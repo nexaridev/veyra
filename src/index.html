@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><title>Veyra</title><link rel="icon" href="assets/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css"></head>
+<body>
+<div id="boot-screen" hidden aria-hidden="true"><div class="boot-logo"><img src="assets/logo.svg" alt="" width="84" height="84"><span class="boot-line"></span></div></div>
+<header><div class="titlebar">
+<button id="brand" class="brand" title="Veyra — новая вкладка" aria-label="Новая вкладка"><img src="assets/logo.svg" alt="" width="27" height="27"></button>
+<div id="tabs" role="tablist" aria-label="Вкладки"></div><button id="new" class="icon" data-icon="plus" title="Новая вкладка" aria-label="Новая вкладка"></button><button id="tab-search" class="icon" data-icon="search" title="Поиск по вкладкам" aria-label="Поиск по вкладкам"></button><div class="drag"></div>
+<button id="minimize" class="window" data-icon="minus" aria-label="Свернуть"></button><button id="maximize" class="window" data-icon="maximize" aria-label="Развернуть"></button><button id="close" class="window close-window" data-icon="close" aria-label="Закрыть"></button>
+</div><div class="toolbar">
+<button id="home-button" class="icon" data-icon="home" title="На главную" aria-label="На главную"></button><button id="back" class="icon" data-icon="back" title="Назад" aria-label="Назад"></button><button id="forward" class="icon" data-icon="forward" title="Вперёд" aria-label="Вперёд"></button><button id="reload" class="icon" data-icon="reload" title="Обновить" aria-label="Обновить"></button>
+<form id="address-form"><span id="site-icon"></span><input id="address" placeholder="Поиск или адрес сайта" autocomplete="off" spellcheck="false" aria-label="Адрес"><button type="button" id="bookmark" title="Добавить в закладки" aria-label="Добавить в закладки"></button></form>
+<button id="zoom-indicator" class="zoom-indicator" hidden title="Сбросить масштаб" aria-label="Сбросить масштаб"></button><button id="reader-button" class="icon" data-icon="book" hidden title="Режим чтения" aria-label="Режим чтения"></button><button id="privacy" class="icon accent" data-icon="shield" title="Приватность" aria-label="Приватность"></button><span class="divider"></span><button id="downloads" class="icon" data-icon="download" title="Загрузки" aria-label="Загрузки"></button><button id="menu" class="icon" data-icon="menu" title="Меню" aria-label="Меню"></button>
+</div><nav id="bookmark-bar" aria-label="Панель закладок"></nav></header>
+<div id="workspace">
+<nav id="rail" aria-label="Боковая панель">
+<button class="rail-button" data-rail="bookmarks" data-icon="bookmark" title="Закладки" aria-label="Закладки"></button>
+<button class="rail-button" data-rail="history" data-icon="history" title="История" aria-label="История"></button>
+<button class="rail-button" data-rail="passwords" data-icon="key" title="Пароли" aria-label="Пароли"></button>
+<button class="rail-button" data-rail="privacy" data-icon="shield" title="Приватность" aria-label="Приватность"></button>
+<button class="rail-button" data-rail="performance" data-icon="gauge" title="Производительность" aria-label="Производительность"></button>
+<div class="rail-spacer"></div>
+<button class="rail-button" id="temporary" data-icon="temporary" title="Временная вкладка" aria-label="Временная вкладка"></button>
+<button class="rail-button" id="open-settings" data-icon="settings" title="Настройки" aria-label="Настройки"></button>
+</nav>
+<main id="content"></main><aside id="panel" hidden aria-label="Панель инструментов"></aside></div>
+<dialog id="clipboard-dialog" aria-labelledby="clipboard-title"><div class="clipboard-top"><span class="clipboard-symbol" data-icon="clipboard"></span><button id="clipboard-cancel-x" class="small-icon" aria-label="Отмена" data-icon="close"></button></div><p class="eyebrow">VEYRA</p><h2 id="clipboard-title">Скопировать текст?</h2><p id="clipboard-origin" class="clipboard-origin"></p><pre id="clipboard-preview" tabindex="0"></pre><p id="clipboard-length" class="note"></p><div class="clipboard-actions"><button id="clipboard-cancel" class="secondary">Отмена</button><button id="clipboard-allow" class="primary">Копировать</button></div></dialog>
+<div id="toast" role="status"></div><script src="locales.js"></script><script src="icons.js"></script><script src="renderer.js"></script>
+</body></html>

@@ -1,0 +1,248 @@
+{
+  "Settings": {
+    "de": "Einstellungen",
+    "fr": "Paramètres",
+    "es": "Configuración",
+    "pl": "Ustawienia"
+  },
+  "New tab": {
+    "de": "Neuer Tab",
+    "fr": "Nouvel onglet",
+    "es": "Nueva pestaña",
+    "pl": "Nowa karta"
+  },
+  "Bookmarks": {
+    "de": "Lesezeichen",
+    "fr": "Favoris",
+    "es": "Marcadores",
+    "pl": "Zakładki"
+  },
+  "History": {
+    "de": "Verlauf",
+    "fr": "Historique",
+    "es": "Historial",
+    "pl": "Historia"
+  },
+  "Downloads": {
+    "de": "Downloads",
+    "fr": "Téléchargements",
+    "es": "Descargas",
+    "pl": "Pobrane"
+  },
+  "Passwords": {
+    "de": "Passwörter",
+    "fr": "Mots de passe",
+    "es": "Contraseñas",
+    "pl": "Hasła"
+  },
+  "Password manager": {
+    "de": "Passwortmanager",
+    "fr": "Gestionnaire de mots de passe",
+    "es": "Gestor de contraseñas",
+    "pl": "Menedżer haseł"
+  },
+  "Privacy": {
+    "de": "Datenschutz",
+    "fr": "Confidentialité",
+    "es": "Privacidad",
+    "pl": "Prywatność"
+  },
+  "Save": {
+    "de": "Speichern",
+    "fr": "Enregistrer",
+    "es": "Guardar",
+    "pl": "Zapisz"
+  },
+  "Cancel": {
+    "de": "Abbrechen",
+    "fr": "Annuler",
+    "es": "Cancelar",
+    "pl": "Anuluj"
+  },
+  "Copy": {
+    "de": "Kopieren",
+    "fr": "Copier",
+    "es": "Copiar",
+    "pl": "Kopiuj"
+  },
+  "Delete": {
+    "de": "Löschen",
+    "fr": "Supprimer",
+    "es": "Eliminar",
+    "pl": "Usuń"
+  },
+  "Search": {
+    "de": "Suche",
+    "fr": "Recherche",
+    "es": "Buscar",
+    "pl": "Szukaj"
+  },
+  "Interface language": {
+    "de": "Sprache der Oberfläche",
+    "fr": "Langue de l’interface",
+    "es": "Idioma de la interfaz",
+    "pl": "Język interfejsu"
+  },
+  "Appearance": {
+    "de": "Darstellung",
+    "fr": "Apparence",
+    "es": "Apariencia",
+    "pl": "Wygląd"
+  },
+  "Dark": {
+    "de": "Dunkel",
+    "fr": "Sombre",
+    "es": "Oscuro",
+    "pl": "Ciemny"
+  },
+  "Light": {
+    "de": "Hell",
+    "fr": "Clair",
+    "es": "Claro",
+    "pl": "Jasny"
+  },
+  "System": {
+    "de": "System",
+    "fr": "Système",
+    "es": "Sistema",
+    "pl": "Systemowy"
+  },
+  "Themes and wallpaper": {
+    "de": "Designs und Hintergrund",
+    "fr": "Thèmes et fond d’écran",
+    "es": "Temas y fondo",
+    "pl": "Motywy i tapeta"
+  },
+  "Customize": {
+    "de": "Anpassen",
+    "fr": "Personnaliser",
+    "es": "Personalizar",
+    "pl": "Dostosuj"
+  },
+  "Compatibility list": {
+    "de": "Kompatibilitätsliste",
+    "fr": "Liste de compatibilité",
+    "es": "Lista de compatibilidad",
+    "pl": "Lista zgodności"
+  },
+  "Domains": {
+    "de": "Domains",
+    "fr": "Domaines",
+    "es": "Dominios",
+    "pl": "Domeny"
+  },
+  "Brightness": {
+    "de": "Helligkeit",
+    "fr": "Luminosité",
+    "es": "Brillo",
+    "pl": "Jasność"
+  },
+  "Contrast": {
+    "de": "Kontrast",
+    "fr": "Contraste",
+    "es": "Contraste",
+    "pl": "Kontrast"
+  },
+  "Apply": {
+    "de": "Anwenden",
+    "fr": "Appliquer",
+    "es": "Aplicar",
+    "pl": "Zastosuj"
+  },
+  "Home shortcuts": {
+    "de": "Startseiten-Verknüpfungen",
+    "fr": "Raccourcis d’accueil",
+    "es": "Accesos de inicio",
+    "pl": "Skróty strony głównej"
+  },
+  "Add website": {
+    "de": "Website hinzufügen",
+    "fr": "Ajouter un site",
+    "es": "Añadir sitio",
+    "pl": "Dodaj witrynę"
+  },
+  "Add": {
+    "de": "Hinzufügen",
+    "fr": "Ajouter",
+    "es": "Añadir",
+    "pl": "Dodaj"
+  },
+  "Name": {
+    "de": "Name",
+    "fr": "Nom",
+    "es": "Nombre",
+    "pl": "Nazwa"
+  },
+  "Address": {
+    "de": "Adresse",
+    "fr": "Adresse",
+    "es": "Dirección",
+    "pl": "Adres"
+  },
+  "Off": {
+    "de": "Aus",
+    "fr": "Désactivé",
+    "es": "Desactivado",
+    "pl": "Wyłączone"
+  },
+  "Connected": {
+    "de": "Verbunden",
+    "fr": "Connecté",
+    "es": "Conectado",
+    "pl": "Połączono"
+  },
+  "Connecting": {
+    "de": "Verbindung wird hergestellt",
+    "fr": "Connexion",
+    "es": "Conectando",
+    "pl": "Łączenie"
+  },
+  "Open Discord": {
+    "de": "Discord öffnen",
+    "fr": "Ouvrir Discord",
+    "es": "Abrir Discord",
+    "pl": "Otwórz Discord"
+  },
+  "Save settings": {
+    "de": "Einstellungen speichern",
+    "fr": "Enregistrer les paramètres",
+    "es": "Guardar configuración",
+    "pl": "Zapisz ustawienia"
+  },
+  "Search or enter address": {
+    "de": "Suchen oder Adresse eingeben",
+    "fr": "Rechercher ou saisir une adresse",
+    "es": "Buscar o introducir dirección",
+    "pl": "Szukaj lub wpisz adres"
+  },
+  "Protected profile": {
+    "de": "Geschütztes Profil",
+    "fr": "Profil protégé",
+    "es": "Perfil protegido",
+    "pl": "Profil chroniony"
+  },
+  "Temporary profile": {
+    "de": "Temporäres Profil",
+    "fr": "Profil temporaire",
+    "es": "Perfil temporal",
+    "pl": "Profil tymczasowy"
+  },
+  "Copying from websites": {
+    "de": "Kopieren von Websites",
+    "fr": "Copie depuis les sites",
+    "es": "Copia desde sitios",
+    "pl": "Kopiowanie z witryn"
+  },
+  "Copy immediately": {
+    "de": "Sofort kopieren",
+    "fr": "Copier immédiatement",
+    "es": "Copiar inmediatamente",
+    "pl": "Kopiuj od razu"
+  },
+  "Ask with preview": {
+    "de": "Mit Vorschau fragen",
+    "fr": "Demander avec aperçu",
+    "es": "Preguntar con vista previa",
+    "pl": "Pytaj z podglądem"
+  }
+}
