@@ -10,12 +10,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 .titlebar button,#tabs{-webkit-app-region:no-drag}
 .brand{font-size:25px;color:var(--accent);width:31px;border-radius:6px}
 .icon{width:34px;height:34px;border-radius:7px;display:grid;place-items:center;flex-shrink:0;font-size:22px}
-#tabs{display:flex;gap:4px;max-width:calc(100% - 220px);min-width:60px;overflow:auto;scrollbar-width:none}
-.tab{display:flex;align-items:center;gap:8px;width:205px;min-width:100px;max-width:205px;height:32px;padding:0 7px 0 11px;border-radius:7px;color:var(--muted);font-size:12px;cursor:pointer}
+#tabs{display:flex;flex:0 1 auto;gap:4px;min-width:0;overflow:auto;scrollbar-width:none}
+.tab{display:flex;align-items:center;gap:8px;min-width:40px;height:32px;padding:0 7px 0 11px;border-radius:7px;color:var(--muted);font-size:12px;cursor:pointer}
 .tab.active{background:var(--toolbar);color:var(--text)}
 .tab:hover{background:var(--surface2)}
 .tab-mark{color:var(--accent);font-size:15px}
-.tab-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab-title{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tab-close{font-size:18px;border-radius:4px;width:22px;height:23px;padding:0}
 .drag{flex:1;min-width:10px}
 .window{width:45px;height:40px;font-size:16px}
@@ -113,7 +113,7 @@ button{display:inline-flex;align-items:center;justify-content:center;gap:8px;tra
 button:active:not(:disabled){transform:scale(.96)}button:disabled{opacity:.45;cursor:not-allowed}button:disabled:hover{background:inherit}
 .brand{display:grid;place-items:center;padding:0;height:32px}.brand-image{object-fit:contain;display:inline-block;flex-shrink:0}
 .window{display:grid;place-items:center}.window .svg-icon{width:15px;height:15px}
-.tab{transition:background .15s,color .15s,opacity .15s;flex-shrink:0;width:200px;max-width:200px;animation:tab-appear .18s ease-out}.tab.sleeping{opacity:.6}.tab-mark{display:grid;place-items:center}.tab-mark .svg-icon{width:15px;height:15px}.tab-close{display:grid;place-items:center}.tab-close .svg-icon{width:13px;height:13px}.pin-mark{width:12px;height:12px;color:var(--accent)}
+.tab{transition:background .15s,color .15s,opacity .15s;flex:1 1 200px;width:200px;max-width:200px;container-type:inline-size;animation:tab-appear .18s ease-out}.tab.sleeping{opacity:.6}.tab-mark{display:grid;place-items:center;flex-shrink:0}.tab-mark .svg-icon{width:15px;height:15px}.tab-close{display:grid;place-items:center;flex-shrink:0}.tab-close .svg-icon{width:13px;height:13px}.pin-mark{width:12px;height:12px;color:var(--accent)}
 #address-form{height:37px;border-radius:10px;transition:border-color .18s,box-shadow .18s}#address-form:focus-within{box-shadow:0 0 0 3px #bc9ffa0b}#site-icon{display:grid;place-items:center}#site-icon .svg-icon{width:16px;height:16px}#bookmark{height:26px;width:27px;display:grid;place-items:center}#bookmark .svg-icon{width:18px;height:18px}#bookmark.selected .svg-icon{fill:var(--accent)}
 #workspace{height:calc(100vh - 94px)}#rail{display:flex;flex-direction:column;align-items:center;gap:10px;width:56px;flex-shrink:0;padding:18px 0 15px;background:var(--chrome);border-right:1px solid var(--border)}
 .rail-button{width:38px;height:38px;border-radius:11px;color:var(--muted);position:relative}.rail-button:hover{color:var(--text)}.rail-button.active{background:#bc9ffa16;color:var(--accent)}.rail-button.active:before{content:'';position:absolute;left:-8px;top:11px;height:16px;width:3px;border-radius:3px;background:var(--accent)}.rail-spacer{flex:1}
@@ -188,5 +188,9 @@ select,textarea{font:inherit;color:var(--text);background:var(--surface2);border
 #clipboard-dialog{width:min(480px,calc(100vw - 40px));padding:28px;border:1px solid var(--border);border-radius:22px;background:var(--surface);color:var(--text);box-shadow:0 28px 100px #0007}#clipboard-dialog::backdrop{background:#080710b8;backdrop-filter:blur(8px)}.clipboard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.clipboard-symbol{display:grid;place-items:center;width:48px;height:48px;border-radius:15px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent)}.clipboard-symbol .svg-icon{width:24px;height:24px}#clipboard-dialog h2{margin:9px 0 10px;font-size:25px;letter-spacing:-.6px}.clipboard-origin{color:var(--accent);font-size:13px;overflow-wrap:anywhere;margin-bottom:22px}#clipboard-preview{margin:0;max-height:220px;min-height:70px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--border);background:var(--bg);border-radius:12px;padding:16px;font:14px/1.6 'Segoe UI',sans-serif;user-select:text}.clipboard-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}.clipboard-actions button{min-width:116px;min-height:42px;border-radius:10px}#clipboard-dialog[open]{animation:clipboard-enter .15s ease-out}@keyframes clipboard-enter{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){#clipboard-dialog[open]{animation:none}}
 
 .tab-favicon{width:16px;height:16px;object-fit:contain;display:block}
+.titlebar>button{flex-shrink:0}
+.tab.pinned{flex:0 0 48px}
+@container (max-width:90px){.tab-close{display:none}.tab-audio{display:none}}
+@container (max-width:35px){.tab-title{display:none}}
 
 .sync-page .card{padding:20px}.sync-page .card>p:first-child{margin-top:0}.sync-page .field{margin-top:0}

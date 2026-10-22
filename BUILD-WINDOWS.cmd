@@ -14,8 +14,8 @@ if not exist node_modules\@ghostery\adblocker (
 )
 call npm run build:win
 if errorlevel 1 exit /b 1
-powershell -NoProfile -Command "$ErrorActionPreference='Stop'; Compress-Archive -LiteralPath '.\dist-v0.6.0\Veyra-win32-x64' -DestinationPath '.\dist-v0.6.0\Veyra-Windows.zip' -Force"
+powershell -NoProfile -Command "$ErrorActionPreference='Stop'; Compress-Archive -LiteralPath '.\dist-v0.6.0a\Veyra-win32-x64' -DestinationPath '.\dist-v0.6.0a\Veyra-Windows.zip' -Force"
 if errorlevel 1 exit /b 1
-echo Build: dist-v0.6.0\Veyra-win32-x64\Veyra.exe
-echo Archive: dist-v0.6.0\Veyra-Windows.zip
+echo Build: dist-v0.6.0a\Veyra-win32-x64\Veyra.exe
+echo Archive: dist-v0.6.0a\Veyra-Windows.zip
 exit /b 0

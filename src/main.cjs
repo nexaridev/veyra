@@ -253,7 +253,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  assertTrusted(e);candidateExpired();
  switch(action){
  case 'state':return snapshot();
- case 'update-check':{const manifest=await require('./updates.cjs').check();checkedUpdate=manifest;const installed=require('../package.json').version.split('.').map(Number),next=manifest.version.split('.').map(Number);let newer=false;for(let i=0;i<3;i++){if(next[i]!==installed[i]){newer=next[i]>installed[i];break}}return {version:manifest.version,newer}}
+ case 'update-check':{const manifest=await require('./updates.cjs').check();checkedUpdate=manifest;const installed=require('../package.json').version.split('.').map(x=>parseInt(x,10)),next=manifest.version.split('.').map(x=>parseInt(x,10));let newer=false;for(let i=0;i<3;i++){if(next[i]!==installed[i]){newer=next[i]>installed[i];break}}return {version:manifest.version,newer}}
  case 'update-download':{if(!checkedUpdate||updateDownloading)throw Error('Сначала проверь обновления.');updateDownloading=true;try{const result=await dialog.showSaveDialog(win,{title:tr('Сохранить обновление'),defaultPath:'Veyra-'+checkedUpdate.version+'-Windows.zip',filters:[{name:'ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return false;await require('./updates.cjs').download(checkedUpdate,result.filePath);shell.showItemInFolder(result.filePath);return true}finally{updateDownloading=false}}
 
  case 'sync-login':case 'sync-signup':{const result=await sync.login(payload?.email,payload?.password,action==='sync-signup');emit();return result}

@@ -1,7 +1,7 @@
 {
   "name": "veyra",
   "productName": "Veyra",
-  "version": "0.6.0",
+  "version": "0.6.0-a",
   "private": true,
   "description": "Private desktop browser with encrypted vault and resource controls",
   "main": "src/main.cjs",
@@ -19,5 +19,5 @@
   "engines": {
     "node": ">=24"
   },
-  "displayVersion": "0.6.0"
+  "displayVersion": "0.6.0a"
 }

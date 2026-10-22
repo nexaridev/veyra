@@ -7,10 +7,10 @@
     platform:'win32',
     arch:'x64',
     electronVersion:'45.0.0',
-    out:path.join(__dirname,'..','dist-v0.6.0'),
+    out:path.join(__dirname,'..','dist-v0.6.0a'),
     overwrite:true,
     icon:path.join(__dirname,'..','src','assets','app.ico'),
-    asar:true,buildVersion:'0.6.0.0',
+    asar:true,buildVersion:'0.6.0.1',
     prune:true,
     ignore:[
       /^\/dist(?:-[^/]+)?(?:\/|$)/,
