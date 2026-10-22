@@ -13,3 +13,8 @@ android/local.properties
 .env
 .env.*
 !.env.example
+
+installer/.deps/
+installer/bin/
+
+/tests/qa*/

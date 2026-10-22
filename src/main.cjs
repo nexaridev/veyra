@@ -33,7 +33,7 @@ function local(url){try{return ['localhost','127.0.0.1','[::1]'].includes(new UR
 function origin(url){try{return new URL(url).origin}catch{return ''}}
 function address(value){
  const s=String(value||'').trim();if(!s)return 'veyra://newtab';
- if(/^veyra:\/\/(newtab|settings|history|bookmarks|passwords|diagnostics|google|themes|shortcuts|compatibility|discord|dark|downloads|performance|privacy|sync)$/.test(s))return s;
+ if(/^veyra:\/\/(newtab|settings|history|bookmarks|passwords|diagnostics|google|themes|shortcuts|compatibility|discord|dark|downloads|performance|privacy|sync|offline)$/.test(s))return s;
  if(/^https?:\/\//i.test(s)){try{return new URL(s).href}catch{return null}}
  if(/^[a-z][a-z\d+.-]*:/i.test(s)&&!/^localhost:\d+/i.test(s)&&!/^[\w.-]+:\d+/.test(s))return null;
  if(!/\s/.test(s)&&/^(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[\p{L}\d-]+\.)+[\p{L}\d-]{2,}(?::\d+)?)(?:[/?#].*)?$/u.test(s)){
@@ -47,7 +47,7 @@ function save(){if(db.settings.restoreSession)db.lastSession={tabs:tabs.filter(t
 function active(){return tabs.find(t=>t.id===selected)}
 function snapshot(){return {
  tabs:tabs.map(({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,blocked,googleBlocked,reader,zoomLevel,muted,audible,navEntries,navIndex})=>({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,blocked,googleBlocked,reader,zoomLevel,muted,audible,canGoBack:navIndex>0,canGoForward:navIndex<navEntries.length-1})),selected,panel,blocked,
- sync:sync.status(),discordStatus:discord?.status,closedTabs:recentlyClosed.length,wallpaperVersion,browsers:external.installedBrowsers().map(({id,name,chromium})=>({id,name,chromium})),fullscreen:!!win?.isFullScreen(),settings:db.settings,bookmarks:db.bookmarks,history:db.history.slice(0,500),
+ gameBest:active()?.mode==='temporary'?0:(db.gameBest||0),sync:sync.status(),discordStatus:discord?.status,closedTabs:recentlyClosed.length,wallpaperVersion,browsers:external.installedBrowsers().map(({id,name,chromium})=>({id,name,chromium})),fullscreen:!!win?.isFullScreen(),settings:db.settings,bookmarks:db.bookmarks,history:db.history.slice(0,500),
  downloads:downloads.map(({id,name,status,received,total})=>({id,name,status,received,total})),
  vault:vault?.status(),pendingCredential:pendingCredential?{origin:pendingCredential.origin,username:pendingCredential.username}:null,
  appDialog:appDialog?appDialog.public:null,clipboardPrompt:clipboardPrompt?{id:clipboardPrompt.id,origin:clipboardPrompt.origin,preview:clipboardPrompt.preview,length:clipboardPrompt.length}:null,permission:permissionRequest?{origin:permissionRequest.origin,permission:permissionRequest.permission}:null,
@@ -173,7 +173,7 @@ async function navigate(t,input,historyMode='push'){
  recordNavigation(t,url,historyMode);t.pendingNavigation=true;
  if(web(url)&&t.mode!=='temporary'){const mode=googleHost(url)?'google':'private';if(mode!==t.mode){removeView(t);t.mode=mode}}
  const generation=++t.generation;t.reader=null;t.googleBlocked=false;if(web(url)&&new URL(url).hostname!=='accounts.google.com')t.serviceURL=url;t.url=url;t.error=null;t.loading=false;t.lastActive=Date.now();panel=null;
- if(url.startsWith('veyra:')){t.favicon='';t.iconRequest=(t.iconRequest||0)+1;t.pendingNavigation=false;removeView(t);t.sleeping=false;t.title=({'veyra://sync':'Синхронизация','veyra://themes':'Темы и обои','veyra://shortcuts':'Ярлыки главной','veyra://compatibility':'Список совместимости','veyra://discord':'Discord Rich Presence','veyra://dark':'Auto Dark Mode','veyra://downloads':'Загрузки','veyra://performance':'Производительность','veyra://privacy':'Приватность','veyra://newtab':'Новая вкладка','veyra://history':'История','veyra://bookmarks':'Закладки','veyra://settings':'Настройки','veyra://passwords':'Пароли','veyra://diagnostics':'Диагностика','veyra://google':'Google'})[url];layout();emit();return}
+ if(url.startsWith('veyra:')){t.favicon='';t.iconRequest=(t.iconRequest||0)+1;t.pendingNavigation=false;removeView(t);t.sleeping=false;t.title=({'veyra://offline':'Veyra Pulse','veyra://sync':'Синхронизация','veyra://themes':'Темы и обои','veyra://shortcuts':'Ярлыки главной','veyra://compatibility':'Список совместимости','veyra://discord':'Discord Rich Presence','veyra://dark':'Auto Dark Mode','veyra://downloads':'Загрузки','veyra://performance':'Производительность','veyra://privacy':'Приватность','veyra://newtab':'Новая вкладка','veyra://history':'История','veyra://bookmarks':'Закладки','veyra://settings':'Настройки','veyra://passwords':'Пароли','veyra://diagnostics':'Диагностика','veyra://google':'Google'})[url];layout();emit();return}
  t.title=new URL(url).hostname;t.loading=true;emit();
  try{if(!t.view)makeView(t);if(!tabs.includes(t)||t.generation!==generation)return;layout();if(!t.view.webContents.getURL())await t.view.webContents.loadURL('about:blank');if(!tabs.includes(t)||t.generation!==generation||!t.view)return;t.loading=true;await applyDark(t.view.webContents,url);await t.view.webContents.loadURL(url)}
  catch(error){if(tabs.includes(t)&&t.generation===generation){t.loading=false;t.error=error.message;layout();emit()}}
@@ -264,6 +264,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  assertTrusted(e);candidateExpired();
  switch(action){
  case 'state':return snapshot();
+ case 'game-record':if(active()?.mode!=='temporary'&&Number.isSafeInteger(payload)&&payload>0&&payload<=1000000000){db.gameBest=Math.max(db.gameBest||0,payload);save()}return true;
  case 'app-dialog-response':if(appDialog?.public.id===payload?.id)appDialog.finish(payload.allow===true?(appDialog.public.type==='prompt'?String(payload.text||'').slice(0,10000):true):null);return true;
  case 'default-browser':await require('./default-browser.cjs').register(app);await shell.openExternal('ms-settings:defaultapps?registeredAppUser=Veyra');return true;
  case 'update-check':{const manifest=await require('./updates.cjs').check();checkedUpdate=manifest;const installed=require('../package.json').version.split('.').map(x=>parseInt(x,10)),next=manifest.version.split('.').map(x=>parseInt(x,10));let newer=false;for(let i=0;i<3;i++){if(next[i]!==installed[i]){newer=next[i]>installed[i];break}}return {version:manifest.version,newer}}
@@ -441,7 +442,7 @@ app.whenReady().then(()=>{
   if(!Array.isArray(db.settings.siteExceptions))db.settings.siteExceptions=[];if(!Array.isArray(db.settings.httpExceptions))db.settings.httpExceptions=[];
   if(!db.settings.permissions||Array.isArray(db.settings.permissions))db.settings.permissions={};
   db.bookmarks=Array.isArray(stored.bookmarks)?stored.bookmarks.filter(x=>web(x.url)).slice(0,3000).map(x=>({...x,id:x.id||crypto.randomUUID(),folder:x.folder||'Избранное'})):[];
-  db.history=Array.isArray(stored.history)?stored.history.filter(x=>web(x.url)).slice(0,1000):[];db.lastSession=stored.lastSession;
+  db.gameBest=Number.isSafeInteger(stored.gameBest)&&stored.gameBest>=0&&stored.gameBest<=1000000000?stored.gameBest:0;db.history=Array.isArray(stored.history)?stored.history.filter(x=>web(x.url)).slice(0,1000):[];db.lastSession=stored.lastSession;
  }catch{}
  if(!appearance.themes[db.settings.colorTheme]&&db.settings.colorTheme!=='custom')db.settings.colorTheme='violet';if(!/^#[0-9a-f]{6}$/i.test(db.settings.customAccent))db.settings.customAccent='#bc9ffa';if(!appearance.wallpapers.includes(db.settings.wallpaper))db.settings.wallpaper='aurora';wallpaperData=appearance.readWallpaper(app.getPath('userData'));
  if(!Array.isArray(db.settings.compatibilityDomains))db.settings.compatibilityDomains=['google.com','youtube.com'];if(!Array.isArray(db.settings.shortcuts))db.settings.shortcuts=[];if(!db.settings.darkSites||Array.isArray(db.settings.darkSites))db.settings.darkSites={};

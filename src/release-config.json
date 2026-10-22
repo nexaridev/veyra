@@ -1,4 +1,4 @@
 {
   "publicKey": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAznn1FR5Q/oBHL8knaSvyNPTFKnt/q/aCqOYFzPbQpFk=\n-----END PUBLIC KEY-----\n",
-  "manifestURL": "https://github.com/nexaridev/veyra/releases/latest/download/veyra-update.json"
+  "manifestURL": "https://veyra.veyra-nexaridev.workers.dev/downloads/windows.json"
 }

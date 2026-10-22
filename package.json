@@ -1,13 +1,14 @@
 {
   "name": "veyra",
   "productName": "Veyra",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": true,
   "description": "Private desktop browser with encrypted vault and resource controls",
   "main": "src/main.cjs",
   "scripts": {
     "start": "electron .",
-    "build:win": "node scripts/package.cjs"
+    "build:win": "node scripts/package.cjs",
+    "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/BUILD-INSTALLER.ps1"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",
@@ -19,5 +20,5 @@
   "engines": {
     "node": ">=24"
   },
-  "displayVersion": "0.6.1"
+  "displayVersion": "0.6.2"
 }

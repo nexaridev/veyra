@@ -1,0 +1,78 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; base-uri 'none'; form-action 'none'"><title>Veyra Pulse</title><style>body{margin:0;background:#15111d}.dodge-game{--ink:#eee9ff;--soft:#9d96b1;--purple:#b6a0ff;color:var(--ink);font:14px/1.5 system-ui,sans-serif;max-width:760px;margin:auto;padding:22px;user-select:none;touch-action:pan-y}
+.dodge-game *{box-sizing:border-box}.dodge-heading{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:16px}.dodge-heading h1{font-size:26px;margin:0;letter-spacing:-1px}.dodge-heading p{color:var(--soft);margin:2px 0;font-size:12px}.dodge-game button{border:1px solid #40364f;background:#282132;color:var(--ink);border-radius:12px;padding:10px 17px;font:inherit;cursor:pointer}.dodge-game button:focus-visible,.dodge-game canvas:focus-visible{outline:2px solid var(--purple);outline-offset:4px}.dodge-game .dodge-primary{background:#b6a0ff;color:#171122;border:0;font-weight:650}.dodge-stats{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;font-variant-numeric:tabular-nums}.dodge-stats span{color:var(--soft)}.dodge-stats b{color:var(--ink);font-size:18px;margin-left:5px}.dodge-arena{position:relative;max-width:480px;margin:auto;aspect-ratio:1;border:1px solid #514364;border-radius:20px;overflow:hidden;background:#100d18;box-shadow:0 12px 60px #b697ff12}.dodge-arena canvas{display:block;width:100%;height:100%;touch-action:none}.dodge-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;background:#100d18e8;padding:22px}.dodge-overlay[hidden]{display:none}.dodge-overlay h2{font-size:30px;margin:0 0 8px}.dodge-overlay p{color:var(--soft);max-width:290px;margin:0 auto 20px}.dodge-meter{height:3px;background:#30263e;max-width:440px;margin:15px auto}.dodge-meter i{display:block;height:100%;background:var(--purple);width:0}.dodge-help{color:var(--soft);text-align:center;font-size:12px;margin:12px 0}.dodge-touch{display:flex;justify-content:space-between;align-items:center;max-width:480px;margin:16px auto 0}.dodge-pad{display:grid;grid-template-columns:42px 42px 42px;grid-template-rows:36px 36px;gap:4px}.dodge-pad button{padding:4px;touch-action:none}.dodge-pad svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2}.dodge-up{grid-column:2}.dodge-left{grid-row:2}.dodge-down{grid-row:2;grid-column:2}.dodge-right{grid-row:2;grid-column:3}.dodge-dash{touch-action:none;min-width:100px}.dodge-touch-note{font-size:11px;color:var(--soft);margin-top:5px;text-align:center}@media(min-width:850px) and (pointer:fine){.dodge-touch{display:none}}@media(max-width:520px){.dodge-game{padding:14px}.dodge-heading h1{font-size:23px}.dodge-stats b{font-size:16px}.dodge-overlay h2{font-size:25px}.dodge-help{font-size:11px}}
+@media(prefers-reduced-motion:reduce){.dodge-arena{box-shadow:none}}
+</style></head><body><div id="game"></div><script>(function (host) {
+ 'use strict';
+ const SIZE = 480, LIMIT = 360;
+ class Engine {
+  constructor(random = Math.random) { this.random = random; this.reset(); }
+  reset() { this.wave = 1; this.lives = 3; this.time = 0; this.elapsed = 0; this.intermission = 1.5; this.spawn = 0; this.shots = 0; this.bullets = []; this.player = {x:240,y:300}; this.invincible = 0; this.dash = 0; this.cooldown = 0; this.dead = false; }
+  get duration() { return 12 + Math.min(10, this.wave * .25); }
+  get speed() { return 90 + 29 * Math.log2(this.wave + 1); }
+  add(x,y,vx,vy,r = 5,warm = .55) { if (this.bullets.length < LIMIT) this.bullets.push({x,y,vx,vy,r,warm,age:0}); }
+  aimed(x,y,speed = this.speed) { const dx=this.player.x-x,dy=this.player.y-y,l=Math.hypot(dx,dy)||1; this.add(x,y,dx/l*speed,dy/l*speed); }
+  pattern() {
+   const n=this.wave, s=this.speed, k=this.shots++, kind=(n-1)%6, r=this.random;
+   if(kind===0){const edge=k%4,t=30+r()*420; this.aimed(edge===0?0:edge===1?480:t,edge===2?0:edge===3?480:t);}
+   else if(kind===1){const x=45+r()*390,y=20,count=5+Math.min(7,Math.floor(n/4));for(let i=0;i<count;i++){const a=Math.PI*.15+Math.PI*.7*i/(count-1);this.add(x,y,Math.cos(a)*s,Math.sin(a)*s);}}
+   else if(kind===2){const gap=60+r()*360,horizontal=k%2===0;for(let t=12;t<480;t+=29)if(Math.abs(t-gap)>55){if(horizontal)this.add(t,0,0,s*.82,5,.8);else this.add(0,t,s*.82,0,5,.8);}}
+   else if(kind===3){const angle=k*.49;for(let i=0;i<3;i++){const a=angle+i*Math.PI*2/3;this.add(240,30,Math.cos(a)*s,Math.sin(a)*s,5,.7);}}
+   else if(kind===4){const x=k%2?0:480,y=30+r()*420;this.aimed(x,y,s);this.add(x,y,(k%2?1:-1)*s*.8,s*.45);this.add(x,y,(k%2?1:-1)*s*.8,-s*.45);}
+   else {const count=6+Math.min(8,Math.floor(n/5)),x=k%2?35:445,y=35;for(let i=0;i<count;i++){const a=i*Math.PI*2/count+k*.21;this.add(x,y,Math.cos(a)*s,Math.sin(a)*s,5,.7);}}
+  }
+  step(dt,input={}) {
+   if(this.dead)return;dt=Math.max(0,Math.min(.04,dt));this.elapsed+=dt;this.cooldown=Math.max(0,this.cooldown-dt);this.invincible=Math.max(0,this.invincible-dt);this.dash=Math.max(0,this.dash-dt);
+   let dx=Number(input.x)||0,dy=Number(input.y)||0,len=Math.hypot(dx,dy);if(len>1){dx/=len;dy/=len;}
+   if(input.dash&&this.cooldown===0){this.dash=.16;this.invincible=Math.max(this.invincible,.18);this.cooldown=1.8;}
+   const speed=this.dash>0?640:input.slow?125:235;
+   this.player.x=Math.max(10,Math.min(470,this.player.x+dx*speed*dt));this.player.y=Math.max(10,Math.min(470,this.player.y+dy*speed*dt));
+   if(this.intermission>0){this.intermission-=dt;return;}
+   this.time+=dt;this.spawn-=dt;
+   if(this.time>=this.duration){this.wave++;this.time=0;this.intermission=1.8;this.bullets=[];this.spawn=0;this.shots=0;if(this.wave%4===0)this.lives=Math.min(3,this.lives+1);return;}
+   if(this.spawn<=0){this.pattern();const spacing=(this.wave-1)%6===2?2.1:Math.max(.11,.68/(1+(this.wave-1)*.075));this.spawn=spacing;}
+   for(const b of this.bullets){b.age+=dt;if(b.warm>0){b.warm-=dt;continue;}b.x+=b.vx*dt;b.y+=b.vy*dt;if(this.invincible===0&&Math.hypot(b.x-this.player.x,b.y-this.player.y)<b.r+5){this.lives--;this.invincible=1.35;if(this.lives<=0){this.dead=true;break;}}}
+   this.bullets=this.bullets.filter(b=>b.age<12&&b.x>-65&&b.y>-65&&b.x<545&&b.y<545);
+  }
+ }
+ const api={Engine,SIZE,LIMIT};
+ if(typeof module!=='undefined'&&module.exports)module.exports=api;else host.VeyraDodge=api;
+})(typeof window==='undefined'?globalThis:window);
+
+(function(host){
+ 'use strict';
+ const words={ru:['Сигнал потерян','Уклоняйся. Держись. Ещё одна волна.','Волна','Рекорд','Щит','Пауза','Вперёд','Пули оставляют просветы. Рывок поможет выбраться.','Продолжить','Конец сигнала','Достигнута волна','Ещё раз','Рывок','Стрелки / WASD · Shift — точнее · Пробел — рывок · P — пауза','Волна пройдена','Потяни по полю или используй кнопки','Готовься'],en:['Signal lost','Dodge. Survive. One more wave.','Wave','Best','Shield','Pause','Play','Find the gaps. Dash to get out of trouble.','Resume','Signal ended','Wave reached','Try again','Dash','Arrows / WASD · Shift — precision · Space — dash · P — pause','Wave cleared','Drag on the arena or use the buttons','Get ready'],uk:['Сигнал втрачено','Ухиляйся. Тримайся. Ще одна хвиля.','Хвиля','Рекорд','Щит','Пауза','Почати','Шукай проміжки. Ривок допоможе вибратися.','Продовжити','Сигнал згас','Досягнуто хвилі','Ще раз','Ривок','Стрілки / WASD · Shift — точніше · Пробіл — ривок · P — пауза','Хвилю пройдено','Потягни полем або використовуй кнопки','Готуйся']};
+ function mount(root,options={}){
+  const w=words[options.language]||words.en,Engine=host.VeyraDodge.Engine,game=new Engine(),keys=new Set(),held=new Set();let best=Number(options.best)||0,started=false,paused=true,disposed=false,previous=0,frame,drag=null,lastWave=0,lastLives=0;
+  if(!options.private&&options.storage!==false)try{best=Math.max(best,Number(localStorage.getItem('veyra-dodge-best'))||0)}catch{}
+  const arrow=d=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+  root.innerHTML=`<section class="dodge-game"><div class="dodge-heading"><div><h1>Veyra Pulse</h1><p>${w[1]}</p></div><button class="dodge-pause">${w[5]}</button></div><div class="dodge-stats" aria-live="polite"><span>${w[2]}<b data-wave>1</b></span><span>${w[4]}<b data-lives>3</b></span><span>${w[3]}<b data-best>0</b></span></div><div class="dodge-arena"><canvas width="480" height="480" tabindex="0" aria-label="Veyra Pulse"></canvas><div class="dodge-overlay"><div><h2></h2><p></p><button class="dodge-primary"></button></div></div></div><div class="dodge-meter" aria-hidden="true"><i></i></div><p class="dodge-help">${w[13]}</p><div class="dodge-touch"><div class="dodge-pad"><button class="dodge-up" data-dir="up" aria-label="Up">${arrow('m6 15 6-6 6 6')}</button><button class="dodge-left" data-dir="left" aria-label="Left">${arrow('m15 6-6 6 6 6')}</button><button class="dodge-down" data-dir="down" aria-label="Down">${arrow('m6 9 6 6 6-6')}</button><button class="dodge-right" data-dir="right" aria-label="Right">${arrow('m9 6 6 6-6 6')}</button></div><div><button class="dodge-dash">${w[12]}</button><div class="dodge-touch-note">${w[15]}</div></div></div></section>`;
+  const canvas=root.querySelector('canvas'),ctx=canvas.getContext('2d'),overlay=root.querySelector('.dodge-overlay'),primary=root.querySelector('.dodge-primary'),listeners=[];
+  function on(target,name,fn,opts){target.addEventListener(name,fn,opts);listeners.push(()=>target.removeEventListener(name,fn,opts));}
+  function modal(title,detail,button){overlay.hidden=false;overlay.querySelector('h2').textContent=title;overlay.querySelector('p').textContent=detail;primary.textContent=button;}
+  function saveBest(){if(game.wave<=best||options.private)return;best=game.wave;if(options.storage!==false)try{localStorage.setItem('veyra-dodge-best',String(best))}catch{}options.onRecord?.(best);}
+  function pause(){if(started&&!game.dead){paused=true;keys.clear();held.clear();drag=null;modal(w[5],w[1],w[8]);}}
+  function start(){if(game.dead){game.reset();started=false;}started=true;paused=false;keys.clear();overlay.hidden=true;previous=0;canvas.focus({preventScroll:true});}
+  on(primary,'click',start);on(root.querySelector('.dodge-pause'),'click',()=>paused?start():pause());
+  on(host,'keydown',e=>{if(!root.isConnected||e.ctrlKey||e.metaKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','shift',' ','p','escape'].includes(k)){e.preventDefault();if((k==='p'||k==='escape')&&!e.repeat){paused?start():pause();return;}if(!started&&k===' '){start();return;}keys.add(k);}});
+  on(host,'keyup',e=>keys.delete(e.key.toLowerCase()));on(host,'blur',pause);on(document,'visibilitychange',()=>{if(document.hidden)pause();});
+  for(const b of root.querySelectorAll('[data-dir]')){on(b,'pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);held.add(b.dataset.dir);});for(const event of ['pointerup','pointercancel','lostpointercapture'])on(b,event,()=>held.delete(b.dataset.dir));}
+  on(root.querySelector('.dodge-dash'),'pointerdown',e=>{e.preventDefault();keys.add(' ');});
+  on(canvas,'pointerdown',e=>{if(paused)return;e.preventDefault();canvas.setPointerCapture(e.pointerId);const r=canvas.getBoundingClientRect();drag={x:(e.clientX-r.left)*480/r.width,y:(e.clientY-r.top)*480/r.height};});
+  on(canvas,'pointermove',e=>{if(!drag)return;const r=canvas.getBoundingClientRect();drag={x:(e.clientX-r.left)*480/r.width,y:(e.clientY-r.top)*480/r.height};});for(const event of ['pointerup','pointercancel','lostpointercapture'])on(canvas,event,()=>drag=null);
+  function draw(now){if(disposed)return;const dt=previous?Math.min(.04,(now-previous)/1000):0;previous=now;
+   if(!paused){let x=Number(keys.has('d')||keys.has('arrowright')||held.has('right'))-Number(keys.has('a')||keys.has('arrowleft')||held.has('left')),y=Number(keys.has('s')||keys.has('arrowdown')||held.has('down'))-Number(keys.has('w')||keys.has('arrowup')||held.has('up'));if(drag){const dx=drag.x-game.player.x,dy=drag.y-game.player.y,l=Math.hypot(dx,dy);x=l>6?dx/Math.max(l,20):0;y=l>6?dy/Math.max(l,20):0;}game.step(dt,{x,y,slow:keys.has('shift'),dash:keys.has(' ')});keys.delete(' ');saveBest();if(game.dead){paused=true;modal(w[9],w[10]+' '+game.wave,w[11]);}}
+   ctx.fillStyle='#100d18';ctx.fillRect(0,0,480,480);ctx.strokeStyle='#ffffff06';ctx.lineWidth=1;for(let p=24;p<480;p+=32){ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,480);ctx.moveTo(0,p);ctx.lineTo(480,p);ctx.stroke();}
+   for(const b of game.bullets){ctx.beginPath();ctx.arc(b.x,b.y,b.r+(b.warm>0?3:0),0,Math.PI*2);if(b.warm>0){ctx.strokeStyle='#ffbb7655';ctx.stroke();}else{ctx.fillStyle='#ffbb76';ctx.fill();}}
+   const p=game.player;ctx.save();ctx.translate(p.x,p.y);if(!game.invincible||Math.floor(now/85)%2===0){ctx.fillStyle=game.dash>0?'#f0e9ff':'#bca5ff';ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(9,2);ctx.lineTo(0,8);ctx.lineTo(-9,2);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(-2,-2,4,4);}ctx.restore();
+   if(!paused&&game.intermission>0){ctx.fillStyle='#eee9ff';ctx.textAlign='center';ctx.font='600 23px system-ui';ctx.fillText(game.wave===1?w[16]:w[14],240,205);ctx.font='16px system-ui';ctx.fillStyle='#b6a0ff';ctx.fillText(w[2]+' '+game.wave,240,235);}
+   if(lastWave!==game.wave||lastLives!==game.lives){root.querySelector('[data-wave]').textContent=game.wave;root.querySelector('[data-lives]').textContent=game.lives;lastWave=game.wave;lastLives=game.lives;}
+   root.querySelector('[data-best]').textContent=best;root.querySelector('.dodge-meter i').style.width=(game.time/game.duration*100)+'%';const dash=root.querySelector('.dodge-dash');dash.textContent=game.cooldown>0?game.cooldown.toFixed(1)+' s':w[12];
+   frame=host.requestAnimationFrame(draw);
+  }
+  modal(w[0],w[7],w[6]);frame=host.requestAnimationFrame(draw);
+  return {pause,dispose(){disposed=true;host.cancelAnimationFrame(frame);for(const off of listeners)off();keys.clear();held.clear();drag=null;},engine:game};
+ }
+ host.VeyraGame={mount};
+})(window);
+
+window.veyraOfflineGame=VeyraGame.mount(document.getElementById('game'),/*VEYRA_CONFIG*/null||{language:'en'});</script></body></html>

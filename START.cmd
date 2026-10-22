@@ -1,8 +1,8 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if exist dist-v0.6.1\Veyra-win32-x64\Veyra.exe (
-  start "Veyra" "%~dp0dist-v0.6.1\Veyra-win32-x64\Veyra.exe"
+if exist dist-v0.6.2\Veyra-win32-x64\Veyra.exe (
+  start "Veyra" "%~dp0dist-v0.6.2\Veyra-win32-x64\Veyra.exe"
   exit /b 0
 )
 where node >nul 2>&1
