@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+<title>Veyra — проверка выбора файлов</title>
+<style>body{font:16px/1.6 system-ui;background:#17141f;color:#eee8fa;max-width:700px;margin:auto;padding:24px}label{display:block;border:1px solid #4a405b;border-radius:12px;padding:16px;margin:16px 0}input{display:block;max-width:100%;margin-top:10px}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:10px}</style>
+<h1>Выбор файлов</h1>
+<p>Эта страница показывает только имя, тип и размер выбранного файла. Содержимое не читается и не отправляется.</p>
+<label>Один файл любого типа<input id="single" type="file"></label>
+<label>Несколько файлов<input id="multiple" type="file" multiple></label>
+<label>Только изображения<input id="images" type="file" accept="image/*" multiple></label>
+<label>PDF или изображение<input id="document" type="file" accept="application/pdf,image/*"></label>
+<label>Расширения файлов<input id="extensions" type="file" accept=".pdf,.jpg,.png"></label>
+<button id="clear">Очистить</button>
+<pre id="result" role="status">Файлы не выбраны.</pre>
+<script>
+for(const input of document.querySelectorAll('input'))input.addEventListener('change',()=>{
+ document.querySelector('#result').textContent=JSON.stringify({field:input.id,count:input.files.length,files:[...input.files].map(file=>({name:file.name,type:file.type,size:file.size}))},null,2);
+});
+document.querySelector('#clear').onclick=()=>{for(const input of document.querySelectorAll('input'))input.value='';document.querySelector('#result').textContent='Файлы не выбраны.'};
+</script>
+</html>
