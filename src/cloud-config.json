@@ -1,5 +1,4 @@
 {
-  "supabaseURL": "https://ekqwcwedmdpiogxskrac.supabase.co",
-  "publishableKey": "sb_publishable_AF1vV-H3hJlXtoDhwbuseQ_KxmNzTWm",
+  "apiURL": "https://veyra.veyra-nexaridev.workers.dev",
   "releaseRepository": "nexaridev/veyra"
 }

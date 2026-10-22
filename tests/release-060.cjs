@@ -5,7 +5,7 @@ let menu;Menu.buildFromTemplate=items=>({popup(){menu=items}});
 const delay=ms=>new Promise(r=>setTimeout(r,ms));async function until(fn){for(let i=0;i<200;i++){if(await fn())return;await delay(30)}throw Error('Timed out')}
 const timer=setTimeout(()=>app.exit(1),45000);
 app.whenReady().then(async()=>{try{const win=m.exports.getWindow();await until(()=>!win.webContents.isLoading());const ui=script=>win.webContents.executeJavaScript(script,true),cmd=(a,p)=>ui('window.veyra.command('+JSON.stringify(a)+','+JSON.stringify(p)+')');
-assert.equal((await cmd('state')).version,'0.6.0');await cmd('navigate','veyra://sync');const initial=await cmd('state');assert.equal(initial.tabs.find(t=>t.id===initial.selected)?.url,'veyra://sync');
+assert.equal((await cmd('state')).version,require('../package.json').displayVersion);await cmd('navigate','veyra://sync');const initial=await cmd('state');assert.equal(initial.tabs.find(t=>t.id===initial.selected)?.url,'veyra://sync');
 await cmd('navigate','veyra://settings');await until(()=>ui('!!document.querySelector("#check-updates")'));await cmd('back');await until(()=>ui('!!document.querySelector("#sync-login")'));console.log('PASS: sync settings and internal back navigation');
 const sync=m.exports.sync;sync.login=async()=>{sync.auth={user:{id:'test',email:'test@example.invalid'}};return {confirmation:false}};
 await cmd('sync-login',{email:'test@example.invalid',password:'example123'});let uploaded;

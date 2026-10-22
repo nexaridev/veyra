@@ -78,7 +78,7 @@ app.whenReady().then(async()=>{
    await until(async()=>!!(await cmd('state')).pendingCredential);assert.equal((await cmd('state')).pendingCredential.origin,'https://login.veyra.test');
    await cmd('vault-dismiss');
   });
-  await check('popup retains opener, postMessage and matching session',async()=>{
+  await check('popup retains opener, postMessage and matching session when enabled',async()=>{api.getDB().settings.popupWindows=true;
    await tab.view.webContents.executeJavaScript("window.open('https://login.veyra.test/popup');true");await until(()=>api.getPopups().size>0);
    const child=[...api.getPopups()][0];await until(()=>!child.webContents.isLoading());assert.equal(child.webContents.session,tab.view.webContents.session);
    assert(await child.webContents.executeJavaScript('!!window.opener'));await child.webContents.executeJavaScript("window.opener.postMessage('qa-popup','https://login.veyra.test')");await until(async()=>await tab.view.webContents.executeJavaScript('window.messageReceived')==='qa-popup');child.close();
@@ -115,7 +115,7 @@ app.whenReady().then(async()=>{
   await check('performance controls and settings render',async()=>{
    await cmd('panel','performance');await delay(100);assert(await ui("!!document.querySelector('#performance-form input[name=ramTargetMB]')"));
    fs.writeFileSync(path.join(output,'veyra-performance.png'),(await win.webContents.capturePage()).toPNG());
-   await cmd('navigate','veyra://settings');await delay(150);assert(await ui("!!document.querySelector('#settings-form')"));assert.equal(await ui("document.querySelectorAll('#settings-form input[type=checkbox]').length"),8);
+   await cmd('navigate','veyra://settings');await delay(150);assert(await ui("!!document.querySelector('#settings-form')"));assert.equal(await ui("document.querySelectorAll('#settings-form input[type=checkbox]').length"),9);
   });
   await cmd('navigate','veyra://newtab');await cmd('panel','passwords');await delay(150);
   console.log('LAYOUT '+await ui("JSON.stringify({panel:document.querySelector('#panel').getBoundingClientRect().toJSON(),hidden:document.querySelector('#panel').hidden,display:getComputedStyle(document.querySelector('#panel')).display,body:document.body.scrollWidth,content:document.querySelector('#content').getBoundingClientRect().toJSON()})"));

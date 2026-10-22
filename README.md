@@ -1,27 +1,44 @@
-# Veyra
+# Veyra — Windows 0.6.1 / Android 0.3.0
 
-Windows **0.6.0** · Android **0.2.0**
+Браузер для Windows на Electron 45 и Android на GeckoView. [Сайт](https://veyra.veyra-nexaridev.workers.dev) · [Релизы](https://github.com/nexaridev/veyra/releases) · [Изменения и ограничения](RELEASE-0.6.1.md) · [Приватность](PRIVACY.md).
 
-Desktop browser built with Electron, Android browser built with GeckoView. Custom interface, bookmarks, privacy controls and optional encrypted bookmark transfers.
+## Запуск
 
-Read [release notes and known limitations](RELEASE-0.6.0.md) and [privacy details](PRIVACY.md) before testing. This is a release candidate; mobile device and real account cross-device tests are still outstanding. Public downloads are provided only through GitHub Releases when available.
+Windows: распакуй весь архив и запусти Veyra-win32-x64/Veyra.exe. Node.js для готовой сборки не нужен. Профиль общий для версий: `%APPDATA%/Veyra`; он не включается в сборку. Перед обновлением закрой старую Veyra и замени папку приложения, сохранив профиль.
 
-## Windows build
+Android: release APK arm64, Android 8+. Сохранены application ID и сертификат предыдущих версий. Проверка на физическом телефоне пока остаётся перед стабильным выпуском.
 
-Node.js 24+, Windows x64: `npm ci`, then `npm run build:win`. Output: `dist-v0.6.0/Veyra-win32-x64/Veyra.exe`. `BUILD-WINDOWS.cmd` also creates a ZIP.
+## Возможности
 
-## Android build
+- Windows: вкладки с favicon, закладки с папками, история, боковые панели, поиск по странице, масштаб, закрепление/восстановление вкладок, темы, обои, свои ярлыки, SVG и анимации с reduced motion.
+- Контекстное меню текста, ссылок и изображений; собственное подтверждение копирования, диалоги сайтов и предупреждения о несохранённых данных. Отдельные окна включаются настройкой. Обычные вкладки не сохраняют window.opener.
+- Windows: менеджер паролей с мастер-паролем, scrypt, AES-256-GCM и защитой Windows; генератор, ручное заполнение точного HTTPS-origin, автоблокировка.
+- Фильтрация Ghostery по EasyList/EasyPrivacy, HTTPS-first, DNT/GPC, ограничение сторонних cookie и UDP WebRTC, разрешения, временный профиль, Auto Dark Mode и диагностика.
+- Мягкая цель памяти и усыпление подходящих вкладок, выбор GPU-ускорения после перезапуска. Discord Rich Presence с языком, доменом, интервалом и скрытием времени.
+- Android: вкладки, закладки, история и очистка, поиск по странице, выбор поиска, сайт для ПК, меню долгого нажатия, сохранение ответов-загрузок, ручной обмен закладками. Выбор браузером по умолчанию на обеих платформах.
 
-See [Android release build](android/RELEASE.md). Java 17, Gradle 9.3.1, Android SDK platform 37.0 and build tools 36.0.0. CI builds use a separate debug key.
+## Аккаунт и синхронизация
 
-## Services
+Настройки → синхронизация (`veyra://sync` на Windows). Собственный вход Veyra: подтверждение email кодом, восстановление/смена пароля, выход со всех устройств и удаление аккаунта. Сессия до 30 дней сохраняется через защиту Windows / Android Keystore. API — Cloudflare Workers, база — PostgreSQL Supabase без Supabase Auth, письма — Brevo Free. В базе хранятся bcrypt-хеши паролей и хеши сессий. Старые аккаунты Supabase Auth автоматически не переносятся.
 
-Supabase stores user accounts and client-encrypted bookmark payloads. The public configuration contains a publishable key, never a service role key. Each user may access only their own rows through RLS. Production signup requires configured SMTP. Cloudflare R2 is optional and is not yet active.
+Используй одну отдельную фразу от 16 символов на устройствах. Закладки шифруются на устройстве PBKDF2-SHA256 (600000 итераций) и AES-256-GCM. Фраза серверу не передаётся и не восстанавливается. Передача ручная, получение объединяет копии. Удаления не распространяются; пароли сайтов, история и cookie не передаются. До 10 копий устройств.
 
-## Updates
+## Разработка и проверки
 
-Windows can check a pinned Ed25519-signed manifest, download a ZIP, and verify SHA256 before saving. Installation is manual. The signing private key is intentionally absent. `scripts/sign-update.cjs` accepts an external private-key path. Never commit keystores, private keys, browser profiles or credentials.
+Windows: Node.js 24+, `npm ci`, `npm start` или `BUILD-WINDOWS.cmd`. Результат — `dist-v0.6.1/Veyra-win32-x64/`. Android: JDK 17+, Gradle 9.3.1, SDK/platform 37.0 и build-tools 36.0.0; см. android/BUILD-ANDROID.ps1. Ключи release хранятся вне исходников.
 
-## Tests
+Тесты: tests/integration.cjs, clipboard-pages.cjs, navigation-rpc.cjs, release-060.cjs, account-ui.cjs, crypto-060.cjs. Для каждого Electron-теста используй отдельные VEYRA_QA_PROFILE и VEYRA_QA_OUTPUT; сетевому тесту нужен локальный тестовый TLS-сертификат. Реальный профиль в тестах не используется. Ручной GitHub Actions workflow собирает тестовые артефакты; Android CI-debug не заменяет release-подпись.
 
-`node tests/crypto-060.cjs`. Electron integration tests require isolated `VEYRA_QA_PROFILE` and `VEYRA_QA_OUTPUT` paths; see test sources. Android: `gradle -p android lintRelease`.
+Реальная почта, вход, шифрованный обмен Windows-клиента и конкурентная смена пароля проверены. Android прошёл сборку и Lint; совместимость шифрования проверена на JVM. Подробный охват и ограничения — в RELEASE-0.6.1.md.
+
+## Границы
+
+Veyra не скрывает IP и не заменяет VPN/Tor. Полной защиты движка от fingerprinting Canvas/Audio/шрифтов/WebGL пока нет. Сетевая блокировка сторонних cookie не означает полное разделение всех хранилищ.
+
+Google может блокировать вход во встроенном Electron. User-Agent и перенос cookie не гарантируют совместимость. Внешний поддерживаемый браузер использует собственный профиль.
+
+Пока нет расширений, полного менеджера паролей Android, фонового синка и автоматической установки обновлений. Windows проверяет Ed25519-подпись манифеста и SHA256 ZIP; установка ручная. EXE не подписан Authenticode. Мастер-пароль и фраза синхронизации не восстанавливаются.
+
+## Сторонние компоненты
+
+Ghostery adblocker — MPL-2.0, лицензия в src/assets/licenses. Условия EasyList/EasyPrivacy сохранены в заголовках списков. Electron/Chromium/GeckoView и зависимости имеют собственные лицензии. SVG-логотип и иконки созданы для Veyra.

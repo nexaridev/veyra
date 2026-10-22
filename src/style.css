@@ -194,3 +194,7 @@ select,textarea{font:inherit;color:var(--text);background:var(--surface2);border
 @container (max-width:35px){.tab-title{display:none}}
 
 .sync-page .card{padding:20px}.sync-page .card>p:first-child{margin-top:0}.sync-page .field{margin-top:0}
+
+#app-dialog{width:min(480px,calc(100vw - 48px));border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--text);padding:28px;box-shadow:0 24px 90px #0009}#app-dialog::backdrop{background:#0008;backdrop-filter:blur(5px)}#app-dialog-message{white-space:pre-wrap;overflow-wrap:anywhere;max-height:40vh;overflow:auto}#app-dialog .actions{justify-content:flex-end}#app-dialog [hidden]{display:none}
+
+.sync-page details{margin-top:18px}.sync-page summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none}.sync-page summary::-webkit-details-marker{display:none}.sync-page summary svg{width:16px;height:16px;transition:transform .18s}.sync-page details[open]>summary svg{transform:rotate(90deg)}.sync-page details form{margin-top:20px}.sync-page details form+form{padding-top:20px;border-top:1px solid var(--border)}

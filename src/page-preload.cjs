@@ -61,3 +61,9 @@ if(/^https?:$/.test(location.protocol))require('electron').contextBridge.execute
  navigator.credentials.get=function(options){if(options?.publicKey&&(options.mediation==='conditional'||!navigator.userActivation?.isActive))return Promise.reject(new DOMException('Automatic passkey prompts are disabled. Choose passkey sign-in explicitly.','NotAllowedError'));return nativeGet(options)};
  if(window.PublicKeyCredential&&typeof PublicKeyCredential.isConditionalMediationAvailable==='function')PublicKeyCredential.isConditionalMediationAvailable=async()=>false;
 }});
+
+if(/^https?:$/.test(location.protocol)){
+ const {contextBridge}=require('electron');
+ contextBridge.exposeInMainWorld('__veyraSiteDialogs',Object.freeze({show:(type,message,defaultText)=>ipcRenderer.sendSync('veyra:site-dialog',{type,message:String(message??''),defaultText:String(defaultText??'')})}));
+ contextBridge.executeInMainWorld({func:()=>{window.alert=message=>{window.__veyraSiteDialogs.show('alert',message)};window.confirm=message=>window.__veyraSiteDialogs.show('confirm',message)===true;window.prompt=(message,value='')=>window.__veyraSiteDialogs.show('prompt',message,value)}});
+}

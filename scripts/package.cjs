@@ -7,15 +7,16 @@
     platform:'win32',
     arch:'x64',
     electronVersion:'45.0.0',
-    out:path.join(__dirname,'..','dist-v0.6.0a'),
+    out:path.join(__dirname,'..','dist-v0.6.1'),
     overwrite:true,
     icon:path.join(__dirname,'..','src','assets','app.ico'),
-    asar:true,buildVersion:'0.6.0.1',
+    asar:true,buildVersion:'0.6.1.0',
     prune:true,
     ignore:[
       /^\/dist(?:-[^/]+)?(?:\/|$)/,
       /^\/scripts(?:\/|$)/,
       /^\/android(?:\/|$)/,
+      /^\/infrastructure(?:\/|$)/,
       /^\/(?:tests|work|outputs)(?:\/|$)/
     ],
     win32metadata:{
