@@ -19,8 +19,8 @@ jobs:
       - run: npm run build:win
       - uses: actions/upload-artifact@v4
         with:
-          name: Veyra-Windows-0.6.3
-          path: dist-v0.6.3/Veyra-win32-x64/
+          name: Veyra-Windows-0.6.5
+          path: dist-v0.6.5/Veyra-win32-x64/
           retention-days: 14
   android:
     runs-on: ubuntu-latest
