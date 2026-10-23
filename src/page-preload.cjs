@@ -67,3 +67,19 @@ if(/^https?:$/.test(location.protocol)){
  contextBridge.exposeInMainWorld('__veyraSiteDialogs',Object.freeze({show:(type,message,defaultText)=>ipcRenderer.sendSync('veyra:site-dialog',{type,message:String(message??''),defaultText:String(defaultText??'')})}));
  contextBridge.executeInMainWorld({func:()=>{window.alert=message=>{window.__veyraSiteDialogs.show('alert',message)};window.confirm=message=>window.__veyraSiteDialogs.show('confirm',message)===true;window.prompt=(message,value='')=>window.__veyraSiteDialogs.show('prompt',message,value)}});
 }
+
+// Optional per-tab compatibility mode; no privileged page bridge.
+if(/^https?:$/.test(location.protocol)&&ipcRenderer.sendSync('veyra:presence-config')){
+ require('electron').contextBridge.executeInMainWorld({func:()=>{
+  const define=(o,k,get)=>{try{Object.defineProperty(o,k,{configurable:true,get})}catch{}};
+  define(document,'hidden',()=>false);define(document,'visibilityState',()=> 'visible');
+  document.hasFocus=()=>true;
+  let fullscreen=null;define(document,'fullscreenElement',()=>fullscreen);
+  define(document,'webkitFullscreenElement',()=>fullscreen);
+  define(document,'fullscreenEnabled',()=>true);
+  const signal=()=>document.dispatchEvent(new Event('fullscreenchange'));
+  Element.prototype.requestFullscreen=function(){fullscreen=this;signal();return Promise.resolve()};Element.prototype.webkitRequestFullscreen=Element.prototype.requestFullscreen;
+  document.exitFullscreen=()=>{fullscreen=null;signal();return Promise.resolve()};document.webkitExitFullscreen=document.exitFullscreen;window.addEventListener('keydown',e=>{if(e.key==='Escape'&&fullscreen)document.exitFullscreen()},true);
+  for(const name of ['blur','visibilitychange'])window.addEventListener(name,e=>e.stopImmediatePropagation(),true);
+ }});
+}

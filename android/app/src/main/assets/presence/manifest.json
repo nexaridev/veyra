@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+  "name": "Veyra presence compatibility",
+  "version": "1.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "presence@veyra.local"
+    }
+  },
+  "permissions": [
+    "nativeMessaging",
+    "nativeMessagingFromContent",
+    "geckoViewAddons"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ]
+}
