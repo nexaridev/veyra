@@ -27,8 +27,8 @@ app.whenReady().then(async()=>{
   for(const mode of ['private','google','temporary'])api.sessionFor(mode).protocol.handle('https',()=>new Response(fixture,{headers:{'content-type':'text/html'}}));
   await check('home, SVG logo, toolbar and sidebar render without text icons',async()=>{
    assert(await ui("!!document.querySelector('.wordmark img[src=\"assets/logo.svg\"]')"));
-   assert.equal(await ui("document.querySelectorAll('#rail button svg').length"),7);
-   assert.equal(await ui("document.querySelectorAll('.toolbar button svg').length"),9);
+   assert.equal(await ui("document.querySelectorAll('#rail button svg').length"),9);
+   assert.equal(await ui("document.querySelectorAll('.toolbar button > .svg-icon').length"),9);
    assert(!(await ui("document.body.innerText.includes('Ⅴ')")));
    fs.writeFileSync(path.join(output,'veyra-home.png'),(await win.webContents.capturePage()).toPNG());
   });
@@ -39,7 +39,7 @@ app.whenReady().then(async()=>{
    assert.equal(await tab.view.webContents.executeJavaScript('typeof window.veyra'),'undefined');
   });
   await check('separate persistent Google and ephemeral temporary profiles',async()=>{
-   const a=api.sessionFor('private'),b=api.sessionFor('google'),t=api.sessionFor('temporary');assert.notEqual(a,b);assert(!a.getUserAgent().includes('Electron/'));assert(!b.getUserAgent().includes('Electron/'));
+   const a=api.sessionFor('private'),b=api.sessionFor('google'),t=api.sessionFor('temporary');assert.notEqual(a,b);assert(!a.getUserAgent().includes('Electron/'));assert(b.getUserAgent().includes('Electron/'));
    await b.cookies.set({url:'https://login.veyra.test',name:'isolation',value:'google'});assert.equal((await a.cookies.get({name:'isolation'})).length,0);assert.equal((await t.cookies.get({name:'isolation'})).length,0);
    assert.equal(t.isPersistent(),false);
   });

@@ -12,7 +12,7 @@ const appearance=require('./appearance.cjs');
 const {DiscordPresence}=require('./discord.cjs');let discord;
 const googleHost=url=>{try{const host=new URL(url).hostname;return db.settings.compatibilityDomains.some(d=>host===d||host.endsWith('.'+d))}catch{return false}};
 function darkConfig(url){let host;try{host=new URL(url).hostname}catch{return {enabled:false}}return {...{enabled:db.settings.autoDark,brightness:100,contrast:100},...db.settings.darkSites[host]}}
-async function applyDark(wc,url){try{if(!wc.debugger.isAttached())wc.debugger.attach('1.3');await wc.debugger.sendCommand('Emulation.setEmulatedMedia',{features:darkConfig(url).enabled?[{name:'prefers-color-scheme',value:'dark'}]:[]})}catch{}}
+async function applyDark(wc,url){if(contexts.get(wc.id)?.mode==='google'||googleHost(url)||!darkConfig(url).enabled){if(wc.debugger.isAttached())try{wc.debugger.detach()}catch{}return;}try{if(!wc.debugger.isAttached())wc.debugger.attach('1.3');await wc.debugger.sendCommand('Emulation.setEmulatedMedia',{features:darkConfig(url).enabled?[{name:'prefers-color-scheme',value:'dark'}]:[]})}catch{}}
 app.setName('Veyra');
 const {configureProfile,flushSessions}=require('./profile.cjs');const sharedProfile=configureProfile(app);
 if(app.isPackaged&&!app.requestSingleInstanceLock()){app.exit(0)}
@@ -80,7 +80,7 @@ function askPermission(wc,p,callback,details){
 function sessionFor(mode){
  if(sessions.has(mode))return sessions.get(mode);
  const ses=session.fromPartition(mode==='temporary'?'veyra-temporary':mode==='google'?'persist:veyra-google-native':'persist:veyra');
- ses.setUserAgent(ses.getUserAgent().replace(/\sElectron\/[^\s]+/g,'').replace(/\sveyra\/[^\s]+/gi,''));
+ if(mode!=='google')ses.setUserAgent(ses.getUserAgent().replace(/\sElectron\/[^\s]+/g,'').replace(/\sveyra\/[^\s]+/gi,''));
  ses.setPermissionCheckHandler((wc,p,requestingOrigin)=>!!wc&&permitted(requestingOrigin||wc.getURL(),p));
  ses.setPermissionRequestHandler(askPermission);
  ses.setDevicePermissionHandler(()=>false);
@@ -96,8 +96,8 @@ function sessionFor(mode){
  });
  ses.webRequest.onBeforeSendHeaders((d,cb)=>{
   const headers={...d.requestHeaders},source=topURL(d);
-  if(db.settings.dnt){headers.DNT='1';headers['Sec-GPC']='1'}
-  if(db.settings.thirdPartyCookies&&privacy.thirdParty(d,source))for(const k of Object.keys(headers))if(k.toLowerCase()==='cookie')delete headers[k];
+  if(mode!=='google'&&db.settings.dnt){headers.DNT='1';headers['Sec-GPC']='1'}
+  if(mode!=='google'&&db.settings.thirdPartyCookies&&privacy.thirdParty(d,source))for(const k of Object.keys(headers))if(k.toLowerCase()==='cookie')delete headers[k];
   if(d.resourceType==='mainFrame'){
    const context=contexts.get(d.webContentsId);if(context?.tab)context.tab.requestHeaders=Object.fromEntries(Object.entries(headers).filter(([k])=>/^(user-agent|sec-ch-ua.*|accept-language|dnt|sec-gpc)$/i.test(k)));
   }
@@ -105,7 +105,7 @@ function sessionFor(mode){
  });
  ses.webRequest.onHeadersReceived((d,cb)=>{
   const headers={...d.responseHeaders};
-  if(db.settings.thirdPartyCookies&&privacy.thirdParty(d,topURL(d)))for(const k of Object.keys(headers))if(k.toLowerCase()==='set-cookie')delete headers[k];
+  if(mode!=='google'&&db.settings.thirdPartyCookies&&privacy.thirdParty(d,topURL(d)))for(const k of Object.keys(headers))if(k.toLowerCase()==='set-cookie')delete headers[k];
   cb({responseHeaders:headers});
  });
  ses.on('will-download',(_,item)=>{
@@ -127,7 +127,7 @@ function attachPage(wc,mode,tab=null){
   if(popups.size>=8){toast('Достигнут предел открытых дополнительных окон.');return {action:'deny'}}
   if(!web(url)&&url!=='about:blank')return {action:'deny'};
   if(!db.settings.popupWindows){if(web(url))setImmediate(()=>{if(!closing&&win&&!win.isDestroyed())newTab(url,mode)});else toast('Для этого окна включи отдельные окна сайтов в настройках.');return {action:'deny'}}
-  return {action:'allow',overrideBrowserWindowOptions:{width:1000,height:760,parent:win,autoHideMenuBar:true,backgroundColor:'#141419',webPreferences:{disableDialogs:true,session:wc.session,preload:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}}};
+  return {action:'allow',overrideBrowserWindowOptions:{width:1000,height:760,parent:win,autoHideMenuBar:true,backgroundColor:'#141419',webPreferences:{disableDialogs:true,session:wc.session,preload:mode==='google'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}}};
  });
  wc.on('did-create-window',child=>{
   popups.add(child);attachPage(child.webContents,mode);child.setMenu(null);
@@ -165,7 +165,7 @@ function attachPage(wc,mode,tab=null){
  });
 }
 function makeView(t,options={}){
- t.view=new WebContentsView({webPreferences:{...options.webPreferences,disableDialogs:true,session:sessionFor(t.mode),preload:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:!t.keepAwake}});
+ t.view=new WebContentsView({webPreferences:{...options.webPreferences,disableDialogs:true,session:sessionFor(t.mode),preload:t.mode==='google'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:!t.keepAwake}});
  win.contentView.addChildView(t.view);attachPage(t.view.webContents,t.mode,t);t.view.webContents.setZoomLevel(t.zoomLevel||0);t.view.webContents.setAudioMuted(!!t.muted);t.sleeping=false;layout();
 }
 function removeView(t){const v=t.view;t.view=null;if(v&&!v.webContents.isDestroyed()){win.contentView.removeChildView(v);v.webContents.close()}}
@@ -255,6 +255,7 @@ ipcMain.on('veyra:site-dialog',(e,p)=>{
  requestAppDialog({type:p.type,title:'Сообщение сайта',origin:origin(frame.url),message:String(p.message||'').slice(0,12000),defaultText:String(p.defaultText||'').slice(0,2000)},wc).then(value=>{e.returnValue=value});
 });
 function assertTrusted(e){if(!win||e.sender!==win.webContents||e.senderFrame!==win.webContents.mainFrame||e.senderFrame.url!==UI)throw Error('Untrusted caller')}
+ipcMain.on('veyra:native-compat',e=>{const ctx=contexts.get(e.sender.id),url=e.senderFrame?.url||e.sender.getURL();e.returnValue=ctx?.mode==='google'||googleHost(url)});
 ipcMain.on('veyra:presence-config',e=>{const ctx=contexts.get(e.sender.id),url=e.senderFrame?.url||e.sender.getURL();let auth=false;try{auth=new URL(url).hostname==='accounts.google.com'}catch{}e.returnValue=ctx?.tab?.fakePresence===true&&ctx.mode!=='google'&&!auth&&!googleHost(url)});
 ipcMain.on('veyra:dark-config',e=>{e.returnValue={...(contexts.has(e.sender.id)?darkConfig(contexts.get(e.sender.id)?.tab?.url||e.sender.getURL()):{enabled:false}),clipboardMode:db.settings.clipboardMode}});
 let clipboardBusy=false,clipboardPrompt=null;
@@ -457,10 +458,10 @@ app.whenReady().then(()=>{
  vault=new PasswordVault(path.join(app.getPath('userData'),'passwords.vault'),safeStorage,emit);
  sync.configureStore(path.join(sharedProfile,'account.session'),safeStorage);
  sessionFor('private');sessionFor('google');sessionFor('temporary');
- defaultPromptVisible=!(app.isDefaultProtocolClient('http')&&app.isDefaultProtocolClient('https'));
+ const defaultStatus=require('./default-browser.cjs').isDefault(app);defaultPromptVisible=false;
  win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
- win.on('focus',()=>{if(defaultPromptVisible&&app.isDefaultProtocolClient('http')&&app.isDefaultProtocolClient('https')){defaultPromptVisible=false;layout();emit();}});win.once('ready-to-show',openWindow);
- win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.on('before-input-event',shortcuts);win.webContents.on('did-finish-load',emit);
+ win.on('focus',async()=>{if(defaultPromptVisible&&await require('./default-browser.cjs').isDefault(app)){defaultPromptVisible=false;if(!win.isDestroyed()){layout();emit();}}});win.once('ready-to-show',openWindow);
+ win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.on('before-input-event',shortcuts);win.webContents.on('did-finish-load',emit);void defaultStatus.then(isDefault=>{if(win&&!win.isDestroyed()){defaultPromptVisible=!isDefault;layout();emit();}});
  for(const event of ['resize','maximize','unmaximize','enter-full-screen','leave-full-screen'])win.on(event,()=>{layout();emit()});
  win.on('close',event=>{clipboardPrompt?.finish(false);if(!closing&&!exitConfirmed&&!storageFlushRunning&&!storageFlushReady&&tabs.some(t=>t.dirty)){event.preventDefault();if(!appDialog)requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть браузер с введёнными данными?'}).then(yes=>{if(yes){exitConfirmed=true;win.close()}});return}if(!storageFlushReady){event.preventDefault();if(!storageFlushRunning){storageFlushRunning=true;save();Promise.race([flushSessions(sessions),new Promise((_,reject)=>setTimeout(()=>reject(Error('Сохранение сессий заняло слишком много времени.')),5000))]).then(()=>{storageFlushReady=true;win.close()}).catch(error=>{storageFlushRunning=false;toast(error.message)})}return}save();closing=true;discord.stop();vault.lock();pendingCredential=null;permissionRequest?.finish(false);for(const child of popups)child.close();for(const t of tabs)removeView(t)});
  powerMonitor.on('lock-screen',()=>vault.lock());powerMonitor.on('suspend',()=>vault.lock());

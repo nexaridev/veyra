@@ -1,4 +1,5 @@
 const {ipcRenderer} = require('electron');
+if(!ipcRenderer.sendSync('veyra:native-compat')){
 // Isolated handlers; clipboard bridge exposes text-only writes, never reads.
 if(process.isMainFrame){
   let lastOffer=0,dirty=false;
@@ -82,4 +83,6 @@ if(/^https?:$/.test(location.protocol)&&ipcRenderer.sendSync('veyra:presence-con
   document.exitFullscreen=()=>{fullscreen=null;signal();return Promise.resolve()};document.webkitExitFullscreen=document.exitFullscreen;window.addEventListener('keydown',e=>{if(e.key==='Escape'&&fullscreen)document.exitFullscreen()},true);
   for(const name of ['blur','visibilitychange'])window.addEventListener(name,e=>e.stopImmediatePropagation(),true);
  }});
+}
+
 }

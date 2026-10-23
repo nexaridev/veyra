@@ -10,4 +10,10 @@ async function register(app){
  for(const scheme of ['http','https'])await add(root+'\\Capabilities\\URLAssociations',scheme,'VeyraURL');
  await add('HKCU\\Software\\RegisteredApplications','Veyra','Software\\Clients\\StartMenuInternet\\Veyra\\Capabilities');
 }
-module.exports={register};
+async function isDefault(app,platform=process.platform,query=run){
+ if(platform!=='win32')return app.isDefaultProtocolClient('http')&&app.isDefaultProtocolClient('https');
+ const values=await Promise.all(['http','https'].map(async scheme=>{try{const result=await query('reg.exe',['query','HKCU\\Software\\Microsoft\\Windows\\Shell\\Associations\\UrlAssociations\\'+scheme+'\\UserChoice','/v','ProgId'],{windowsHide:true,timeout:3000,encoding:'utf8'});return result.stdout.match(/\bProgId\s+REG_SZ\s+([^\r\n]+)/i)?.[1].trim()||null;}catch{return null;}}));
+ if(values.every(value=>value!==null))return values.every(value=>value.toLowerCase()==='veyraurl');
+ return app.isDefaultProtocolClient('http')&&app.isDefaultProtocolClient('https');
+}
+module.exports={register,isDefault};
