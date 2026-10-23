@@ -22,8 +22,10 @@ try{$inputStream.CopyTo($gzip)}finally{$inputStream.Dispose();$gzip.Dispose();$o
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if(!(Test-Path -LiteralPath $compiler)){throw '.NET Framework 4.8 / 64-bit Windows is required to build the installer.'}
 $OutputPath=[IO.Path]::GetFullPath($OutputPath);New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($OutputPath)) -Force | Out-Null
-$arguments=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/out:'+$OutputPath),('/win32manifest:'+(Join-Path $PSScriptRoot 'app.manifest')),('/win32icon:'+(Join-Path $PSScriptRoot '..\src\assets\app.ico')),('/resource:'+$compressed+',bc.gz'),('/resource:'+$license+',bc-license.txt'),('/reference:'+$dll),'/reference:System.Net.Http.dll','/reference:System.IO.Compression.dll','/reference:System.IO.Compression.FileSystem.dll','/reference:System.Web.Extensions.dll','/reference:Microsoft.CSharp.dll',(Join-Path $PSScriptRoot 'Core.cs'),(Join-Path $PSScriptRoot 'Program.cs'))
+$arguments=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/out:'+$OutputPath),('/win32manifest:'+(Join-Path $PSScriptRoot 'app.manifest')),('/win32icon:'+(Join-Path $PSScriptRoot '..\src\assets\app.ico')),('/resource:'+$compressed+',bc.gz'),('/resource:'+$license+',bc-license.txt'),('/reference:'+$dll),'/reference:System.Net.Http.dll','/reference:System.IO.Compression.dll','/reference:System.IO.Compression.FileSystem.dll','/reference:System.Web.Extensions.dll','/reference:Microsoft.CSharp.dll',(Join-Path $PSScriptRoot 'Core.cs'),(Join-Path $PSScriptRoot 'Program.cs'),(Join-Path $PSScriptRoot 'Launcher.cs'))
 & $compiler @arguments
 if($LASTEXITCODE){throw 'Installer compilation failed.'}
 Copy-Item -LiteralPath $license -Destination (Join-Path ([IO.Path]::GetDirectoryName($OutputPath)) 'VeyraSetup-LICENSE.txt') -Force
 Write-Output $OutputPath
+
+foreach($name in @('VeyraLauncher.exe','Delete Veyra.exe')) { $target=Join-Path ([IO.Path]::GetDirectoryName($OutputPath)) $name; if($target -ne $OutputPath){Copy-Item -LiteralPath $OutputPath -Destination $target -Force} }

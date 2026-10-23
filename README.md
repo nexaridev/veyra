@@ -1,44 +1,55 @@
-# Veyra — Windows 0.6.1 / Android 0.3.0
+# Veyra
 
-Браузер для Windows на Electron 45 и Android на GeckoView. [Сайт](https://veyra.veyra-nexaridev.workers.dev) · [Релизы](https://github.com/nexaridev/veyra/releases) · [Изменения и ограничения](RELEASE-0.6.1.md) · [Приватность](PRIVACY.md).
+A browser for Windows and Android by Nexaridev.
 
-## Запуск
+[Website](https://veyra.veyra-nexaridev.workers.dev) · [Downloads](https://github.com/nexaridev/veyra/releases) · [Privacy](PRIVACY.md)
 
-Windows: распакуй весь архив и запусти Veyra-win32-x64/Veyra.exe. Node.js для готовой сборки не нужен. Профиль общий для версий: `%APPDATA%/Veyra`; он не включается в сборку. Перед обновлением закрой старую Veyra и замени папку приложения, сохранив профиль.
+## Current versions
 
-Android: release APK arm64, Android 8+. Сохранены application ID и сертификат предыдущих версий. Проверка на физическом телефоне пока остаётся перед стабильным выпуском.
+Windows 0.6.3 and Android 0.3.2 are available as preview releases. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
-## Возможности
+## Installation
 
-- Windows: вкладки с favicon, закладки с папками, история, боковые панели, поиск по странице, масштаб, закрепление/восстановление вкладок, темы, обои, свои ярлыки, SVG и анимации с reduced motion.
-- Контекстное меню текста, ссылок и изображений; собственное подтверждение копирования, диалоги сайтов и предупреждения о несохранённых данных. Отдельные окна включаются настройкой. Обычные вкладки не сохраняют window.opener.
-- Windows: менеджер паролей с мастер-паролем, scrypt, AES-256-GCM и защитой Windows; генератор, ручное заполнение точного HTTPS-origin, автоблокировка.
-- Фильтрация Ghostery по EasyList/EasyPrivacy, HTTPS-first, DNT/GPC, ограничение сторонних cookie и UDP WebRTC, разрешения, временный профиль, Auto Dark Mode и диагностика.
-- Мягкая цель памяти и усыпление подходящих вкладок, выбор GPU-ускорения после перезапуска. Discord Rich Presence с языком, доменом, интервалом и скрытием времени.
-- Android: вкладки, закладки, история и очистка, поиск по странице, выбор поиска, сайт для ПК, меню долгого нажатия, сохранение ответов-загрузок, выбор одного/нескольких файлов для сайтов, ручной обмен закладками. Выбор браузером по умолчанию на обеих платформах.
+Download the Windows installer from the website. Administrator rights are not required. Desktop and Start menu shortcuts are optional. Updates and uninstall preserve your browser profile.
 
-## Аккаунт и синхронизация
+The launcher finds browser versions in known locations, checks for updates and opens the local version when the network is unavailable. Delete Veyra removes the application while keeping your profile.
 
-Настройки → синхронизация (`veyra://sync` на Windows). Собственный вход Veyra: подтверждение email кодом, восстановление/смена пароля, выход со всех устройств и удаление аккаунта. Сессия до 30 дней сохраняется через защиту Windows / Android Keystore. API — Cloudflare Workers, база — PostgreSQL Supabase без Supabase Auth, письма — Brevo Free. В базе хранятся bcrypt-хеши паролей и хеши сессий. Старые аккаунты Supabase Auth автоматически не переносятся.
+On Android, install the APK from the releases page. Updates retain the existing application identity and signing key.
 
-Используй одну отдельную фразу от 16 символов на устройствах. Закладки шифруются на устройстве PBKDF2-SHA256 (600000 итераций) и AES-256-GCM. Фраза серверу не передаётся и не восстанавливается. Передача ручная, получение объединяет копии. Удаления не распространяются; пароли сайтов, история и cookie не передаются. До 10 копий устройств.
+## Features
 
-## Разработка и проверки
+Windows includes tabs with favicons, bookmarks and folders, history, sidebar panels, themes, custom wallpapers, editable shortcuts and page search. Context menus support links, text and images. Clipboard requests can use a confirmation dialog.
 
-Windows: Node.js 24+, `npm ci`, `npm start` или `BUILD-WINDOWS.cmd`. Результат — `dist-v0.6.1/Veyra-win32-x64/`. Android: JDK 17+, Gradle 9.3.1, SDK/platform 37.0 и build-tools 36.0.0; см. android/BUILD-ANDROID.ps1. Ключи release хранятся вне исходников.
+The password vault uses a master password, authenticated encryption and Windows protection. Filling requires the exact HTTPS origin and never submits a form automatically.
 
-Тесты: tests/integration.cjs, clipboard-pages.cjs, navigation-rpc.cjs, release-060.cjs, account-ui.cjs, crypto-060.cjs. Для каждого Electron-теста используй отдельные VEYRA_QA_PROFILE и VEYRA_QA_OUTPUT; сетевому тесту нужен локальный тестовый TLS-сертификат. Реальный профиль в тестах не используется. Ручной GitHub Actions workflow собирает тестовые артефакты; Android CI-debug не заменяет release-подпись.
+Privacy controls include tracker filtering, HTTPS upgrades, third party cookie restrictions, WebRTC settings, site permissions and temporary profiles. Memory controls can suspend eligible background tabs. Individual tabs can remain awake. Discord Rich Presence is optional.
 
-Реальная почта, вход, шифрованный обмен Windows-клиента и конкурентная смена пароля проверены. Android прошёл сборку и Lint; совместимость шифрования проверена на JVM. Подробный охват и ограничения — в RELEASE-0.6.1.md.
+Focus compatibility reports a visible and focused page. Virtual fullscreen acknowledges a site request without resizing the window. This mode is enabled by default and can be disabled for an individual tab. It can affect site behavior and does not guarantee compatibility with every check.
 
-## Границы
+Android includes tabs, bookmarks, history, page search, desktop site mode, sharing, default browser selection, file uploads and a saved downloads list. Its interface and password features do not yet match the Windows version.
 
-Veyra не скрывает IP и не заменяет VPN/Tor. Полной защиты движка от fingerprinting Canvas/Audio/шрифтов/WebGL пока нет. Сетевая блокировка сторонних cookie не означает полное разделение всех хранилищ.
+Both platforms include Veyra Pulse, an offline game with increasingly difficult waves and local records.
 
-Google может блокировать вход во встроенном Electron. User-Agent и перенос cookie не гарантируют совместимость. Внешний поддерживаемый браузер использует собственный профиль.
+## Accounts and bookmarks
 
-Пока нет расширений, полного менеджера паролей Android, фонового синка и автоматической установки обновлений. Windows проверяет Ed25519-подпись манифеста и SHA256 ZIP; установка ручная. EXE не подписан Authenticode. Мастер-пароль и фраза синхронизации не восстанавливаются.
+Veyra accounts use a separate login system with email confirmation and password recovery. The API runs on Cloudflare Workers. Supabase PostgreSQL stores account data without Supabase Auth. Brevo delivers transactional email.
 
-## Сторонние компоненты
+Bookmark transfers are manual and encrypted on the device using a separate phrase. Use the same phrase on each device. It is never sent to the server and cannot be recovered. Passwords, history and cookies are not synchronized. Deletions are not propagated between copies.
 
-Ghostery adblocker — MPL-2.0, лицензия в src/assets/licenses. Условия EasyList/EasyPrivacy сохранены в заголовках списков. Electron/Chromium/GeckoView и зависимости имеют собственные лицензии. SVG-логотип и иконки созданы для Veyra.
+## Development
+
+Use Node.js 24 or newer. Run `npm ci`, then `npm start`. Run `npm run build:win` to package Windows. See [installer documentation](installer/README.md) for its build and tests.
+
+Android requires JDK 17, Gradle 9.3.1, Android platform 37 and build tools 36.0.0. Release signing keys stay outside this repository.
+
+See [macOS instructions](MACOS-BUILD.md) for Intel and Apple Silicon packaging. No macOS runtime testing or notarized release is available yet.
+
+## Limitations
+
+Veyra does not hide your IP address or replace a VPN. Google can reject login through embedded browser engines. Full fingerprint resistance and general browser extension support are not implemented.
+
+Windows executables are not Authenticode signed. SmartScreen can warn about unfamiliar downloads. Android builds pass compilation and Lint, but acceptance testing on a physical phone is still outstanding.
+
+## Third party software
+
+Electron, Chromium, GeckoView, Ghostery and other dependencies retain their own licenses. Filter list terms remain in their source headers. The installer embeds Bouncy Castle and includes its license notice.

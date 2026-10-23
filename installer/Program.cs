@@ -18,8 +18,8 @@ using Microsoft.Win32;
 [assembly:AssemblyTitle("Veyra Installer")]
 [assembly:AssemblyProduct("Veyra Installer")]
 [assembly:AssemblyCompany("Nexaridev")]
-[assembly:AssemblyVersion("1.0.0.0")]
-[assembly:AssemblyFileVersion("1.0.0.0")]
+[assembly:AssemblyVersion("1.1.0.0")]
+[assembly:AssemblyFileVersion("1.1.0.0")]
 
 namespace Veyra.Setup {
  internal static class Program {
@@ -27,7 +27,7 @@ namespace Veyra.Setup {
    AppDomain.CurrentDomain.AssemblyResolve+=delegate(object sender,ResolveEventArgs e){if(new AssemblyName(e.Name).Name!="BouncyCastle.Cryptography")return null;using(var source=Assembly.GetExecutingAssembly().GetManifestResourceStream("bc.gz"))using(var gzip=new GZipStream(source,CompressionMode.Decompress))using(var memory=new MemoryStream()){gzip.CopyTo(memory);return Assembly.Load(memory.ToArray());}};
    System.Net.ServicePointManager.SecurityProtocol=System.Net.SecurityProtocolType.Tls12;
    Application.EnableVisualStyles();Application.SetCompatibleTextRenderingDefault(false);
-   bool created;using(var mutex=new Mutex(true,"Local\\VeyraSetup-"+WindowsIdentity.GetCurrent().User.Value,out created)){if(!created)return;Application.Run(new SetupForm(args.Length==1&&args[0]=="--uninstall"));}
+   bool created;using(var mutex=new Mutex(true,"Local\\Veyra-"+(args.Contains("--install")?"Setup":Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location))+"-"+WindowsIdentity.GetCurrent().User.Value,out created)){if(!created)return;if(!args.Contains("--install")&&Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location).Equals("VeyraLauncher",StringComparison.OrdinalIgnoreCase))Application.Run(new LauncherForm());else Application.Run(new SetupForm((args.Length==1&&args[0]=="--uninstall")||Path.GetFileNameWithoutExtension(Assembly.GetExecutingAssembly().Location).Equals("Delete Veyra",StringComparison.OrdinalIgnoreCase)));}
   }
  }
  internal sealed class Integration:IIntegration {
@@ -38,12 +38,17 @@ namespace Veyra.Setup {
   static string MenuLink {get{return Path.Combine(MenuDirectory,"Veyra.lnk");}}
   internal static void MakeShortcut(string path,Layout layout){
    object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));object link=null;
-   try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;shortcut.TargetPath=layout.Exe;shortcut.WorkingDirectory=layout.App;shortcut.Description="Veyra by Nexaridev";shortcut.IconLocation=layout.Exe+",0";shortcut.Save();}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}
+   try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;shortcut.TargetPath=Path.Combine(layout.Root,"VeyraLauncher.exe");shortcut.WorkingDirectory=layout.App;shortcut.Description="Veyra by Nexaridev";shortcut.IconLocation=layout.Exe+",0";shortcut.Save();}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}
   }
-  static bool OurShortcut(string path,Layout layout){if(!File.Exists(path))return false;object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));object link=null;try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;return String.Equals((string)shortcut.TargetPath,layout.Exe,StringComparison.OrdinalIgnoreCase);}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}}
+  internal static void CopyManagers(Layout layout){layout.RequireOwned();foreach(string name in new[]{"VeyraLauncher.exe","Delete Veyra.exe"}){string file=Path.Combine(layout.Root,name);Paths.NoLinks(file);File.Copy(layout.SetupExe,file,true);}}
+  internal static void MakeDeleteShortcut(string path,Layout layout){object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")),link=null;try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;shortcut.TargetPath=Path.Combine(layout.Root,"Delete Veyra.exe");shortcut.WorkingDirectory=layout.Root;shortcut.Description="Удалить Veyra, сохранив профиль";shortcut.IconLocation=layout.Exe+",0";shortcut.Save();}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}}
+  static bool OurShortcut(string path,Layout layout){if(!File.Exists(path))return false;object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));object link=null;try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;return new[]{layout.Exe,Path.Combine(layout.Root,"VeyraLauncher.exe"),Path.Combine(layout.Root,"Delete Veyra.exe")}.Contains((string)shortcut.TargetPath,StringComparer.OrdinalIgnoreCase);}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}}
   void CaptureShortcut(string path){if(!shortcuts.ContainsKey(path))shortcuts[path]=File.Exists(path)?File.ReadAllBytes(path):null;}
   public void Apply(Layout layout,Options options,string version){
    captured=true;using(var key=Registry.CurrentUser.OpenSubKey(RegistryPath)){hadKey=key!=null;if(key!=null)foreach(string name in key.GetValueNames()){oldValues[name]=key.GetValue(name,null,RegistryValueOptions.DoNotExpandEnvironmentNames);oldKinds[name]=key.GetValueKind(name);}}
+   foreach(string name in new[]{"VeyraLauncher.exe","Delete Veyra.exe"}){string file=Path.Combine(layout.Root,name);Paths.NoLinks(file);CaptureShortcut(file);}
+   CopyManagers(layout);
+   Directory.CreateDirectory(MenuDirectory);string deleteLink=Path.Combine(MenuDirectory,"Delete Veyra.lnk");CaptureShortcut(deleteLink);MakeDeleteShortcut(deleteLink,layout);
    if(options.Desktop){CaptureShortcut(DesktopLink);MakeShortcut(DesktopLink,layout);}
    if(options.StartMenu){Directory.CreateDirectory(MenuDirectory);CaptureShortcut(MenuLink);MakeShortcut(MenuLink,layout);}
    using(var key=Registry.CurrentUser.CreateSubKey(RegistryPath)){
@@ -52,7 +57,7 @@ namespace Veyra.Setup {
   }
   public void Rollback(){if(!captured)return;foreach(var item in shortcuts){if(item.Value==null){if(File.Exists(item.Key))File.Delete(item.Key);}else File.WriteAllBytes(item.Key,item.Value);}using(var key=Registry.CurrentUser.CreateSubKey(RegistryPath)){foreach(string name in key.GetValueNames())key.DeleteValue(name,false);foreach(var item in oldValues)key.SetValue(item.Key,item.Value,oldKinds[item.Key]);}if(!hadKey)Registry.CurrentUser.DeleteSubKey(RegistryPath,false);}
   public void Remove(Layout layout){
-   foreach(string path in new[]{DesktopLink,MenuLink})if(OurShortcut(path,layout))File.Delete(path);if(Directory.Exists(MenuDirectory)&&!Directory.EnumerateFileSystemEntries(MenuDirectory).Any())Directory.Delete(MenuDirectory);
+   foreach(string path in new[]{DesktopLink,MenuLink,Path.Combine(MenuDirectory,"Delete Veyra.lnk")})if(OurShortcut(path,layout))File.Delete(path);if(Directory.Exists(MenuDirectory)&&!Directory.EnumerateFileSystemEntries(MenuDirectory).Any())Directory.Delete(MenuDirectory);
    using(var key=Registry.CurrentUser.OpenSubKey(RegistryPath))if(key!=null&&!String.Equals((string)key.GetValue("InstallLocation"),layout.Root,StringComparison.OrdinalIgnoreCase))return;
    Registry.CurrentUser.DeleteSubKey(RegistryPath,false);
    // Remove default-browser registrations only when they still point to this installation.
@@ -115,7 +120,7 @@ if(!(Test-Path -LiteralPath (Join-Path $actual '.veyra-managed'))){exit 1}
 if((Get-Content -LiteralPath (Join-Path $actual '.veyra-managed') -TotalCount 1) -ne 'dev.veyra.browser/installer/1'){exit 1}
 $rootItem=Get-Item -LiteralPath $actual
 if($rootItem.Attributes -band [IO.FileAttributes]::ReparsePoint){exit 1}
-foreach($name in @('VeyraSetup.exe','.veyra-managed')){Remove-Item -LiteralPath (Join-Path $actual $name) -Force -ErrorAction SilentlyContinue}
+foreach($name in @('VeyraSetup.exe','VeyraLauncher.exe','Delete Veyra.exe','.veyra-managed')){Remove-Item -LiteralPath (Join-Path $actual $name) -Force -ErrorAction SilentlyContinue}
 if(!(Get-ChildItem -LiteralPath $actual -Force | Select-Object -First 1)){Remove-Item -LiteralPath $actual}
 Remove-Item -LiteralPath $PSCommandPath -Force
 ";
