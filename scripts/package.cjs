@@ -8,10 +8,10 @@ require('./build-game.cjs');
     platform:'win32',
     arch:'x64',
     electronVersion:'45.0.0',
-    out:path.join(__dirname,'..','dist-v0.6.3'),
+    out:path.join(__dirname,'..','dist-v0.6.3a'),
     overwrite:true,
     icon:path.join(__dirname,'..','src','assets','app.ico'),
-    asar:true,buildVersion:'0.6.3.0',
+    asar:true,buildVersion:'0.6.4.0',
     prune:true,
     ignore:[
       /^\/dist(?:-[^/]+)?(?:\/|$)/,

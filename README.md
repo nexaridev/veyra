@@ -6,7 +6,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 0.6.3 and Android 0.3.2 are available as preview releases. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 0.6.3a and Android 0.3.2 are available as preview releases. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 

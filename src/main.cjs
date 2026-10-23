@@ -24,6 +24,7 @@ let win,profile,privacy,vault,selected,panel=null,seq=0,blocked=0,closing=false,
 let db={schema:2,settings:{...defaults},bookmarks:[],history:[]};
 const recentlyClosed=[];let wallpaperData='',wallpaperVersion=0;
 const tabs=[],downloads=[],sessions=new Map(),contexts=new Map(),popups=new Set();
+let defaultPromptVisible=true;
 let performanceState={memoryMB:0,cpu:0,liveTabs:0,sleepingTabs:0},runtimeAcceleration=true;
 const earlyProfile=path.join(app.getPath('userData'),'profile.json');
 try{if(JSON.parse(fs.readFileSync(earlyProfile,'utf8')).settings?.hardwareAcceleration===false){app.disableHardwareAcceleration();runtimeAcceleration=false;}}catch{}
@@ -46,7 +47,7 @@ function toast(message){if(win&&!win.isDestroyed())win.webContents.send('veyra:t
 function save(){if(db.settings.restoreSession)db.lastSession={tabs:tabs.filter(t=>t.mode!=='temporary'&&web(t.url)&&!t.googleBlocked).slice(0,30).map(t=>({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted})),selectedURL:active()?.url};else delete db.lastSession;try{fs.writeFileSync(profile+'.tmp',JSON.stringify(db,null,2));fs.renameSync(profile+'.tmp',profile)}catch(error){toast('Не удалось сохранить профиль: '+error.message)}}
 function active(){return tabs.find(t=>t.id===selected)}
 function snapshot(){return {
- tabs:tabs.map(({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,keepAwake,fakePresence,blocked,googleBlocked,reader,zoomLevel,muted,audible,navEntries,navIndex})=>({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,keepAwake,fakePresence,blocked,googleBlocked,reader,zoomLevel,muted,audible,canGoBack:navIndex>0,canGoForward:navIndex<navEntries.length-1})),selected,panel,blocked,
+ tabs:tabs.map(({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,keepAwake,fakePresence,blocked,googleBlocked,reader,zoomLevel,muted,audible,navEntries,navIndex})=>({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,keepAwake,fakePresence,blocked,googleBlocked,reader,zoomLevel,muted,audible,canGoBack:navIndex>0,canGoForward:navIndex<navEntries.length-1})),selected,panel,blocked,defaultPromptVisible,
  gameBest:active()?.mode==='temporary'?0:(db.gameBest||0),sync:sync.status(),discordStatus:discord?.status,closedTabs:recentlyClosed.length,wallpaperVersion,browsers:external.installedBrowsers().map(({id,name,chromium})=>({id,name,chromium})),fullscreen:!!win?.isFullScreen(),settings:db.settings,bookmarks:db.bookmarks,history:db.history.slice(0,500),
  downloads:downloads.map(({id,name,status,received,total})=>({id,name,status,received,total})),
  vault:vault?.status(),pendingCredential:pendingCredential?{origin:pendingCredential.origin,username:pendingCredential.username}:null,
@@ -55,7 +56,7 @@ function snapshot(){return {
 }}
 function emit(){discord?.protectContext();if(win&&!win.isDestroyed()&&!closing)win.webContents.send('veyra:state',snapshot())}
 function layout(){
- if(!win||win.isDestroyed())return;const [w,h]=win.getContentSize(),top=win.isFullScreen()?0:94+(db.settings.bookmarksBar?32:0),left=win.isFullScreen()?0:56;
+ if(!win||win.isDestroyed())return;const [w,h]=win.getContentSize(),top=win.isFullScreen()?0:94+(db.settings.bookmarksBar?32:0)+(defaultPromptVisible?44:0),left=win.isFullScreen()?0:56;
  const side=panel?Math.min(380,Math.floor(w*.47)):0;
  for(const t of tabs)if(t.view&&!t.view.webContents.isDestroyed()){
   t.view.setVisible(t.id===selected&&(web(t.url)||t.url==='about:blank')&&!t.error&&!t.googleBlocked&&!t.reader&&!clipboardPrompt&&!appDialog);
@@ -267,8 +268,9 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'state':return snapshot();
  case 'game-record':if(active()?.mode!=='temporary'&&Number.isSafeInteger(payload)&&payload>0&&payload<=1000000000){db.gameBest=Math.max(db.gameBest||0,payload);save()}return true;
  case 'app-dialog-response':if(appDialog?.public.id===payload?.id)appDialog.finish(payload.allow===true?(appDialog.public.type==='prompt'?String(payload.text||'').slice(0,10000):true):null);return true;
+ case 'dismiss-default-prompt':defaultPromptVisible=false;layout();emit();return true;
  case 'default-browser':await require('./default-browser.cjs').register(app);await shell.openExternal('ms-settings:defaultapps?registeredAppUser=Veyra');return true;
- case 'update-check':{const manifest=await require('./updates.cjs').check();checkedUpdate=manifest;const installed=require('../package.json').version.split('.').map(x=>parseInt(x,10)),next=manifest.version.split('.').map(x=>parseInt(x,10));let newer=false;for(let i=0;i<3;i++){if(next[i]!==installed[i]){newer=next[i]>installed[i];break}}return {version:manifest.version,newer}}
+ case 'update-check':{const manifest=await require('./updates.cjs').check();checkedUpdate=manifest;const installed=require('../package.json').version.split('.').map(x=>parseInt(x,10)),next=manifest.version.split('.').map(x=>parseInt(x,10));let newer=false;for(let i=0;i<3;i++){if(next[i]!==installed[i]){newer=next[i]>installed[i];break}}return {version:manifest.displayVersion||manifest.version,newer}}
  case 'update-download':{if(!checkedUpdate||updateDownloading)throw Error('Сначала проверь обновления.');updateDownloading=true;try{const result=await dialog.showSaveDialog(win,{title:tr('Сохранить обновление'),defaultPath:'Veyra-'+checkedUpdate.version+'-Windows.zip',filters:[{name:'ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return false;await require('./updates.cjs').download(checkedUpdate,result.filePath);shell.showItemInFolder(result.filePath);return true}finally{updateDownloading=false}}
 
  case 'sync-login':case 'sync-signup':{const result=await sync.login(payload?.email,payload?.password,action==='sync-signup');emit();return result}
@@ -455,8 +457,9 @@ app.whenReady().then(()=>{
  vault=new PasswordVault(path.join(app.getPath('userData'),'passwords.vault'),safeStorage,emit);
  sync.configureStore(path.join(sharedProfile,'account.session'),safeStorage);
  sessionFor('private');sessionFor('google');sessionFor('temporary');
+ defaultPromptVisible=!(app.isDefaultProtocolClient('http')&&app.isDefaultProtocolClient('https'));
  win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
- win.once('ready-to-show',openWindow);
+ win.on('focus',()=>{if(defaultPromptVisible&&app.isDefaultProtocolClient('http')&&app.isDefaultProtocolClient('https')){defaultPromptVisible=false;layout();emit();}});win.once('ready-to-show',openWindow);
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.on('before-input-event',shortcuts);win.webContents.on('did-finish-load',emit);
  for(const event of ['resize','maximize','unmaximize','enter-full-screen','leave-full-screen'])win.on(event,()=>{layout();emit()});
  win.on('close',event=>{clipboardPrompt?.finish(false);if(!closing&&!exitConfirmed&&!storageFlushRunning&&!storageFlushReady&&tabs.some(t=>t.dirty)){event.preventDefault();if(!appDialog)requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть браузер с введёнными данными?'}).then(yes=>{if(yes){exitConfirmed=true;win.close()}});return}if(!storageFlushReady){event.preventDefault();if(!storageFlushRunning){storageFlushRunning=true;save();Promise.race([flushSessions(sessions),new Promise((_,reject)=>setTimeout(()=>reject(Error('Сохранение сессий заняло слишком много времени.')),5000))]).then(()=>{storageFlushReady=true;win.close()}).catch(error=>{storageFlushRunning=false;toast(error.message)})}return}save();closing=true;discord.stop();vault.lock();pendingCredential=null;permissionRequest?.finish(false);for(const child of popups)child.close();for(const t of tabs)removeView(t)});
