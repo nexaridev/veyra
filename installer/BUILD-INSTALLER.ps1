@@ -28,4 +28,4 @@ if($LASTEXITCODE){throw 'Installer compilation failed.'}
 Copy-Item -LiteralPath $license -Destination (Join-Path ([IO.Path]::GetDirectoryName($OutputPath)) 'VeyraSetup-LICENSE.txt') -Force
 Write-Output $OutputPath
 
-foreach($name in @('VeyraLauncher.exe','Delete Veyra.exe')) { $target=Join-Path ([IO.Path]::GetDirectoryName($OutputPath)) $name; if($target -ne $OutputPath){Copy-Item -LiteralPath $OutputPath -Destination $target -Force} }
+foreach($name in @('VeyraLauncher.exe','DeleteVeyra.exe')) { $target=Join-Path ([IO.Path]::GetDirectoryName($OutputPath)) $name; if($target -ne $OutputPath){Copy-Item -LiteralPath $OutputPath -Destination $target -Force} }
