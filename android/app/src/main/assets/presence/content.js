@@ -1,4 +1,5 @@
-browser.runtime.sendNativeMessage('veyra_presence',{}).then(enabled=>{
+const compatibilityHost=location.hostname;
+if(!['google.com','youtube.com'].some(domain=>compatibilityHost===domain||compatibilityHost.endsWith('.'+domain)))browser.runtime.sendNativeMessage('veyra_presence',{}).then(enabled=>{
  if(!enabled)return;const w=window.wrappedJSObject,d=w.document;let fullscreen=null;
  const fn=f=>exportFunction(f,w);const get=(o,k,f)=>{try{Object.defineProperty(o,k,{configurable:true,get:fn(f)})}catch{}};
  get(d,'hidden',()=>false);get(d,'visibilityState',()=> 'visible');d.hasFocus=fn(()=>true);
