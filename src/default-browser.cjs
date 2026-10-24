@@ -16,4 +16,11 @@ async function isDefault(app,platform=process.platform,query=run){
  if(values.every(value=>value!==null))return values.every(value=>value.toLowerCase()==='veyraurl');
  return app.isDefaultProtocolClient('http')&&app.isDefaultProtocolClient('https');
 }
-module.exports={register,isDefault};
+async function registerHTML(app){
+ if(process.platform!=='win32'||!app.isPackaged)return;
+ const exe=process.execPath;if(exe.includes('"'))return;const base='HKCU\\Software\\Classes';
+ const add=(key,name,value)=>run('reg.exe',['add',key,...(name?['/v',name]:['/ve']),'/t','REG_SZ','/d',value,'/f'],{windowsHide:true});
+ await add(base+'\\VeyraHTML','','Veyra HTML Document');await add(base+'\\VeyraHTML\\DefaultIcon','',exe+',0');await add(base+'\\VeyraHTML\\shell\\open\\command','',`"${exe}" "%1"`);
+ for(const ext of ['.html','.htm'])await add(base+'\\'+ext+'\\OpenWithProgids','VeyraHTML','');
+}
+module.exports={register,isDefault,registerHTML};
