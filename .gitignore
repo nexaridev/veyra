@@ -18,3 +18,4 @@ installer/.deps/
 installer/bin/
 
 /tests/qa*/
+/RESUME-TODO.md

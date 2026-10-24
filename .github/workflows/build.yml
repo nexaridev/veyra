@@ -15,12 +15,14 @@ jobs:
       - run: npm ci
       - run: node tests/crypto-060.cjs
       - run: node tests/game-engine.cjs
+      - run: node tests/localization-070.cjs
+      - run: node tests/site-070.mjs
       - run: powershell -NoProfile -ExecutionPolicy Bypass -File installer/TEST-INSTALLER.ps1
       - run: npm run build:win
       - uses: actions/upload-artifact@v4
         with:
-          name: Veyra-Windows-0.6.5
-          path: dist-v0.6.5/Veyra-win32-x64/
+          name: Veyra-Windows-0.7.0
+          path: dist-v0.7.0/Veyra-win32-x64/
           retention-days: 14
   android:
     runs-on: ubuntu-latest
@@ -38,6 +40,6 @@ jobs:
       - run: gradle -p android --no-daemon assembleDebug lintDebug
       - uses: actions/upload-artifact@v4
         with:
-          name: Veyra-Android-0.3.2-CI-debug
+          name: Veyra-Android-0.5.0-CI-debug
           path: android/app/build/outputs/apk/debug/*.apk
           retention-days: 14

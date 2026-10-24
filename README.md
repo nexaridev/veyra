@@ -2,11 +2,11 @@
 
 A browser for Windows and Android by Nexaridev.
 
-[Website](https://veyra.veyra-nexaridev.workers.dev) · [Downloads](https://github.com/nexaridev/veyra/releases) · [Privacy](PRIVACY.md)
+[Website](https://veyra.veyra-nexaridev.workers.dev) · [Downloads](https://github.com/nexaridev/veyra/releases) · [Privacy](PRIVACY-en.md)
 
 ## Current versions
 
-Windows 0.6.5 and Android 0.3.2 are available as preview releases. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 0.7.0 and Android 0.5.0 are available as preview releases. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
@@ -17,6 +17,14 @@ The launcher finds browser versions in known locations, checks for updates and o
 On Android, install the APK from the releases page. Updates retain the existing application identity and signing key.
 
 ## Features
+
+Home widgets include a clock, calendar, notes, focus timer and recent searches. Move and resize them directly on the home page. The free collection also supports publishing declarative designs to the community. Note contents are never part of a publication.
+
+The profile screen lists active sessions and encrypted bookmark copies. You can name devices, revoke individual sessions and remove cloud copies. Sidebar order, visibility and width are customizable on Windows.
+
+Windows uses the original uBlock Origin filtering and cosmetic engine through an Electron API adapter. Private Windows tabs use its network filtering without storing their browser session on disk; cosmetic filtering is unavailable there. Android can install the bundled Mozilla signed extension after displaying its permissions.
+
+Windows speed controls limit each ordinary tab separately. Google compatibility tabs are excluded to preserve their native runtime. The value is a per tab cap, not a system wide bandwidth reservation.
 
 Windows includes tabs with favicons, bookmarks and folders, history, sidebar panels, themes, custom wallpapers, editable shortcuts and page search. Context menus support links, text and images. Clipboard requests can use a confirmation dialog.
 
@@ -52,4 +60,10 @@ Windows executables are not Authenticode signed. SmartScreen can warn about unfa
 
 ## Third party software
 
-Electron, Chromium, GeckoView, Ghostery and other dependencies retain their own licenses. Filter list terms remain in their source headers. The installer embeds Bouncy Castle and includes its license notice.
+Electron, Chromium, GeckoView, uBlock Origin and other dependencies retain their own licenses. Filter list terms remain in their source headers. The installer embeds Bouncy Castle and includes its license notice.
+
+## License
+
+Veyra is released under GPLv3. See [LICENSE](LICENSE) and [third party source details](vendor/SOURCES.md). The VPN architecture is described in [VPN design](VPN-DESIGN.md).
+
+Russian and English are supported throughout the browser interface. The website and privacy information are available in both languages. Extension language on Windows follows the selected browser language after a restart.

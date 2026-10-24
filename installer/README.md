@@ -9,3 +9,5 @@ Delete Veyra asks for confirmation and preserves the browser profile. Windows Se
 Build with `powershell -NoProfile -ExecutionPolicy Bypass -File installer/BUILD-INSTALLER.ps1`. Test with `powershell -NoProfile -ExecutionPolicy Bypass -File installer/TEST-INSTALLER.ps1`.
 
 Requires Windows 10 or 11, x64, and .NET Framework 4.8. No administrator rights. The manifest uses a pinned Ed25519 key. The archive is checked with SHA256 before extraction. Installation stages files and restores the previous browser on failure. Downgrades are rejected. Bouncy Castle 2.7.0 is embedded with its MIT notice. These executables are not Authenticode signed.
+
+Installer 1.2.0 includes a Russian and English switch in setup, launcher and uninstall windows. The choice is stored locally. Existing 1.1.0 launchers are replaced when the new installer is run.

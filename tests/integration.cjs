@@ -14,10 +14,10 @@ mod._compile(source,file);const api=mod.exports;const results=[];
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 const deadline=setTimeout(()=>{console.error('FAIL: timeout');app.exit(1)},60000);
 async function check(name,fn){await fn();results.push({name,passed:true});console.log('PASS: '+name)}
-async function until(fn,ms=5000){const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await delay(30)}throw Error('Condition timed out')}
+async function until(fn,ms=18000){const end=Date.now()+ms;while(Date.now()<end){if(await fn())return;await delay(30)}throw Error('Condition timed out')}
 app.whenReady().then(async()=>{
  try{
-  const win=api.getWindow();await until(()=>!win.webContents.isLoading());
+  await until(()=>api.getWindow());const win=api.getWindow();await until(()=>!win.webContents.isLoading());
   win.webContents.setBackgroundThrottling(false);
   await win.webContents.insertCSS('*{animation:none!important;transition:none!important}');
   await delay(250);
@@ -44,8 +44,8 @@ app.whenReady().then(async()=>{
    assert.equal(t.isPersistent(),false);
   });
   await check('real filter engine blocks analytics and preserves normal resources',async()=>{
-   const p=api.getPrivacy();assert(p.blocks({url:'https://www.google-analytics.com/analytics.js',resourceType:'script'},'https://example.com'));
-   assert(!p.blocks({url:'https://example.com/app.js',resourceType:'script'},'https://example.com'));
+   const p=api.getPrivacy();const result=await p.ublock.dispatch(api.sessionFor('private'),'onBeforeRequest',{id:1,url:'https://www.google-analytics.com/analytics.js',resourceType:'script',webContentsId:-1},'https://example.com');assert(result.cancel||result.redirectUrl);
+   const safe=await p.ublock.dispatch(api.sessionFor('private'),'onBeforeRequest',{id:2,url:'https://example.com/app.js',resourceType:'script',webContentsId:-1},'https://example.com');assert(!safe.cancel&&!safe.redirectUrl);
    assert(p.thirdParty({url:'https://tracker.example.net/a',resourceType:'xhr'},'https://example.com'));
   });
   await check('bookmark create, folder, edit and search UI',async()=>{

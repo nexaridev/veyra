@@ -3,6 +3,7 @@
   "main": "worker.mjs",
   "compatibility_date": "2026-10-22",
   "workers_dev": true,
+  "triggers": { "crons": ["* * * * *"] },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.05,

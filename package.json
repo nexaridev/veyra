@@ -1,7 +1,7 @@
 {
   "name": "veyra",
   "productName": "Veyra",
-  "version": "0.6.5",
+  "version": "0.7.0",
   "private": true,
   "description": "Private desktop browser with encrypted vault and resource controls",
   "main": "src/main.cjs",
@@ -15,10 +15,11 @@
     "electron": "45.0.0"
   },
   "dependencies": {
-    "@ghostery/adblocker": "2.20.1"
+    "electron-chrome-extensions": "4.9.0"
   },
   "engines": {
     "node": ">=24"
   },
-  "displayVersion": "0.6.5"
+  "displayVersion": "0.7.0",
+  "license": "GPL-3.0-only"
 }

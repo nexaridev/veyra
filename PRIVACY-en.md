@@ -1,0 +1,15 @@
+# Veyra: data and external services
+
+Your browser profile is stored on your device. Windows uses %APPDATA%/Veyra; Android uses private application storage. Local history, settings and bookmarks are not encrypted. The Windows password manager uses a separate encrypted vault. Removing the application or its profile may remove your data.
+
+Sync is optional and initiated by you. Veyra's own account API runs on Cloudflare Workers. Supabase supplies PostgreSQL storage; Supabase Auth is not used. The server stores your email address, bcrypt password hash, session hashes, operational metadata and encrypted bookmark backups. Your account password is sent over HTTPS for verification and is not stored as plaintext. Sessions last up to 30 days and are stored locally using Windows encryption or Android Keystore. You can sign out of all devices, change your password or delete your account.
+
+Bookmarks are encrypted on your device with AES-256-GCM and a separate phrase using PBKDF2-SHA256 with 600,000 iterations. This phrase never reaches the server and cannot be recovered by email. The server sees your account, random device identifier, platform and transfer time. Website passwords, cookies and history are excluded. Deleting an account removes its cloud backups and sessions; local bookmarks stay. Old Supabase Auth accounts are not migrated automatically.
+
+Cloudflare and Supabase process requests and network information on their infrastructure. Brevo receives your email address and a one-time code for verification or password recovery. Codes expire after 10 minutes and attempts are limited. A durable encrypted outbox retries email delivery. Free sending quotas apply. Request counters use IP addresses hashed with a server secret. Providers' own policies also apply.
+
+Update checks and downloads contact GitHub and its distribution infrastructure. uBlock Origin updates selected filter lists from their authors' servers, including GitHub, EasyList and other sources listed in uBlock Origin settings. Those servers see your IP address; filter updates can be disabled. Websites and your selected search engine receive normal network requests. Discord Rich Presence shares status with your local Discord application only when enabled; domain sharing is a separate setting.
+
+Recent searches and note contents stay on your device. Private tabs do not record recent searches. Widget publication is optional: your title, description, widget type and presentation settings become public. Notes, local searches and exact widget positions are excluded. You can rename devices, revoke individual sessions, delete cloud backups and remove your own publications. Account deletion also removes its publications.
+
+Veyra does not provide a VPN or hide your IP address. Google sign-in depends on Google's requirements and the browser engine. Compatibility with all sign-in methods is not guaranteed.

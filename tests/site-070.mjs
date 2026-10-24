@@ -1,0 +1,5 @@
+import assert from 'node:assert/strict';import worker from '../infrastructure/site/worker.mjs';
+for(const language of ['ru','en'])for(const path of ['/','/privacy']){const response=await worker.fetch(new Request('https://veyra.veyra-nexaridev.workers.dev'+path+'?lang='+language),{},{});assert.equal(response.status,200);assert.equal(response.headers.get('content-language'),language);const html=await response.text();assert(html.includes('<html lang="'+language+'">'));assert(html.includes('?lang='+(language==='ru'?'en':'ru')));if(language==='en')assert(!/[А-Яа-яЁё]/.test(html.replace('Русский','')));assert(response.headers.get('content-security-policy').includes("default-src 'none'"));}
+assert.equal((await worker.fetch(new Request('https://veyra.veyra-nexaridev.workers.dev/?lang=%3Cscript%3E'),{},{})).headers.get('content-language'),'en');
+assert.equal((await worker.fetch(new Request('https://veyra.veyra-nexaridev.workers.dev/',{method:'HEAD'}),{},{})).status,200);
+console.log('PASS bilingual landing and privacy pages, language whitelist, CSP and HEAD');

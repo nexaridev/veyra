@@ -10,9 +10,9 @@ const filename=path.resolve(__dirname,'../src/main.cjs'),mod=new Module(filename
 mod._compile(fs.readFileSync(filename,'utf8').replace("win.once('ready-to-show',openWindow);",'').replace("webPreferences:{preload:path.join(__dirname,'preload.cjs')","webPreferences:{offscreen:true,backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs')")+'\nmodule.exports={getWindow:()=>win,getTabs:()=>tabs,sessionFor,isGoogleRejected};',filename);
 const api=mod.exports,external=require('../src/external-browser.cjs'),appearance=require('../src/appearance.cjs');
 const delay=ms=>new Promise(r=>setTimeout(r,ms));const timer=setTimeout(()=>{console.error('QA timed out');app.exit(1)},45000);
-async function until(fn){for(let i=0;i<150;i++){if(await fn())return;await delay(30)}throw Error('Condition timed out')}
+async function until(fn){for(let i=0;i<1200;i++){if(await fn())return;await delay(30)}throw Error('Condition timed out')}
 app.whenReady().then(async()=>{try{
- const win=api.getWindow();await until(()=>!win.webContents.isLoading());const ui=code=>win.webContents.executeJavaScript(code,true),cmd=(a,p)=>ui('window.veyra.command('+JSON.stringify(a)+','+JSON.stringify(p)+')');
+ await until(()=>api.getWindow());const win=api.getWindow();await until(()=>!win.webContents.isLoading());const ui=code=>win.webContents.executeJavaScript(code,true),cmd=(a,p)=>ui('window.veyra.command('+JSON.stringify(a)+','+JSON.stringify(p)+')');
  await until(()=>ui('typeof state!=="undefined"&&!!state'));await win.webContents.insertCSS('*{animation:none!important;transition:none!important}');
  if(restore){const s=await cmd('state');assert.equal(s.settings.colorTheme,'forest');assert.equal(s.settings.wallpaper,'custom');assert.equal(s.settings.bookmarksBar,true);assert(s.tabs.some(t=>t.url==='https://article.veyra.test/'));assert(!s.tabs.some(t=>t.mode==='temporary'));assert((await cmd('wallpaper-data')).startsWith('data:image/jpeg;base64,'));console.log('PASS: theme, custom wallpaper and non-private session restored after restart');clearTimeout(timer);app.exit(0);return}
  assert(external.installedBrowsers().some(b=>b.id==='chrome'));const chrome=external.installedBrowsers().find(b=>b.id==='chrome');

@@ -1,0 +1,722 @@
+{
+  " · Загрузка завершена": {
+    "ru": " · Загрузка завершена",
+    "en": " · Download complete"
+  },
+  " · Ошибка загрузки": {
+    "ru": " · Ошибка загрузки",
+    "en": " · Download failed"
+  },
+  "Аккаунт и облачные копии закладок будут удалены без возможности восстановления.": {
+    "ru": "Аккаунт и облачные копии закладок будут удалены без возможности восстановления.",
+    "en": "Your account and cloud bookmark backups will be permanently deleted."
+  },
+  "Аккаунт удалён.": {
+    "ru": "Аккаунт удалён.",
+    "en": "Account deleted."
+  },
+  "Вход выполнен.": {
+    "ru": "Вход выполнен.",
+    "en": "Signed in."
+  },
+  "Выделить всё": {
+    "ru": "Выделить всё",
+    "en": "Select all"
+  },
+  "Диагностика выполняется на странице; её JavaScript может менять результаты. Это не сертификат анонимности.": {
+    "ru": "Диагностика выполняется на странице; её JavaScript может менять результаты. Это не сертификат анонимности.",
+    "en": "Diagnostics run inside the page; its JavaScript can affect the results. This does not certify anonymity."
+  },
+  "Для выбора браузером по умолчанию запусти собранную Veyra.exe.": {
+    "ru": "Для выбора браузером по умолчанию запусти собранную Veyra.exe.",
+    "en": "Run the installed Veyra.exe to set it as your default browser."
+  },
+  "Для этого окна включи отдельные окна сайтов в настройках.": {
+    "ru": "Для этого окна включи отдельные окна сайтов в настройках.",
+    "en": "Enable separate site windows in settings to open this window."
+  },
+  "Доступна версия ": {
+    "ru": "Доступна версия ",
+    "en": "Version available: "
+  },
+  "Загружается: ": {
+    "ru": "Загружается: ",
+    "en": "Downloading: "
+  },
+  "Закладки объединены.": {
+    "ru": "Закладки объединены.",
+    "en": "Bookmarks merged."
+  },
+  "Закладки отправлены.": {
+    "ru": "Закладки отправлены.",
+    "en": "Bookmarks uploaded."
+  },
+  "Запрос не выполнен: ": {
+    "ru": "Запрос не выполнен: ",
+    "en": "Request failed: "
+  },
+  "Играть без интернета": {
+    "ru": "Играть без интернета",
+    "en": "Play offline"
+  },
+  "Код восстановления отправлен. Проверь почту и папку «Спам».": {
+    "ru": "Код восстановления отправлен. Проверь почту и папку «Спам».",
+    "en": "Recovery code sent. Check your inbox and spam folder."
+  },
+  "Код отправлен. Открой «Подтвердить email» и введи код из письма.": {
+    "ru": "Код отправлен. Открой «Подтвердить email» и введи код из письма.",
+    "en": "Code sent. Open Confirm email and enter the code from your email."
+  },
+  "Контрольная сумма обновления не совпала.": {
+    "ru": "Контрольная сумма обновления не совпала.",
+    "en": "Update checksum does not match."
+  },
+  "Копировать адрес изображения": {
+    "ru": "Копировать адрес изображения",
+    "en": "Copy image address"
+  },
+  "Копировать адрес ссылки": {
+    "ru": "Копировать адрес ссылки",
+    "en": "Copy link address"
+  },
+  "Копировать изображение": {
+    "ru": "Копировать изображение",
+    "en": "Copy image"
+  },
+  "Не удалось загрузить обновление.": {
+    "ru": "Не удалось загрузить обновление.",
+    "en": "Could not download the update."
+  },
+  "Неверный формат копии.": {
+    "ru": "Неверный формат копии.",
+    "en": "Invalid backup format."
+  },
+  "Недопустимый адрес.": {
+    "ru": "Недопустимый адрес.",
+    "en": "Invalid address."
+  },
+  "Некорректная копия.": {
+    "ru": "Некорректная копия.",
+    "en": "Invalid backup."
+  },
+  "Некорректное обновление.": {
+    "ru": "Некорректное обновление.",
+    "en": "Invalid update."
+  },
+  "Некорректный ответ.": {
+    "ru": "Некорректный ответ.",
+    "en": "Invalid response."
+  },
+  "Некорректный путь приложения.": {
+    "ru": "Некорректный путь приложения.",
+    "en": "Invalid application path."
+  },
+  "Несохранённые данные": {
+    "ru": "Несохранённые данные",
+    "en": "Unsaved changes"
+  },
+  "Открыть изображение в новой вкладке": {
+    "ru": "Открыть изображение в новой вкладке",
+    "en": "Open image in new tab"
+  },
+  "Отменить": {
+    "ru": "Отменить",
+    "en": "Undo"
+  },
+  "Пароль изменён. Войди снова.": {
+    "ru": "Пароль изменён. Войди снова.",
+    "en": "Password changed. Sign in again."
+  },
+  "Пароль: минимум 12 символов, максимум 72 байта UTF-8.": {
+    "ru": "Пароль: минимум 12 символов, максимум 72 байта UTF-8.",
+    "en": "Password: at least 12 characters, up to 72 UTF-8 bytes."
+  },
+  "Подписанное обновление пока не опубликовано.": {
+    "ru": "Подписанное обновление пока не опубликовано.",
+    "en": "A signed update has not been published yet."
+  },
+  "Подпись обновления недействительна.": {
+    "ru": "Подпись обновления недействительна.",
+    "en": "The update signature is invalid."
+  },
+  "Размер обновления не совпал.": {
+    "ru": "Размер обновления не совпал.",
+    "en": "Update size does not match."
+  },
+  "Сборка проверена и сохранена.": {
+    "ru": "Сборка проверена и сохранена.",
+    "en": "The build has been verified and saved."
+  },
+  "Сервер обновлений: ": {
+    "ru": "Сервер обновлений: ",
+    "en": "Update server: "
+  },
+  "Синхронизация": {
+    "ru": "Синхронизация",
+    "en": "Sync"
+  },
+  "Синхронизация уже выполняется.": {
+    "ru": "Синхронизация уже выполняется.",
+    "en": "Sync is already running."
+  },
+  "Сначала войди в аккаунт.": {
+    "ru": "Сначала войди в аккаунт.",
+    "en": "Sign in first."
+  },
+  "Сначала проверь обновления.": {
+    "ru": "Сначала проверь обновления.",
+    "en": "Check for updates first."
+  },
+  "Сообщение сайта": {
+    "ru": "Сообщение сайта",
+    "en": "Message from website"
+  },
+  "Сохранить изображение как…": {
+    "ru": "Сохранить изображение как…",
+    "en": "Save image as…"
+  },
+  "Сохранить медиа как…": {
+    "ru": "Сохранить медиа как…",
+    "en": "Save media as…"
+  },
+  "Сохранить обновление": {
+    "ru": "Сохранить обновление",
+    "en": "Save update"
+  },
+  "Сохранить ссылку как…": {
+    "ru": "Сохранить ссылку как…",
+    "en": "Save link as…"
+  },
+  "Стиль": {
+    "ru": "Стиль",
+    "en": "Style"
+  },
+  "Удалить аккаунт?": {
+    "ru": "Удалить аккаунт?",
+    "en": "Delete account?"
+  },
+  "Удалить копию": {
+    "ru": "Удалить копию",
+    "en": "Delete backup"
+  },
+  "Установлена актуальная версия": {
+    "ru": "Установлена актуальная версия",
+    "en": "You are up to date"
+  },
+  "Фраза синхронизации: от 16 до 1024 символов.": {
+    "ru": "Фраза синхронизации: от 16 до 1024 символов.",
+    "en": "Sync phrase: 16 to 1024 characters."
+  },
+  "Сохранение сессий заняло слишком много времени.": {
+    "ru": "Сохранение сессий заняло слишком много времени.",
+    "en": "Saving sessions took too long. Please try closing again."
+  },
+  "Не удалось применить настройки сети и оформления.": {
+    "ru": "Не удалось применить настройки сети и оформления.",
+    "en": "Could not apply network and appearance settings."
+  },
+  "Этот компьютер": {
+    "ru": "Этот компьютер",
+    "en": "This computer"
+  },
+  "Слишком много запросов. Попробуй через 10 минут.": {
+    "ru": "Слишком много запросов. Попробуй через 10 минут.",
+    "en": "Too many requests. Try again in 10 minutes."
+  },
+  "Проверь email.": {
+    "ru": "Проверь email.",
+    "en": "Check your email address."
+  },
+  "Повторный код можно запросить через минуту.": {
+    "ru": "Повторный код можно запросить через минуту.",
+    "en": "You can request another code in one minute."
+  },
+  "Дневной лимит писем исчерпан. Попробуй завтра.": {
+    "ru": "Дневной лимит писем исчерпан. Попробуй завтра.",
+    "en": "The daily email limit has been reached. Try again tomorrow."
+  },
+  "Неверный или просроченный код.": {
+    "ru": "Неверный или просроченный код.",
+    "en": "Incorrect or expired code."
+  },
+  "Слишком много попыток входа.": {
+    "ru": "Слишком много попыток входа.",
+    "en": "Too many sign-in attempts."
+  },
+  "Неверный email или пароль.": {
+    "ru": "Неверный email или пароль.",
+    "en": "Incorrect email or password."
+  },
+  "Войди в аккаунт.": {
+    "ru": "Войди в аккаунт.",
+    "en": "Sign in to your account."
+  },
+  "Сессия завершена. Войди снова.": {
+    "ru": "Сессия завершена. Войди снова.",
+    "en": "Your session has ended. Sign in again."
+  },
+  "Неверный текущий пароль.": {
+    "ru": "Неверный текущий пароль.",
+    "en": "Incorrect current password."
+  },
+  "Лимит: 10 устройств.": {
+    "ru": "Лимит: 10 устройств.",
+    "en": "Maximum 10 devices."
+  },
+  "Отправка писем ещё не настроена.": {
+    "ru": "Отправка писем ещё не настроена.",
+    "en": "Email delivery is not configured yet."
+  },
+  "Некорректный или слишком большой запрос.": {
+    "ru": "Некорректный или слишком большой запрос.",
+    "en": "The request is invalid or too large."
+  },
+  "Сервис временно недоступен.": {
+    "ru": "Сервис временно недоступен.",
+    "en": "The service is temporarily unavailable."
+  },
+  "Сервис временно недоступен. Попробуй ещё раз.": {
+    "ru": "Сервис временно недоступен. Попробуй ещё раз.",
+    "en": "The service is temporarily unavailable. Please try again."
+  },
+  "Доступ запрещён.": {
+    "ru": "Доступ запрещён.",
+    "en": "Forbidden"
+  },
+  "Не найдено.": {
+    "ru": "Не найдено.",
+    "en": "Not found"
+  },
+  "Некорректный запрос.": {
+    "ru": "Некорректный запрос.",
+    "en": "Invalid request"
+  },
+  "Слишком много запросов.": {
+    "ru": "Слишком много запросов.",
+    "en": "Too many requests"
+  },
+  "Некорректные данные профиля.": {
+    "ru": "Некорректные данные профиля.",
+    "en": "Invalid profile"
+  },
+  "Некорректный идентификатор.": {
+    "ru": "Некорректный идентификатор.",
+    "en": "Invalid id"
+  },
+  "Некорректный шаблон виджета.": {
+    "ru": "Некорректный шаблон виджета.",
+    "en": "Invalid widget template"
+  },
+  "Можно опубликовать не больше 20 виджетов.": {
+    "ru": "Можно опубликовать не больше 20 виджетов.",
+    "en": "Maximum 20 publications"
+  },
+  "Некорректное устройство.": {
+    "ru": "Некорректное устройство.",
+    "en": "Invalid device"
+  },
+  "Некорректная зашифрованная копия.": {
+    "ru": "Некорректная зашифрованная копия.",
+    "en": "Invalid encrypted payload"
+  },
+  "Сервис аккаунтов недоступен.": {
+    "ru": "Сервис аккаунтов недоступен.",
+    "en": "Account service unavailable"
+  },
+  "Источник запроса не разрешён.": {
+    "ru": "Источник запроса не разрешён.",
+    "en": "Forbidden origin"
+  },
+  "Нужен запрос JSON.": {
+    "ru": "Нужен запрос JSON.",
+    "en": "Use application/json"
+  },
+  "Не удалось подключиться. Проверь интернет и попробуй снова.": {
+    "ru": "Не удалось подключиться. Проверь интернет и попробуй снова.",
+    "en": "Could not connect. Check your internet connection and try again."
+  },
+  "Сервер не ответил вовремя. Попробуй снова.": {
+    "ru": "Сервер не ответил вовремя. Попробуй снова.",
+    "en": "The server did not respond in time. Please try again."
+  },
+  "Не удалось выполнить действие. Попробуй снова.": {
+    "ru": "Не удалось выполнить действие. Попробуй снова.",
+    "en": "Could not complete the action. Please try again."
+  },
+  "Не удалось прочитать копию. Проверь фразу шифрования.": {
+    "ru": "Не удалось прочитать копию. Проверь фразу шифрования.",
+    "en": "Could not read the backup. Check your encryption phrase."
+  },
+  "Ответ сервера слишком большой.": {
+    "ru": "Ответ сервера слишком большой.",
+    "en": "Response too large"
+  },
+  " · Download complete": {
+    "ru": " · Загрузка завершена",
+    "en": " · Download complete"
+  },
+  " · Download failed": {
+    "ru": " · Ошибка загрузки",
+    "en": " · Download failed"
+  },
+  "Your account and cloud bookmark backups will be permanently deleted.": {
+    "ru": "Аккаунт и облачные копии закладок будут удалены без возможности восстановления.",
+    "en": "Your account and cloud bookmark backups will be permanently deleted."
+  },
+  "Account deleted.": {
+    "ru": "Аккаунт удалён.",
+    "en": "Account deleted."
+  },
+  "Signed in.": {
+    "ru": "Вход выполнен.",
+    "en": "Signed in."
+  },
+  "Select all": {
+    "ru": "Выделить всё",
+    "en": "Select all"
+  },
+  "Diagnostics run inside the page; its JavaScript can affect the results. This does not certify anonymity.": {
+    "ru": "Диагностика выполняется на странице; её JavaScript может менять результаты. Это не сертификат анонимности.",
+    "en": "Diagnostics run inside the page; its JavaScript can affect the results. This does not certify anonymity."
+  },
+  "Run the installed Veyra.exe to set it as your default browser.": {
+    "ru": "Для выбора браузером по умолчанию запусти собранную Veyra.exe.",
+    "en": "Run the installed Veyra.exe to set it as your default browser."
+  },
+  "Enable separate site windows in settings to open this window.": {
+    "ru": "Для этого окна включи отдельные окна сайтов в настройках.",
+    "en": "Enable separate site windows in settings to open this window."
+  },
+  "Version available: ": {
+    "ru": "Доступна версия ",
+    "en": "Version available: "
+  },
+  "Downloading: ": {
+    "ru": "Загружается: ",
+    "en": "Downloading: "
+  },
+  "Bookmarks merged.": {
+    "ru": "Закладки объединены.",
+    "en": "Bookmarks merged."
+  },
+  "Bookmarks uploaded.": {
+    "ru": "Закладки отправлены.",
+    "en": "Bookmarks uploaded."
+  },
+  "Request failed: ": {
+    "ru": "Запрос не выполнен: ",
+    "en": "Request failed: "
+  },
+  "Play offline": {
+    "ru": "Играть без интернета",
+    "en": "Play offline"
+  },
+  "Recovery code sent. Check your inbox and spam folder.": {
+    "ru": "Код восстановления отправлен. Проверь почту и папку «Спам».",
+    "en": "Recovery code sent. Check your inbox and spam folder."
+  },
+  "Code sent. Open Confirm email and enter the code from your email.": {
+    "ru": "Код отправлен. Открой «Подтвердить email» и введи код из письма.",
+    "en": "Code sent. Open Confirm email and enter the code from your email."
+  },
+  "Update checksum does not match.": {
+    "ru": "Контрольная сумма обновления не совпала.",
+    "en": "Update checksum does not match."
+  },
+  "Copy image address": {
+    "ru": "Копировать адрес изображения",
+    "en": "Copy image address"
+  },
+  "Copy link address": {
+    "ru": "Копировать адрес ссылки",
+    "en": "Copy link address"
+  },
+  "Copy image": {
+    "ru": "Копировать изображение",
+    "en": "Copy image"
+  },
+  "Could not download the update.": {
+    "ru": "Не удалось загрузить обновление.",
+    "en": "Could not download the update."
+  },
+  "Invalid backup format.": {
+    "ru": "Неверный формат копии.",
+    "en": "Invalid backup format."
+  },
+  "Invalid address.": {
+    "ru": "Недопустимый адрес.",
+    "en": "Invalid address."
+  },
+  "Invalid backup.": {
+    "ru": "Некорректная копия.",
+    "en": "Invalid backup."
+  },
+  "Invalid update.": {
+    "ru": "Некорректное обновление.",
+    "en": "Invalid update."
+  },
+  "Invalid response.": {
+    "ru": "Некорректный ответ.",
+    "en": "Invalid response."
+  },
+  "Invalid application path.": {
+    "ru": "Некорректный путь приложения.",
+    "en": "Invalid application path."
+  },
+  "Unsaved changes": {
+    "ru": "Несохранённые данные",
+    "en": "Unsaved changes"
+  },
+  "Open image in new tab": {
+    "ru": "Открыть изображение в новой вкладке",
+    "en": "Open image in new tab"
+  },
+  "Undo": {
+    "ru": "Отменить",
+    "en": "Undo"
+  },
+  "Password changed. Sign in again.": {
+    "ru": "Пароль изменён. Войди снова.",
+    "en": "Password changed. Sign in again."
+  },
+  "Password: at least 12 characters, up to 72 UTF-8 bytes.": {
+    "ru": "Пароль: минимум 12 символов, максимум 72 байта UTF-8.",
+    "en": "Password: at least 12 characters, up to 72 UTF-8 bytes."
+  },
+  "A signed update has not been published yet.": {
+    "ru": "Подписанное обновление пока не опубликовано.",
+    "en": "A signed update has not been published yet."
+  },
+  "The update signature is invalid.": {
+    "ru": "Подпись обновления недействительна.",
+    "en": "The update signature is invalid."
+  },
+  "Update size does not match.": {
+    "ru": "Размер обновления не совпал.",
+    "en": "Update size does not match."
+  },
+  "The build has been verified and saved.": {
+    "ru": "Сборка проверена и сохранена.",
+    "en": "The build has been verified and saved."
+  },
+  "Update server: ": {
+    "ru": "Сервер обновлений: ",
+    "en": "Update server: "
+  },
+  "Sync": {
+    "ru": "Синхронизация",
+    "en": "Sync"
+  },
+  "Sync is already running.": {
+    "ru": "Синхронизация уже выполняется.",
+    "en": "Sync is already running."
+  },
+  "Sign in first.": {
+    "ru": "Сначала войди в аккаунт.",
+    "en": "Sign in first."
+  },
+  "Check for updates first.": {
+    "ru": "Сначала проверь обновления.",
+    "en": "Check for updates first."
+  },
+  "Message from website": {
+    "ru": "Сообщение сайта",
+    "en": "Message from website"
+  },
+  "Save image as…": {
+    "ru": "Сохранить изображение как…",
+    "en": "Save image as…"
+  },
+  "Save media as…": {
+    "ru": "Сохранить медиа как…",
+    "en": "Save media as…"
+  },
+  "Save update": {
+    "ru": "Сохранить обновление",
+    "en": "Save update"
+  },
+  "Save link as…": {
+    "ru": "Сохранить ссылку как…",
+    "en": "Save link as…"
+  },
+  "Style": {
+    "ru": "Стиль",
+    "en": "Style"
+  },
+  "Delete account?": {
+    "ru": "Удалить аккаунт?",
+    "en": "Delete account?"
+  },
+  "Delete backup": {
+    "ru": "Удалить копию",
+    "en": "Delete backup"
+  },
+  "You are up to date": {
+    "ru": "Установлена актуальная версия",
+    "en": "You are up to date"
+  },
+  "Sync phrase: 16 to 1024 characters.": {
+    "ru": "Фраза синхронизации: от 16 до 1024 символов.",
+    "en": "Sync phrase: 16 to 1024 characters."
+  },
+  "Saving sessions took too long. Please try closing again.": {
+    "ru": "Сохранение сессий заняло слишком много времени.",
+    "en": "Saving sessions took too long. Please try closing again."
+  },
+  "Could not apply network and appearance settings.": {
+    "ru": "Не удалось применить настройки сети и оформления.",
+    "en": "Could not apply network and appearance settings."
+  },
+  "This computer": {
+    "ru": "Этот компьютер",
+    "en": "This computer"
+  },
+  "Too many requests. Try again in 10 minutes.": {
+    "ru": "Слишком много запросов. Попробуй через 10 минут.",
+    "en": "Too many requests. Try again in 10 minutes."
+  },
+  "Check your email address.": {
+    "ru": "Проверь email.",
+    "en": "Check your email address."
+  },
+  "You can request another code in one minute.": {
+    "ru": "Повторный код можно запросить через минуту.",
+    "en": "You can request another code in one minute."
+  },
+  "The daily email limit has been reached. Try again tomorrow.": {
+    "ru": "Дневной лимит писем исчерпан. Попробуй завтра.",
+    "en": "The daily email limit has been reached. Try again tomorrow."
+  },
+  "Incorrect or expired code.": {
+    "ru": "Неверный или просроченный код.",
+    "en": "Incorrect or expired code."
+  },
+  "Too many sign-in attempts.": {
+    "ru": "Слишком много попыток входа.",
+    "en": "Too many sign-in attempts."
+  },
+  "Incorrect email or password.": {
+    "ru": "Неверный email или пароль.",
+    "en": "Incorrect email or password."
+  },
+  "Sign in to your account.": {
+    "ru": "Войди в аккаунт.",
+    "en": "Sign in to your account."
+  },
+  "Your session has ended. Sign in again.": {
+    "ru": "Сессия завершена. Войди снова.",
+    "en": "Your session has ended. Sign in again."
+  },
+  "Incorrect current password.": {
+    "ru": "Неверный текущий пароль.",
+    "en": "Incorrect current password."
+  },
+  "Maximum 10 devices.": {
+    "ru": "Лимит: 10 устройств.",
+    "en": "Maximum 10 devices."
+  },
+  "Email delivery is not configured yet.": {
+    "ru": "Отправка писем ещё не настроена.",
+    "en": "Email delivery is not configured yet."
+  },
+  "The request is invalid or too large.": {
+    "ru": "Некорректный или слишком большой запрос.",
+    "en": "The request is invalid or too large."
+  },
+  "The service is temporarily unavailable.": {
+    "ru": "Сервис временно недоступен.",
+    "en": "The service is temporarily unavailable."
+  },
+  "The service is temporarily unavailable. Please try again.": {
+    "ru": "Сервис временно недоступен. Попробуй ещё раз.",
+    "en": "The service is temporarily unavailable. Please try again."
+  },
+  "Forbidden": {
+    "ru": "Доступ запрещён.",
+    "en": "Forbidden"
+  },
+  "Not found": {
+    "ru": "Не найдено.",
+    "en": "Not found"
+  },
+  "Invalid request": {
+    "ru": "Некорректный запрос.",
+    "en": "Invalid request"
+  },
+  "Too many requests": {
+    "ru": "Слишком много запросов.",
+    "en": "Too many requests"
+  },
+  "Invalid profile": {
+    "ru": "Некорректные данные профиля.",
+    "en": "Invalid profile"
+  },
+  "Invalid id": {
+    "ru": "Некорректный идентификатор.",
+    "en": "Invalid id"
+  },
+  "Invalid widget template": {
+    "ru": "Некорректный шаблон виджета.",
+    "en": "Invalid widget template"
+  },
+  "Maximum 20 publications": {
+    "ru": "Можно опубликовать не больше 20 виджетов.",
+    "en": "Maximum 20 publications"
+  },
+  "Invalid device": {
+    "ru": "Некорректное устройство.",
+    "en": "Invalid device"
+  },
+  "Invalid encrypted payload": {
+    "ru": "Некорректная зашифрованная копия.",
+    "en": "Invalid encrypted payload"
+  },
+  "Account service unavailable": {
+    "ru": "Сервис аккаунтов недоступен.",
+    "en": "Account service unavailable"
+  },
+  "Forbidden origin": {
+    "ru": "Источник запроса не разрешён.",
+    "en": "Forbidden origin"
+  },
+  "Use application/json": {
+    "ru": "Нужен запрос JSON.",
+    "en": "Use application/json"
+  },
+  "Could not connect. Check your internet connection and try again.": {
+    "ru": "Не удалось подключиться. Проверь интернет и попробуй снова.",
+    "en": "Could not connect. Check your internet connection and try again."
+  },
+  "The server did not respond in time. Please try again.": {
+    "ru": "Сервер не ответил вовремя. Попробуй снова.",
+    "en": "The server did not respond in time. Please try again."
+  },
+  "Could not complete the action. Please try again.": {
+    "ru": "Не удалось выполнить действие. Попробуй снова.",
+    "en": "Could not complete the action. Please try again."
+  },
+  "Could not read the backup. Check your encryption phrase.": {
+    "ru": "Не удалось прочитать копию. Проверь фразу шифрования.",
+    "en": "Could not read the backup. Check your encryption phrase."
+  },
+  "Response too large": {
+    "ru": "Ответ сервера слишком большой.",
+    "en": "Response too large"
+  },
+  "Sign in first": {
+    "ru": "Сначала войди в аккаунт.",
+    "en": "Sign in first."
+  },
+  "Password: 12+ characters, up to 72 UTF-8 bytes": {
+    "ru": "Пароль: минимум 12 символов, максимум 72 байта UTF-8.",
+    "en": "Password: at least 12 characters, up to 72 UTF-8 bytes."
+  },
+  "Use 16–1024 characters": {
+    "ru": "Фраза синхронизации: от 16 до 1024 символов.",
+    "en": "Sync phrase: 16 to 1024 characters."
+  },
+  "Invalid backup": {
+    "ru": "Некорректная копия.",
+    "en": "Invalid backup."
+  }
+}

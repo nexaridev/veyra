@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -18,8 +18,8 @@ using Microsoft.Win32;
 [assembly:AssemblyTitle("Veyra Installer")]
 [assembly:AssemblyProduct("Veyra Installer")]
 [assembly:AssemblyCompany("Nexaridev")]
-[assembly:AssemblyVersion("1.1.0.0")]
-[assembly:AssemblyFileVersion("1.1.0.0")]
+[assembly:AssemblyVersion("1.2.0.0")]
+[assembly:AssemblyFileVersion("1.2.0.0")]
 
 namespace Veyra.Setup {
  internal static class Program {
@@ -41,7 +41,7 @@ namespace Veyra.Setup {
    try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;shortcut.TargetPath=Path.Combine(layout.Root,"VeyraLauncher.exe");shortcut.WorkingDirectory=layout.App;shortcut.Description="Veyra by Nexaridev";shortcut.IconLocation=layout.Exe+",0";shortcut.Save();}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}
   }
   internal static void CopyManagers(Layout layout){layout.RequireOwned();foreach(string name in new[]{"VeyraLauncher.exe","Delete Veyra.exe"}){string file=Path.Combine(layout.Root,name);Paths.NoLinks(file);File.Copy(layout.SetupExe,file,true);}}
-  internal static void MakeDeleteShortcut(string path,Layout layout){object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")),link=null;try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;shortcut.TargetPath=Path.Combine(layout.Root,"Delete Veyra.exe");shortcut.WorkingDirectory=layout.Root;shortcut.Description="Удалить Veyra, сохранив профиль";shortcut.IconLocation=layout.Exe+",0";shortcut.Save();}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}}
+  internal static void MakeDeleteShortcut(string path,Layout layout){object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell")),link=null;try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;shortcut.TargetPath=Path.Combine(layout.Root,"Delete Veyra.exe");shortcut.WorkingDirectory=layout.Root;shortcut.Description=L.T("Удалить Veyra, сохранив профиль");shortcut.IconLocation=layout.Exe+",0";shortcut.Save();}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}}
   static bool OurShortcut(string path,Layout layout){if(!File.Exists(path))return false;object shell=Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));object link=null;try{dynamic host=shell;link=host.CreateShortcut(path);dynamic shortcut=link;return new[]{layout.Exe,Path.Combine(layout.Root,"VeyraLauncher.exe"),Path.Combine(layout.Root,"Delete Veyra.exe")}.Contains((string)shortcut.TargetPath,StringComparer.OrdinalIgnoreCase);}finally{if(link!=null)Marshal.FinalReleaseComObject(link);Marshal.FinalReleaseComObject(shell);}}
   void CaptureShortcut(string path){if(!shortcuts.ContainsKey(path))shortcuts[path]=File.Exists(path)?File.ReadAllBytes(path):null;}
   public void Apply(Layout layout,Options options,string version){
@@ -79,32 +79,33 @@ namespace Veyra.Setup {
   [DllImport("user32.dll")]static extern bool ReleaseCapture();[DllImport("user32.dll")]static extern IntPtr SendMessage(IntPtr hwnd,int msg,IntPtr wparam,IntPtr lparam);
   static readonly Color Bg=Color.FromArgb(20,17,27),Fg=Color.FromArgb(238,232,248),Muted=Color.FromArgb(161,151,180),Accent=Color.FromArgb(185,159,252);
   public SetupForm(bool remove){
-   uninstall=remove;Text=remove?"Удаление Veyra":"Установка Veyra";ClientSize=new Size(650,470);FormBorderStyle=FormBorderStyle.None;StartPosition=FormStartPosition.CenterScreen;BackColor=Bg;ForeColor=Fg;Font=new Font("Segoe UI",10);AutoScaleMode=AutoScaleMode.Dpi;
+   uninstall=remove;Text=remove?L.T("Удаление Veyra"):L.T("Установка Veyra");ClientSize=new Size(650,470);FormBorderStyle=FormBorderStyle.None;StartPosition=FormStartPosition.CenterScreen;BackColor=Bg;ForeColor=Fg;Font=new Font("Segoe UI",10);AutoScaleMode=AutoScaleMode.Dpi;
    var header=new Panel{Location=new Point(0,0),Size=new Size(650,110),BackColor=Bg};Controls.Add(header);header.MouseDown+=delegate(object s,MouseEventArgs e){if(e.Button==MouseButtons.Left){ReleaseCapture();SendMessage(Handle,0xA1,new IntPtr(2),IntPtr.Zero);}};
    header.Controls.Add(new Brand{Location=new Point(30,22),Size=new Size(64,64)});header.Controls.Add(new Label{Text="Veyra",Font=new Font("Segoe UI",24,FontStyle.Bold),ForeColor=Fg,Location=new Point(106,18),AutoSize=true});header.Controls.Add(new Label{Text="by Nexaridev",ForeColor=Muted,Location=new Point(110,65),AutoSize=true});
-   var close=new Button{Text="Закрыть",Location=new Point(548,25),Size=new Size(78,30),FlatStyle=FlatStyle.Flat,BackColor=Bg,ForeColor=Muted};close.FlatAppearance.BorderSize=0;close.Click+=delegate{Close();};header.Controls.Add(close);
-   title.Text=remove?"Удалить браузер?":"Установить Veyra";title.Font=new Font("Segoe UI",19,FontStyle.Bold);title.SetBounds(36,126,580,39);Controls.Add(title);
-   var path=new Label{Text=remove?"Профиль, закладки и пароли останутся на этом ПК.":"Папка: %LOCALAPPDATA%\\Programs\\Veyra",ForeColor=Muted};path.SetBounds(38,175,574,40);Controls.Add(path);
-   desktop.Text="Ярлык на рабочем столе";startMenu.Text="Ярлык в меню «Пуск»";desktop.Checked=startMenu.Checked=true;desktop.SetBounds(38,221,540,28);startMenu.SetBounds(38,253,540,28);foreach(var box in new[]{desktop,startMenu}){box.FlatStyle=FlatStyle.Flat;box.ForeColor=Fg;box.Visible=!remove;Controls.Add(box);}
-   status.Text=remove?"Браузер должен быть закрыт.":"Скачаем и проверим актуальную тестовую сборку.";status.ForeColor=Muted;status.SetBounds(38,300,520,48);Controls.Add(status);percent.ForeColor=Muted;percent.TextAlign=ContentAlignment.TopRight;percent.SetBounds(558,300,52,28);Controls.Add(percent);bar.SetBounds(38,356,574,5);bar.Value=0;Controls.Add(bar);
-   main.Text=remove?"Удалить":"Установить";main.SetBounds(366,395,246,42);main.FlatStyle=FlatStyle.Flat;main.FlatAppearance.BorderSize=0;main.BackColor=Accent;main.ForeColor=Bg;main.Font=new Font("Segoe UI",10,FontStyle.Bold);main.Click+=async delegate{if(done){if(!uninstall){Process.Start(new ProcessStartInfo(layout.Exe){WorkingDirectory=layout.App,UseShellExecute=true});}Close();}else await Run();};Controls.Add(main);
-   cancel.Text="Отмена";cancel.SetBounds(38,395,130,42);cancel.FlatStyle=FlatStyle.Flat;cancel.FlatAppearance.BorderColor=Color.FromArgb(63,51,78);cancel.ForeColor=Fg;cancel.Click+=delegate{Close();};Controls.Add(cancel);
-   var licenseButton=new Button{Text="Лицензии",Location=new Point(184,400),Size=new Size(106,32),FlatStyle=FlatStyle.Flat,BackColor=Bg,ForeColor=Muted};licenseButton.FlatAppearance.BorderSize=0;licenseButton.Click+=delegate{using(var source=Assembly.GetExecutingAssembly().GetManifestResourceStream("bc-license.txt"))using(var reader=new StreamReader(source))using(var notice=new Form{Text="Лицензии Veyra Installer",Size=new Size(650,450),StartPosition=FormStartPosition.CenterParent,BackColor=Bg}){notice.Controls.Add(new TextBox{Multiline=true,ReadOnly=true,Dock=DockStyle.Fill,ScrollBars=ScrollBars.Vertical,BackColor=Bg,ForeColor=Fg,Font=new Font("Segoe UI",10),Text=reader.ReadToEnd()});notice.ShowDialog(this);}};Controls.Add(licenseButton);
-   FormClosing+=delegate(object sender,FormClosingEventArgs e){if(busy){e.Cancel=true;closeRequested=true;if(cancellation!=null)cancellation.Cancel();status.Text="Завершаем текущую операцию…";}};
+   var close=new Button{Text=L.T("Закрыть"),Location=new Point(548,25),Size=new Size(78,30),FlatStyle=FlatStyle.Flat,BackColor=Bg,ForeColor=Muted};close.FlatAppearance.BorderSize=0;close.Click+=delegate{Close();};header.Controls.Add(close);
+   title.Text=remove?L.T("Удалить браузер?"):L.T("Установить Veyra");title.Font=new Font("Segoe UI",19,FontStyle.Bold);title.SetBounds(36,126,580,39);Controls.Add(title);
+   var path=new Label{Text=remove?L.T("Профиль, закладки и пароли останутся на этом ПК."):L.T("Папка: %LOCALAPPDATA%\\Programs\\Veyra"),ForeColor=Muted};path.SetBounds(38,175,574,40);Controls.Add(path);
+   desktop.Text=L.T("Ярлык на рабочем столе");startMenu.Text=L.T("Ярлык в меню «Пуск»");desktop.Checked=startMenu.Checked=true;desktop.SetBounds(38,221,540,28);startMenu.SetBounds(38,253,540,28);foreach(var box in new[]{desktop,startMenu}){box.FlatStyle=FlatStyle.Flat;box.ForeColor=Fg;box.Visible=!remove;Controls.Add(box);}
+   status.Text=remove?L.T("Браузер должен быть закрыт."):L.T("Скачаем и проверим актуальную тестовую сборку.");status.ForeColor=Muted;status.SetBounds(38,300,520,48);Controls.Add(status);percent.ForeColor=Muted;percent.TextAlign=ContentAlignment.TopRight;percent.SetBounds(558,300,52,28);Controls.Add(percent);bar.SetBounds(38,356,574,5);bar.Value=0;Controls.Add(bar);
+   main.Text=remove?L.T("Удалить"):L.T("Установить");main.SetBounds(366,395,246,42);main.FlatStyle=FlatStyle.Flat;main.FlatAppearance.BorderSize=0;main.BackColor=Accent;main.ForeColor=Bg;main.Font=new Font("Segoe UI",10,FontStyle.Bold);main.Click+=async delegate{if(done){if(!uninstall){Process.Start(new ProcessStartInfo(layout.Exe){WorkingDirectory=layout.App,UseShellExecute=true});}Close();}else await Run();};Controls.Add(main);
+   cancel.Text=L.T("Отмена");cancel.SetBounds(38,395,130,42);cancel.FlatStyle=FlatStyle.Flat;cancel.FlatAppearance.BorderColor=Color.FromArgb(63,51,78);cancel.ForeColor=Fg;cancel.Click+=delegate{Close();};Controls.Add(cancel);
+   var licenseButton=new Button{Text=L.T("Лицензии"),Location=new Point(184,400),Size=new Size(106,32),FlatStyle=FlatStyle.Flat,BackColor=Bg,ForeColor=Muted};licenseButton.FlatAppearance.BorderSize=0;licenseButton.Click+=delegate{using(var source=Assembly.GetExecutingAssembly().GetManifestResourceStream("bc-license.txt"))using(var reader=new StreamReader(source))using(var notice=new Form{Text=L.T("Лицензии Veyra Installer"),Size=new Size(650,450),StartPosition=FormStartPosition.CenterParent,BackColor=Bg}){notice.Controls.Add(new TextBox{Multiline=true,ReadOnly=true,Dock=DockStyle.Fill,ScrollBars=ScrollBars.Vertical,BackColor=Bg,ForeColor=Fg,Font=new Font("Segoe UI",10),Text=reader.ReadToEnd()});notice.ShowDialog(this);}};Controls.Add(licenseButton);
+   L.AddSwitcher(header,this);
+   FormClosing+=delegate(object sender,FormClosingEventArgs e){if(busy){e.Cancel=true;closeRequested=true;if(cancellation!=null)cancellation.Cancel();status.Text=L.T("Завершаем текущую операцию…");}};
   }
-  static void RequireClosed(){foreach(var p in Process.GetProcessesByName("Veyra")){using(p){try{if(p.SessionId==Process.GetCurrentProcess().SessionId)throw new IOException("Закрой Veyra и нажми кнопку ещё раз.");}catch(InvalidOperationException){}}}}
+  static void RequireClosed(){foreach(var p in Process.GetProcessesByName("Veyra")){using(p){try{if(p.SessionId==Process.GetCurrentProcess().SessionId)throw new IOException(L.T("Закрой Veyra и нажми кнопку ещё раз."));}catch(InvalidOperationException){}}}}
   async Task Run(){
-   busy=true;main.Enabled=desktop.Enabled=startMenu.Enabled=false;cancel.Text="Отменить";cancellation=new CancellationTokenSource();cancellation.CancelAfter(TimeSpan.FromMinutes(20));
+   busy=true;main.Enabled=desktop.Enabled=startMenu.Enabled=false;cancel.Text=L.T("Отменить");cancellation=new CancellationTokenSource();cancellation.CancelAfter(TimeSpan.FromMinutes(20));
    try{
-    if(!Environment.Is64BitOperatingSystem)throw new IOException("Эта сборка предназначена для 64-разрядной Windows.");RequireClosed();var integration=new Integration();var installer=new Installer(layout,integration,Application.ExecutablePath,RequireClosed);
-    if(uninstall){await Task.Run(()=>installer.Uninstall());ScheduleOwnRemoval(layout);done=true;title.Text="Veyra удалена";status.Text="Личный профиль сохранён.";main.Text="Готово";bar.Value=100;}
+    if(!Environment.Is64BitOperatingSystem)throw new IOException(L.T("Эта сборка предназначена для 64-разрядной Windows."));RequireClosed();var integration=new Integration();var installer=new Installer(layout,integration,Application.ExecutablePath,RequireClosed);
+    if(uninstall){await Task.Run(()=>installer.Uninstall());ScheduleOwnRemoval(layout);done=true;title.Text=L.T("Veyra удалена");status.Text=L.T("Личный профиль сохранён.");main.Text=L.T("Готово");bar.Value=100;}
     else{
      var progress=new Progress<ProgressInfo>(value=>{status.Text=value.Text;bar.Value=value.Percent;bar.Invalidate();percent.Text=value.Percent<0?"":value.Percent+"%";if(value.Percent>=95)cancel.Enabled=false;});
      using(var network=new Network())await installer.Install(network,new Options{Desktop=desktop.Checked,StartMenu=startMenu.Checked},progress,cancellation.Token);
-     done=true;title.Text="Всё готово";status.Text="Veyra установлена. Можно открывать браузер.";main.Text="Запустить Veyra";cancel.Text="Закрыть";
+     done=true;title.Text=L.T("Всё готово");status.Text=L.T("Veyra установлена. Можно открывать браузер.");main.Text=L.T("Запустить Veyra");cancel.Text=L.T("Закрыть");
     }
-   }catch(OperationCanceledException){status.Text=closeRequested?"Установка отменена.":"Загрузка отменена или истекло время ожидания.";bar.Value=0;percent.Text="";}
-   catch(Exception error){status.Text=error is IOException?error.Message:"Не удалось завершить операцию. "+error.Message;bar.Value=0;percent.Text="";}
+   }catch(OperationCanceledException){status.Text=closeRequested?L.T("Установка отменена."):L.T("Загрузка отменена или истекло время ожидания.");bar.Value=0;percent.Text="";}
+   catch(Exception error){status.Text=error is IOException?L.T(error.Message):L.T("Не удалось завершить операцию. ");bar.Value=0;percent.Text="";}
    finally{busy=false;cancellation.Dispose();cancellation=null;main.Enabled=true;desktop.Enabled=startMenu.Enabled=!done;cancel.Enabled=true;if(closeRequested)Close();}
   }
   static void ScheduleOwnRemoval(Layout value){

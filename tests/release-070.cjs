@@ -1,0 +1,17 @@
+const {app}=require('electron'),fs=require('fs'),path=require('path'),Module=require('module'),assert=require('assert/strict');
+const root=path.resolve(__dirname,'..'),profile=process.env.VEYRA_QA_PROFILE||fs.mkdtempSync(path.join(require('os').tmpdir(),'veyra-070-ui-'));
+fs.writeFileSync(path.join(profile,'profile.json'),JSON.stringify({settings:{autoUpdateFilters:false,eco:false}}));app.setPath('userData',profile);
+const file=path.join(root,'src/main.cjs'),m=new Module(file,module);m.filename=file;m.paths=Module._nodeModulePaths(path.dirname(file));
+m._compile(fs.readFileSync(file,'utf8').replace("win.once('ready-to-show',openWindow);",'').replace("webPreferences:{preload:path.join(__dirname,'preload.cjs')","webPreferences:{offscreen:true,backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs')")+'\nmodule.exports={getWindow:()=>win,getDB:()=>db,getTabs:()=>tabs,shortcuts};',file);
+const delay=ms=>new Promise(r=>setTimeout(r,ms));async function until(fn){for(let i=0;i<600;i++){if(await fn())return;await delay(30)}throw Error('Timed out')};const timer=setTimeout(()=>app.exit(1),45000);
+app.whenReady().then(async()=>{try{
+await until(()=>m.exports.getWindow());await until(()=>m.exports.getWindow());const win=m.exports.getWindow();win.webContents.on('console-message',e=>console.log('UI',e.message));await until(()=>win.webContents.getURL().includes('index.html')&&!win.webContents.isLoading());const ui=s=>win.webContents.executeJavaScript(s,true),cmd=(a,p)=>ui('window.veyra.command('+JSON.stringify(a)+','+JSON.stringify(p)+')');
+await until(()=>ui('!!document.querySelector("#home-query")'));await until(()=>ui("document.activeElement.id==='home-query'"));assert.equal(await ui('document.activeElement.id'),'home-query');assert.equal(await ui('document.querySelectorAll(".home-widget").length'),1);
+await cmd('new');await delay(100);await until(()=>ui("document.activeElement.id==='home-query'"));assert.equal(await ui('document.activeElement.id'),'home-query');
+let prevented=false;m.exports.shortcuts({preventDefault(){prevented=true}},{type:'keyDown',key:'д',code:'KeyL',control:true});assert(prevented);await delay(50);assert.equal(await ui('document.activeElement.id'),'address');
+await cmd('widgets-save',[{id:'calendar',kind:'calendar',style:'glass'},{id:'notes',kind:'notes',style:'plain',note:'private note'}]);await delay(50);assert.equal(await ui('document.querySelectorAll(".home-widget").length'),2);
+await cmd('navigate','veyra://sidebar');await until(()=>ui('!!document.querySelector("#sidebar-form")'));await ui('document.querySelector("[data-rail-row=history]").querySelector("button").click();document.querySelector("#sidebar-form").requestSubmit()');await delay(100);assert.equal((await cmd('state')).settings.sidebarOrder[0],'history');
+await cmd('navigate','veyra://settings');await delay(100);assert.equal(await ui('document.querySelectorAll(".profile-link .card").length'),0);assert.equal(await ui('document.querySelector("[name=networkDownMbps]").value'),'0');
+fs.mkdirSync('outputs',{recursive:true});fs.writeFileSync('outputs/veyra-070-settings.png',(await win.webContents.capturePage()).toPNG());await cmd('home');await delay(100);fs.writeFileSync('outputs/veyra-070-home.png',(await win.webContents.capturePage()).toPNG());
+console.log('PASS new-tab focus, physical keyboard shortcuts, widgets, sidebar reorder, settings structure and network fields');clearTimeout(timer);app.exit(0)
+}catch(e){console.error(e.stack);clearTimeout(timer);app.exit(1)}});
