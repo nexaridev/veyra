@@ -371,6 +371,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'search':{const q=typeof payload==='string'?payload.trim():'';if(!q||q.length>200)break;const dest=address(q);if(active()?.mode!=='temporary'&&dest&&/^(https:\/\/www.google.com\/search\?q=|https:\/\/duckduckgo.com\/\?q=)/.test(dest)){db.recentSearches=[{query:q,time:Date.now()},...(db.recentSearches||[]).filter(x=>x.query!==q)].slice(0,50);save()}void navigate(active(),q);break}
  case 'search-history-clear':db.recentSearches=[];save();emit();break;
  case 'navigate':if(typeof payload==='string'&&payload.length<8192){const q=payload.trim(),dest=address(q);if(q.length<=200&&!/^https?:/i.test(q)&&active()?.mode!=='temporary'&&dest&&/^(https:\/\/www.google.com\/search\?q=|https:\/\/duckduckgo.com\/\?q=)/.test(dest)){db.recentSearches=[{query:q,time:Date.now()},...(db.recentSearches||[]).filter(x=>x.query!==q)].slice(0,50);save()}void navigate(active(),payload)}break;
+ case 'support-server':newTab('https://discord.gg/29m8etyA9R');break;
  case 'new':newTab();break;
  case 'google-mode':newTab('veyra://google');break;
  case 'temporary':newTab('veyra://newtab','temporary');break;

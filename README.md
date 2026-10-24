@@ -7,7 +7,7 @@
 
 A browser for Windows and Android by Nexaridev.
 
-[Website](https://veyra.veyra-nexaridev.workers.dev) · [Downloads](https://github.com/nexaridev/veyra/releases) · [Privacy](PRIVACY-en.md)
+[Website](https://veyra.veyra-nexaridev.workers.dev) · [Downloads](https://github.com/nexaridev/veyra/releases) · [Privacy](PRIVACY-en.md) · [Discord support](https://discord.gg/29m8etyA9R)
 
 ## Current versions
 
