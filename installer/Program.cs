@@ -18,8 +18,8 @@ using Microsoft.Win32;
 [assembly:AssemblyTitle("Veyra Installer")]
 [assembly:AssemblyProduct("Veyra Installer")]
 [assembly:AssemblyCompany("Nexaridev")]
-[assembly:AssemblyVersion("1.3.0.0")]
-[assembly:AssemblyFileVersion("1.3.0.0")]
+[assembly:AssemblyVersion("1.3.1.0")]
+[assembly:AssemblyFileVersion("1.3.1.0")]
 
 namespace Veyra.Setup {
  internal static class Program {
@@ -87,7 +87,7 @@ namespace Veyra.Setup {
    var close=new Button{Text=L.T("Закрыть"),Location=new Point(548,25),Size=new Size(78,30),FlatStyle=FlatStyle.Flat,BackColor=Bg,ForeColor=Muted};close.FlatAppearance.BorderSize=0;close.Click+=delegate{Close();};header.Controls.Add(close);
    title.Text=remove?L.T("Удалить браузер?"):L.T("Установить Veyra");title.Font=new Font("Segoe UI",19,FontStyle.Bold);title.SetBounds(36,126,580,39);Controls.Add(title);
    var path=new Label{Text=remove?L.T("Профиль, закладки и пароли останутся на этом ПК."):L.T("Папка: %LOCALAPPDATA%\\Programs\\Veyra"),ForeColor=Muted};path.SetBounds(38,175,574,40);Controls.Add(path);
-   desktop.Text=L.T("Ярлык на рабочем столе");startMenu.Text=L.T("Ярлык в меню «Пуск»");desktop.Checked=startMenu.Checked=true;if(layout.Owns()){desktop.Checked=File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),"Veyra.lnk"));startMenu.Checked=File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs),"Veyra","Veyra.lnk"));}if(initial!=null){desktop.Checked=initial.Desktop;startMenu.Checked=initial.StartMenu;}desktop.SetBounds(38,221,540,28);startMenu.SetBounds(38,253,540,28);foreach(var box in new[]{desktop,startMenu}){box.FlatStyle=FlatStyle.Flat;box.ForeColor=Fg;box.Visible=!remove;Controls.Add(box);}
+   desktop.Text=L.T("Ярлык на рабочем столе");startMenu.Text=L.T("Ярлык в меню «Пуск»");desktop.Checked=startMenu.Checked=true;if(incremental&&layout.Owns()){desktop.Checked=File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),"Veyra.lnk"));startMenu.Checked=File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs),"Veyra","Veyra.lnk"));}if(initial!=null){desktop.Checked=initial.Desktop;startMenu.Checked=initial.StartMenu;}desktop.SetBounds(38,221,540,28);startMenu.SetBounds(38,253,540,28);foreach(var box in new[]{desktop,startMenu}){box.FlatStyle=FlatStyle.Flat;box.ForeColor=Fg;box.Visible=!remove;Controls.Add(box);}
    status.Text=remove?L.T("Браузер должен быть закрыт."):L.T("Скачаем и проверим актуальную тестовую сборку.");status.ForeColor=Muted;status.SetBounds(38,300,520,48);Controls.Add(status);percent.ForeColor=Muted;percent.TextAlign=ContentAlignment.TopRight;percent.SetBounds(558,300,52,28);Controls.Add(percent);bar.SetBounds(38,356,574,5);bar.Value=0;Controls.Add(bar);
    main.Text=remove?L.T("Удалить"):L.T("Установить");main.SetBounds(366,395,246,42);main.FlatStyle=FlatStyle.Flat;main.FlatAppearance.BorderSize=0;main.BackColor=Accent;main.ForeColor=Bg;main.Font=new Font("Segoe UI",10,FontStyle.Bold);main.Click+=async delegate{if(done){if(!uninstall){Process.Start(new ProcessStartInfo(layout.Exe){WorkingDirectory=layout.App,UseShellExecute=true});}Close();}else await Run();};Controls.Add(main);
    cancel.Text=L.T("Отмена");cancel.SetBounds(38,395,130,42);cancel.FlatStyle=FlatStyle.Flat;cancel.FlatAppearance.BorderColor=Color.FromArgb(63,51,78);cancel.ForeColor=Fg;cancel.Click+=delegate{Close();};Controls.Add(cancel);
