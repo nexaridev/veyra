@@ -15,7 +15,7 @@ async function route(request,env,ctx){
  const path=new URL(request.url).pathname;
  if(path==='/downloads/windows.json')return new Response(request.method==='HEAD'?null:JSON.stringify(windowsManifest),{headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'public, max-age=60','X-Content-Type-Options':'nosniff'}});
  if(path==='/download/windows'||path==='/download/android')return new Response(null,{status:302,headers:{Location:path==='/download/windows'?installerURL:androidURL,'Cache-Control':'no-cache'}});
- if(path==='/health')return new Response(request.method==='HEAD'?null:JSON.stringify({service:'veyra-site',status:'ok',release:'1.0.3',android:'0.6.6'}),{headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
+ if(path==='/health')return new Response(request.method==='HEAD'?null:JSON.stringify({service:'veyra-site',status:'ok',release:'1.0.4',android:'0.6.6'}),{headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'}});
  if(path==='/assets/site.css')return new Response(request.method==='HEAD'?null:stylesheet,{headers:{'Content-Type':'text/css; charset=utf-8','Cache-Control':'public, max-age=300'}});
  if(path!=='/'&&path!=='/privacy')return new Response(request.method==='HEAD'?null:'Not found',{status:404,headers:{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'}});
  const rendered=page(request,path);return new Response(request.method==='HEAD'?null:rendered.html,{headers:{...headers,'Content-Language':rendered.language,Vary:'Accept-Language'}});

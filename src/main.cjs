@@ -316,7 +316,8 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
 
  case 'widget-list':return sync.request('widget-list',{},!!sync.auth);
  case 'widget-get':return sync.request('widget-get',{id:payload?.id},!!sync.auth);
- case 'widget-preview':return widgetRuntime.open(payload,db.settings.language);
+ case 'widget-preview':return widgetRuntime.openPreview(payload,db.settings.language);
+ case 'widget-open':{const widget=(db.settings.homeWidgets||[]).find(w=>w.id===payload);if(!widget||widget.kind!=='custom'||!widget.package)throw Error('Widget is not installed');return widgetRuntime.openInstalled(widget.package,db.settings.language,widget.id)}
  case 'widget-release':return widgetRuntime.release(payload);
  case 'widget-draft-get':return db.widgetDraft||null;
  case 'widget-draft-save':db.widgetDraft=require('./widget-package.js').normalize(payload);save();return true;
@@ -413,7 +414,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'remove-bookmark':db.bookmarks=db.bookmarks.filter(x=>x.id!==payload);save();emit();break;
  case 'panel':if(['privacy','menu','downloads','find','bookmarks','history','passwords','performance','customize','tabs','help','dark','shortcuts','discord','compatibility',null].includes(payload))setPanel(payload);break;
  case 'language':if(!I18n.languages.includes(payload))throw Error('Этот язык не поддерживается.');db.settings.language=payload;save();emit();break;
- case 'widgets-save':{db.settings.homeWidgets=require('./widgets.js').normalize(payload);save();emit();break}
+ case 'widgets-save':{const previous=db.settings.homeWidgets||[],next=require('./widgets.js').normalize(payload),nextById=new Map(next.map(w=>[w.id,w])),packageApi=require('./widget-package.js');for(const w of previous)if(w.kind==='custom'){const updated=nextById.get(w.id);if(!updated)await widgetRuntime.clear(w.id);else{const oldPermissions=packageApi.permissions(w.package?.permissions),newPermissions=packageApi.permissions(updated.package?.permissions);if(JSON.stringify(oldPermissions)!==JSON.stringify(newPermissions))await widgetRuntime.revoke(w.id,oldPermissions.storage&&!newPermissions.storage)}}db.settings.homeWidgets=next;save();emit();break}
  case 'sidebar-save':{const keys=['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'];if(!Array.isArray(payload?.order)||payload.order.length!==keys.length||new Set(payload.order).size!==keys.length||payload.order.some(x=>!keys.includes(x)))throw Error('Invalid sidebar');db.settings.sidebarOrder=payload.order;db.settings.sidebarHidden=Array.isArray(payload.hidden)?payload.hidden.filter(x=>keys.includes(x)):[];db.settings.sidebarWidth=Math.max(48,Math.min(88,Number(payload.width)||56));save();layout();emit();break}
  case 'settings':{
   const accelerationChanged=typeof payload?.hardwareAcceleration==='boolean'&&payload.hardwareAcceleration!==db.settings.hardwareAcceleration;

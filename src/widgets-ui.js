@@ -1,5 +1,5 @@
 let widgetDisposers=[];
-function releaseWidgetFrames(root){for(const frame of root.querySelectorAll('webview')){const url=frame.getAttribute('src');frame.remove();if(url?.startsWith('veyra-widget:'))void command('widget-release',url)}}
+function releaseWidgetFrames(root){for(const frame of root.querySelectorAll('webview')){const url=frame.getAttribute('src');frame.remove();if(url?.startsWith('veyra-widget-host:'))void command('widget-release',url)}}
 function disposeWidgets(root){clearInterval(widgetTimer);widgetTimer=null;for(const dispose of widgetDisposers.splice(0))dispose();releaseWidgetFrames(root)}
 const widgetNames={clock:'Часы',calendar:'Календарь',notes:'Заметки',focus:'Таймер',recent:'Недавние запросы',custom:'Свой виджет'};
 const railNames={bookmarks:'Закладки',history:'История',passwords:'Пароли',privacy:'Приватность',performance:'Производительность','keep-awake':'Не усыплять эту вкладку','fake-presence':'Подмена фокуса и fullscreen'};

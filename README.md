@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 1.0.2 adds permission based application links and Copy clean link. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.6. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.4 adds consent based permissions for isolated community widgets. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.6. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
@@ -23,7 +23,7 @@ On Android, install the APK from the releases page. Updates retain the existing 
 
 ## Features
 
-Home widgets include a clock, calendar, notes, focus timer and recent searches. Move and resize them directly on the home page. On Windows, Veyra Studio provides a visual canvas with text, shapes, images, clocks, buttons, layers and undo. Import or export `.veyrawidget` packages and publish them with a preview and explicit confirmation. Custom HTML, CSS and JavaScript run in a sandbox without network or browser data access. Builtin notes remain local; all content inside a published custom package becomes public.
+Home widgets include a clock, calendar, notes, focus timer and recent searches. Move and resize them directly on the home page. On Windows, Veyra Studio provides a visual canvas with text, shapes, images, clocks, buttons, layers and undo. Import or export `.veyrawidget` packages and publish them with a preview and explicit confirmation. Custom HTML, CSS and JavaScript run in a sandbox. A widget can request fetch/XHR access to up to eight exact HTTPS origins and its own local storage; each request is shown before install. Cookies, browser profile data, files, account and clipboard stay unavailable. Builtin notes remain local; all content inside a published custom package becomes public.
 
 The profile screen supports a custom avatar, authenticator based two factor authentication, one time recovery codes, active sessions and encrypted bookmark copies. You can name devices, revoke individual sessions and remove cloud copies. Sidebar order, visibility and width are customizable on Windows.
 

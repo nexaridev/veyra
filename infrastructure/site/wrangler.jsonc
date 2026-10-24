@@ -1,6 +1,7 @@
 {
   "name": "veyra",
   "main": "worker.mjs",
+  "keep_vars": true,
   "compatibility_date": "2026-10-22",
   "workers_dev": true,
   "triggers": { "crons": ["* * * * *"] },
