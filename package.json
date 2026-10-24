@@ -9,7 +9,7 @@
     "start": "electron .",
     "build:win": "node scripts/package.cjs",
     "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/BUILD-INSTALLER.ps1",
-    "test": "node tests/widget-package.cjs && node tests/account-gateway-v4.mjs"
+    "test": "node tests/widget-package.cjs && node tests/account-gateway-v4.mjs && node tests/site-headers.mjs"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",
