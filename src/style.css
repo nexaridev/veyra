@@ -210,4 +210,18 @@ select,textarea{font:inherit;color:var(--text);background:var(--surface2);border
 
 #external-app-dialog{width:min(470px,calc(100vw - 40px));max-height:calc(100vh - 60px);overflow:auto;padding:28px;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--text);box-shadow:0 24px 90px #0009}#external-app-dialog::backdrop{background:#0008;backdrop-filter:blur(5px)}#external-app-dialog .actions{justify-content:flex-end}#external-app-origin,.external-app-rule strong{overflow-wrap:anywhere}.external-app-card{display:flex;align-items:center;gap:16px;padding:18px;margin:18px 0;border:1px solid var(--border);border-radius:12px;background:var(--bg)}.external-app-card svg{width:30px;height:30px;fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.external-app-card small,.external-app-rule small{display:block;color:var(--muted);margin-top:5px}.external-app-rule{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:14px 0}.external-app-rule>div{min-width:0}.external-app-settings summary{cursor:pointer}.permission-remember[hidden]{display:none}
 
+/* Keep the external application permissions section aligned with the rest of Settings. */
+.external-app-settings>summary{display:flex;align-items:center;gap:9px;min-height:46px;padding:12px 18px;list-style:none;font-size:13px;font-weight:550;color:var(--text)}
+.external-app-settings>summary::-webkit-details-marker{display:none}
+.external-app-settings>summary::before{content:'›';display:inline-grid;place-items:center;width:14px;height:14px;color:var(--muted);font-size:18px;line-height:1;transform:rotate(0);transition:transform .16s}
+.external-app-settings[open]>summary{border-bottom:1px solid var(--border)}
+.external-app-settings[open]>summary::before{transform:rotate(90deg)}
+.external-app-content{padding:12px 18px 18px}
+.external-app-content>.note{margin:0 0 14px}
+.external-app-rule{min-height:54px;margin:0;padding:12px 0;border-top:1px solid var(--border)}
+.external-app-rule strong{display:block;font-size:13px;font-weight:550;color:var(--text)}
+.external-app-rule small{font-size:12px;line-height:1.5}
+.external-app-rule .secondary,.external-app-content>[data-action="external-apps-reset"]{flex-shrink:0;min-height:36px;padding:8px 12px}
+.external-app-content>[data-action="external-apps-reset"]{margin-top:12px}
+
 .version-line{display:flex;align-items:center;gap:12px}.support-server{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:6px;color:var(--muted);border-radius:9px;flex-shrink:0}.support-server:hover,.support-server:focus-visible{color:var(--accent);background:var(--bg)}.support-server .svg-icon{width:20px;height:20px}.menu-brand .support-server{margin-left:auto}
