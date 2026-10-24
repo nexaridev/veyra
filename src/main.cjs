@@ -129,13 +129,17 @@ function scheduleEmit(){if(!emitTimer)emitTimer=setTimeout(()=>{emitTimer=null;e
 function applyWebRTC(wc){if(typeof wc.setWebRTCIPHandlingPolicy==='function')wc.setWebRTCIPHandlingPolicy(db.settings.webrtc?'disable_non_proxied_udp':'default')}
 function attachPage(wc,mode,tab=null){
  contexts.set(wc.id,{wc,mode,tab});applyWebRTC(wc);tab?.view?.setBackgroundColor('#121418');wc.on('did-start-navigation',(_,url,inPlace,main)=>{if(main&&!inPlace&&web(url))void applyDark(wc,url)});
- wc.on('destroyed',()=>contexts.delete(wc.id));
- const guard=(e,url)=>{if(!web(url)){e.preventDefault();toast('Поддерживаются HTTP и HTTPS ссылки.');return}if(tab&&tab.mode!=='temporary'&&googleHost(url)!==(tab.mode==='google')){e.preventDefault();void navigate(tab,url,tab.pendingNavigation?'replace':'push')}};
+ wc.on('destroyed',()=>{contexts.delete(wc.id);if(tab&&tabs.includes(tab)&&tab.view?.webContents===wc){win.contentView.removeChildView(tab.view);tab.view=null;tab.dirty=false;void closeTab(tab.id)}});
+ const guard=(e,url)=>{if(!web(url)){e.preventDefault();toast('Поддерживаются HTTP и HTTPS ссылки.');return}if(tab&&!tab.openerTabId&&tab.mode!=='temporary'&&googleHost(url)!==(tab.mode==='google')){e.preventDefault();void navigate(tab,url,tab.pendingNavigation?'replace':'push')}};
  wc.on('will-navigate',guard);wc.on('will-redirect',guard);
  wc.setWindowOpenHandler(({url})=>{
-  if(popups.size>=8){toast('Достигнут предел открытых дополнительных окон.');return {action:'deny'}}
+  if(popups.size+tabs.filter(t=>t.openerTabId).length>=8){toast('Достигнут предел открытых дополнительных окон.');return {action:'deny'}}
   if(!web(url)&&url!=='about:blank')return {action:'deny'};
-  if(!db.settings.popupWindows){if(web(url))setImmediate(()=>{if(!closing&&win&&!win.isDestroyed())newTab(url,mode)});else toast('Для этого окна включи отдельные окна сайтов в настройках.');return {action:'deny'}}
+  if(!db.settings.popupWindows)return {action:'allow',overrideBrowserWindowOptions:{webPreferences:{disableDialogs:true,session:wc.session,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}},createWindow:options=>{
+   const openerId=tab?.id||selected,t=newTab('veyra://newtab',mode);t.openerTabId=openerId;t.url=url;t.loading=true;makeView(t,options);
+   if(!options.webContents)void t.view.webContents.loadURL(url);
+   layout();emit();return t.view.webContents;
+  }};
   return {action:'allow',overrideBrowserWindowOptions:{width:1000,height:760,parent:win,autoHideMenuBar:true,backgroundColor:'#141419',webPreferences:{disableDialogs:true,session:wc.session,preload:mode==='google'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}}};
  });
  wc.on('did-create-window',child=>{
@@ -145,6 +149,7 @@ function attachPage(wc,mode,tab=null){
   child.on('closed',()=>popups.delete(child));
  });
  if(tab){
+  wc.on('close',()=>{if(tab.openerTabId&&tabs.includes(tab)){tab.dirty=false;void closeTab(tab.id)}});
   wc.on('before-input-event',shortcuts);
   wc.on('did-start-loading',()=>{tab.loading=true;tab.error=null;emit()});
   wc.on('did-stop-loading',()=>{tab.loading=false;emit()});
@@ -174,14 +179,14 @@ function attachPage(wc,mode,tab=null){
  });
 }
 function makeView(t,options={}){
- t.view=new WebContentsView({webPreferences:{...options.webPreferences,disableDialogs:true,session:sessionFor(t.mode),preload:t.mode==='google'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:!t.keepAwake}});
+ t.view=new WebContentsView({...(options.webContents?{webContents:options.webContents}:{}),webPreferences:{...options.webPreferences,disableDialogs:true,session:sessionFor(t.mode),preload:t.mode==='google'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:!t.keepAwake}});
  win.contentView.addChildView(t.view);attachPage(t.view.webContents,t.mode,t);ublock?.addTab(t.view.webContents,win);t.view.webContents.setZoomLevel(t.zoomLevel||0);t.view.webContents.setAudioMuted(!!t.muted);t.sleeping=false;layout();
 }
 function removeView(t){const v=t.view;t.view=null;if(v&&!v.webContents.isDestroyed()){win.contentView.removeChildView(v);v.webContents.close()}}
 async function navigate(t,input,historyMode='push'){
  if(!t)return;const url=address(input);if(!url){toast('Этот адрес не поддерживается.');return}
  recordNavigation(t,url,historyMode);t.pendingNavigation=true;
- if(web(url)&&t.mode!=='temporary'){const mode=googleHost(url)?'google':'private';if(mode!==t.mode){removeView(t);t.mode=mode}}
+ if(web(url)&&!t.openerTabId&&t.mode!=='temporary'){const mode=googleHost(url)?'google':'private';if(mode!==t.mode){removeView(t);t.mode=mode}}
  const generation=++t.generation;t.reader=null;t.googleBlocked=false;if(web(url)&&new URL(url).hostname!=='accounts.google.com')t.serviceURL=url;t.url=url;t.error=null;t.loading=false;t.lastActive=Date.now();panel=null;
  if(url.startsWith('veyra:')){t.favicon='';t.iconRequest=(t.iconRequest||0)+1;t.pendingNavigation=false;removeView(t);t.sleeping=false;t.title=({'veyra://widget-studio':'Конструктор виджетов','veyra://widgets':'Виджеты','veyra://sidebar':'Боковая панель','veyra://offline':'Veyra Pulse','veyra://sync':'Синхронизация','veyra://themes':'Темы и обои','veyra://shortcuts':'Ярлыки главной','veyra://compatibility':'Список совместимости','veyra://discord':'Discord Rich Presence','veyra://dark':'Auto Dark Mode','veyra://downloads':'Загрузки','veyra://performance':'Производительность','veyra://privacy':'Приватность','veyra://newtab':'Новая вкладка','veyra://history':'История','veyra://bookmarks':'Закладки','veyra://settings':'Настройки','veyra://passwords':'Пароли','veyra://diagnostics':'Диагностика','veyra://google':'Google'})[url];layout();emit();return}
  t.title=new URL(url).hostname;t.loading=true;emit();
@@ -195,9 +200,9 @@ function newTab(url='veyra://newtab',mode='private'){
  if(active())active().lastActive=Date.now();tabs.push(t);selected=t.id;void navigate(t,url);layout();emit();return t;
 }
 function choose(id){appDialog?.finish(null);clipboardPrompt?.finish(false);const t=tabs.find(t=>t.id===id);if(!t)return;if(active())active().lastActive=Date.now();selected=id;t.lastActive=Date.now();if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents)}
-async function closeTab(id){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs[Math.min(i,tabs.length-1)].id);layout();save();emit()}
+async function closeTab(id){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs.find(x=>x.id===t.openerTabId)?.id||tabs[Math.min(i,tabs.length-1)].id);layout();save();emit()}
 function sleepTab(t,manual=false){
- if(!t||t.keepAwake||t.id===selected||!t.view||!web(t.url)||t.pinned||t.dirty||t.loading||t.view.webContents.isCurrentlyAudible()||downloads.some(d=>d.status==='progress'&&d.mode===t.mode))return false;
+ if(!t||t.openerTabId||t.keepAwake||t.id===selected||!t.view||!web(t.url)||t.pinned||t.dirty||t.loading||t.view.webContents.isCurrentlyAudible()||downloads.some(d=>d.status==='progress'&&d.mode===t.mode))return false;
  removeView(t);t.sleeping=true;t.loading=false;emit();return true;
 }
 function recordNavigation(t,url,mode='push'){
