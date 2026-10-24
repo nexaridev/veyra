@@ -1,7 +1,8 @@
 const {ipcRenderer} = require('electron');
+const nativeCompatibility=ipcRenderer.sendSync('veyra:native-compat');
 // A site gets device labels only after the user grants native media access.
 // The initial stream stays private to this wrapper until device selection ends.
-if(process.isMainFrame){
+if(process.isMainFrame&&!nativeCompatibility){
  const {contextBridge}=require('electron');
  contextBridge.exposeInMainWorld('__veyraMediaPicker',Object.freeze({choose:payload=>ipcRenderer.invoke('veyra:media-pick',payload)}));
  contextBridge.executeInMainWorld({func:()=>{
@@ -20,7 +21,7 @@ if(process.isMainFrame){
   };
  }});
 }
-if(!ipcRenderer.sendSync('veyra:native-compat')){
+if(!nativeCompatibility){
 // Isolated handlers; clipboard bridge exposes text-only writes, never reads.
 if(process.isMainFrame){
   let lastOffer=0,dirty=false;

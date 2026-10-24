@@ -2,7 +2,7 @@
 const {app}=require('electron'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),Module=require('node:module');
 app.commandLine.appendSwitch('use-fake-device-for-media-stream');
 const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'veyra-media-'));
-app.setPath('userData',profile);fs.writeFileSync(path.join(profile,'profile.json'),JSON.stringify({settings:{trackers:false,autoUpdateFilters:false,eco:false,language:'en'}}));
+process.env.VEYRA_QA_PROFILE=profile;app.setPath('userData',profile);fs.writeFileSync(path.join(profile,'profile.json'),JSON.stringify({settings:{trackers:false,autoUpdateFilters:false,eco:false,language:'en'}}));
 const file=path.join(root,'src/main.cjs'),m=new Module(file,module);m.filename=file;m.paths=Module._nodeModulePaths(path.dirname(file));
 m._compile(fs.readFileSync(file,'utf8').replace("win.once('ready-to-show',openWindow);",'').replace("webPreferences:{backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs')","webPreferences:{offscreen:true,backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs')")+'\nmodule.exports={getWindow:()=>win,getTabs:()=>tabs,sessionFor};',file);
 const delay=ms=>new Promise(r=>setTimeout(r,ms));async function until(f){for(let i=0;i<800;i++){if(await f())return;await delay(25)}throw Error('Timed out')}
@@ -11,7 +11,7 @@ app.whenReady().then(async()=>{try{
  await until(()=>m.exports.getWindow());const win=m.exports.getWindow();win.webContents.on('console-message',e=>console.log('UI',e.message));await until(()=>!win.webContents.isLoading());
  const ui=s=>win.webContents.executeJavaScript(s,true),cmd=(a,p)=>ui('window.veyra.command('+JSON.stringify(a)+','+JSON.stringify(p)+')');
  m.exports.sessionFor('private').protocol.handle('https',()=>new Response('<!doctype html><title>Media fixture</title><body>Local permission fixture</body>',{headers:{'Content-Type':'text/html'}}));
- await cmd('navigate','https://media.veyra.test/');await until(()=>m.exports.getTabs().some(t=>t.view&&!t.loading));const tab=m.exports.getTabs().find(t=>t.view),wc=tab.view.webContents;
+ await cmd('navigate','https://media.veyra.test/');await until(()=>m.exports.getTabs().some(t=>t.view&&t.view.webContents.getURL()==='https://media.veyra.test/'&&!t.view.webContents.isLoading()&&!t.loading));const tab=m.exports.getTabs().find(t=>t.view),wc=tab.view.webContents;
  await wc.executeJavaScript("window.mediaState='waiting';navigator.mediaDevices.getUserMedia({audio:true,video:true}).then(s=>{window.testStream=s;window.mediaState='ok'},e=>{window.mediaState=e.name});true",true);
  await until(async()=> (await cmd('state')).permission?.stage==='permission');let request=(await cmd('state')).permission;
  assert(request.mediaTypes.includes('audio')&&request.mediaTypes.includes('video'));await until(()=>ui('document.querySelector("#site-permission").open'));
