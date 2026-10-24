@@ -1,7 +1,7 @@
 {
   "name": "veyra",
   "productName": "Veyra",
-  "version": "0.9.2",
+  "version": "1.0.0",
   "private": true,
   "description": "Private desktop browser with encrypted vault and resource controls",
   "main": "src/main.cjs",
@@ -9,7 +9,7 @@
     "start": "electron .",
     "build:win": "node scripts/package.cjs",
     "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/BUILD-INSTALLER.ps1",
-    "test": "node tests/widget-package.cjs && node tests/account-gateway-v4.mjs && node tests/site-headers.mjs && node tests/site-permissions.cjs && node tests/popup-policy.cjs"
+    "test": "node tests/widget-package.cjs && node tests/account-gateway-v4.mjs && node tests/site-headers.mjs && node tests/site-permissions.cjs && node tests/popup-policy.cjs && node tests/external-apps.cjs && node tests/clean-link.cjs"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",
@@ -22,6 +22,6 @@
   "engines": {
     "node": ">=24"
   },
-  "displayVersion": "0.9.2",
+  "displayVersion": "1.0.0",
   "license": "GPL-3.0-only"
 }

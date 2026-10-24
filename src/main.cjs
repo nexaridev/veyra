@@ -9,6 +9,7 @@ const {SyncClient,unseal}=require('./sync.cjs');const sync=new SyncClient();let 
 const {PrivacyEngine}=require('./privacy.cjs');
 const I18n=require('./locales.js');
 const external=require('./external-browser.cjs');
+const {ExternalApplications,externalURL}=require('./external-apps.cjs');
 const appearance=require('./appearance.cjs');
 const {DiscordPresence}=require('./discord.cjs');let discord;
 const googleHost=url=>{try{const host=new URL(url).hostname;return db.settings.compatibilityDomains.some(d=>host===d||host.endsWith('.'+d))}catch{return false}};
@@ -32,8 +33,8 @@ const pendingExternalURLs=[];
 app.on('second-instance',(_,argv)=>{const url=argv.find(value=>/^https?:\/\//i.test(value));if(url){if(win)newTab(url);else pendingExternalURLs.push(url);}if(win&&!win.isDestroyed()){if(win.isMinimized())win.restore();win.show();win.focus()}});
 let storageFlushRunning=false,storageFlushReady=false,exitConfirmed=false,appDialog=null;
 const UI=pathToFileURL(path.join(__dirname,'index.html')).href;
-const defaults={homeWidgets:[{id:'clock',kind:'clock',style:'plain'}],sidebarWidth:56,sidebarOrder:['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'],sidebarHidden:[],networkDownMbps:0,networkUpMbps:0,popupWindows:false,discordShowDomain:false,discordShowTime:true,discordInterval:60,compatibilityDomains:['google.com','youtube.com'],autoDark:false,darkSites:{},shortcuts:[],discordEnabled:false,discordAppId:'1562807114227777606',clipboardMode:'auto',colorTheme:'violet',customAccent:'#bc9ffa',wallpaper:'aurora',wallpaperDim:45,bookmarksBar:false,restoreSession:false,externalBrowser:'auto',language:'ru',theme:'dark',search:'duckduckgo',trackers:true,dnt:true,thirdPartyCookies:true,httpsFirst:true,webrtc:true,autoUpdateFilters:true,siteExceptions:[],httpExceptions:[],permissions:{},ramTargetMB:2048,maxBackgroundTabs:6,sleepMinutes:15,eco:true,hardwareAcceleration:true};
-let ublock;let win,profile,privacy,vault,selected,panel=null,seq=0,blocked=0,closing=false,pendingCredential=null,sitePermissions;
+const defaults={homeWidgets:[{id:'clock',kind:'clock',style:'plain'}],sidebarWidth:56,sidebarOrder:['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'],sidebarHidden:[],networkDownMbps:0,networkUpMbps:0,externalAppPermissions:{},popupWindows:false,discordShowDomain:false,discordShowTime:true,discordInterval:60,compatibilityDomains:['google.com','youtube.com'],autoDark:false,darkSites:{},shortcuts:[],discordEnabled:false,discordAppId:'1562807114227777606',clipboardMode:'auto',colorTheme:'violet',customAccent:'#bc9ffa',wallpaper:'aurora',wallpaperDim:45,bookmarksBar:false,restoreSession:false,externalBrowser:'auto',language:'ru',theme:'dark',search:'duckduckgo',trackers:true,dnt:true,thirdPartyCookies:true,httpsFirst:true,webrtc:true,autoUpdateFilters:true,siteExceptions:[],httpExceptions:[],permissions:{},ramTargetMB:2048,maxBackgroundTabs:6,sleepMinutes:15,eco:true,hardwareAcceleration:true};
+let ublock;let win,profile,privacy,vault,selected,panel=null,seq=0,blocked=0,closing=false,pendingCredential=null,sitePermissions,externalApps;
 let db={schema:2,settings:{...defaults},bookmarks:[],history:[]};
 const directDownloads=new Map();const recentlyClosed=[];let wallpaperData='',wallpaperVersion=0;
 const tabs=[],downloads=[],sessions=new Map(),contexts=new Map(),popups=new Set();
@@ -66,7 +67,7 @@ function snapshot(){return {
  gameBest:active()?.mode==='temporary'?0:(db.gameBest||0),sync:sync.status(),discordStatus:discord?.status,closedTabs:recentlyClosed.length,wallpaperVersion,browsers:external.installedBrowsers().map(({id,name,chromium})=>({id,name,chromium})),fullscreen:!!win?.isFullScreen(),settings:db.settings,bookmarks:db.bookmarks,history:db.history.slice(0,500),recentSearches:active()?.mode==='temporary'?[]:(db.recentSearches||[]),
  downloads:downloads.map(({id,name,status,received,total,limitMbps,mode})=>({id,name,status,received,total,limitMbps,mode})),
  vault:vault?.status(),pendingCredential:pendingCredential?{origin:pendingCredential.origin,username:pendingCredential.username}:null,
- appDialog:appDialog?appDialog.public:null,clipboardPrompt:clipboardPrompt?{id:clipboardPrompt.id,origin:clipboardPrompt.origin,preview:clipboardPrompt.preview,length:clipboardPrompt.length}:null,permission:sitePermissions?.snapshot()||null,
+ appDialog:appDialog?appDialog.public:null,clipboardPrompt:clipboardPrompt?{id:clipboardPrompt.id,origin:clipboardPrompt.origin,preview:clipboardPrompt.preview,length:clipboardPrompt.length}:null,permission:sitePermissions?.snapshot()||null,externalAppRequest:externalApps?.snapshot()||null,
  filters:privacy?.status(),performance:performanceState,runtimeAcceleration,version:require('../package.json').displayVersion||app.getVersion()
 }}
 function emit(){discord?.protectContext();if(win&&!win.isDestroyed()&&!closing)win.webContents.send('veyra:state',snapshot())}
@@ -74,13 +75,14 @@ function layout(){
  if(!win||win.isDestroyed())return;const [w,h]=win.getContentSize(),top=win.isFullScreen()?0:94+(db.settings.bookmarksBar?32:0)+(defaultPromptVisible?44:0),left=win.isFullScreen()?0:db.settings.sidebarWidth;
  const side=panel?Math.min(380,Math.floor(w*.47)):0;
  for(const t of tabs)if(t.view&&!t.view.webContents.isDestroyed()){
-  t.view.setVisible(t.id===selected&&(web(t.url)||t.url==='about:blank')&&!t.error&&!t.googleBlocked&&!t.reader&&!clipboardPrompt&&!appDialog&&!sitePermissions?.pending);
+  t.view.setVisible(t.id===selected&&(web(t.url)||t.url==='about:blank')&&!t.error&&!t.googleBlocked&&!t.reader&&!clipboardPrompt&&!appDialog&&!sitePermissions?.pending&&!externalApps?.pending);
   t.view.setBounds({x:left,y:top,width:Math.max(100,w-left-side),height:Math.max(100,h-top)});
  }
 }
 function setPanel(value){panel=panel===value?null:value;layout();emit();win?.webContents.focus()}
 function permitted(wc,url,p,details){if(p==='clipboard-sanitized-write')return secure(url)&&db.settings.clipboardMode==='auto';return p==='fullscreen'||sitePermissions.check(wc,p,url,details)}
 function askPermission(wc,p,callback,details){
+ if(externalApps?.pending)return callback(false);
  if(p==='clipboard-sanitized-write')return callback(!!wc&&secure(wc.getURL())&&db.settings.clipboardMode==='auto');
  if(p==='fullscreen')return callback(true);
  return sitePermissions.request(wc,p,callback,details);
@@ -130,13 +132,19 @@ let emitTimer;
 function scheduleEmit(){if(!emitTimer)emitTimer=setTimeout(()=>{emitTimer=null;emit()},150)}
 function applyWebRTC(wc){if(typeof wc.setWebRTCIPHandlingPolicy==='function')wc.setWebRTCIPHandlingPolicy(db.settings.webrtc?'disable_non_proxied_udp':'default')}
 function attachPage(wc,mode,tab=null,initialURL=''){
- const attachedView=tab?.view;sitePermissions.bind(wc);
+ const attachedView=tab?.view;sitePermissions.bind(wc);externalApps.bind(wc);
  contexts.set(wc.id,{wc,mode,tab});applySitePolicy(wc,initialURL||tab?.url||wc.getURL());applyWebRTC(wc);tab?.view?.setBackgroundColor('#121418');wc.on('did-start-navigation',(_,url,inPlace,main)=>{if(main&&!inPlace&&web(url)){applySitePolicy(wc,url);void applyDark(wc,url)}});
  wc.on('destroyed',()=>{contexts.delete(wc.id);if(tab&&tabs.includes(tab)&&tab.view===attachedView){if(win&&!win.isDestroyed())win.contentView.removeChildView(attachedView);tab.view=null;tab.dirty=false;if(!closing)void closeTab(tab.id)}});
- const guard=(e,url)=>{if(web(url))applySitePolicy(wc,url);if(!web(url)){e.preventDefault();toast('Поддерживаются HTTP и HTTPS ссылки.');return}if(tab&&!tab.openerTabId&&tab.mode!=='temporary'&&googleHost(url)!==(tab.mode==='google')){e.preventDefault();void navigate(tab,url,tab.pendingNavigation?'replace':'push')}};
+ const guard=(e,url)=>{if(externalURL(url)){e.preventDefault();void externalApps.request(wc,url,wc.getURL());return;}if(web(url))applySitePolicy(wc,url);if(!web(url)){e.preventDefault();toast('Поддерживаются HTTP и HTTPS ссылки.');return}if(tab&&!tab.openerTabId&&tab.mode!=='temporary'&&googleHost(url)!==(tab.mode==='google')){e.preventDefault();void navigate(tab,url,tab.pendingNavigation?'replace':'push')}};
+ wc.on('will-frame-navigate',event=>{
+  if(web(event.url)||/^(about|data|blob|javascript|chrome-extension):/i.test(event.url))return;event.preventDefault();if(!externalURL(event.url))return;
+  let frame=event.initiator||event.frame,source='';for(let depth=0;frame&&depth<16;depth++,frame=frame.parent){if(web(frame.url)){source=frame.url;break;}if(!['about:blank','about:srcdoc',''].includes(frame.url))break;}
+  if(!source&&event.isMainFrame!==false)source=wc.getURL();if(source)void externalApps.request(wc,event.url,source);
+ });
  wc.on('will-navigate',guard);wc.on('will-redirect',guard);
  wc.setWindowOpenHandler(details=>{
   const {url}=details;
+  if(externalURL(url)){void externalApps.request(wc,url,details.referrer?.url||wc.getURL());return {action:'deny'};}
   if(popups.size+tabs.filter(t=>t.openerTabId).length>=8){toast('Достигнут предел открытых дополнительных окон.');return {action:'deny'}}
   if(!web(url)&&url!=='about:blank')return {action:'deny'};
   if(!require('./popup-policy.cjs').separateWindow(details,db.settings.popupWindows))return {action:'allow',overrideBrowserWindowOptions:{webPreferences:{disableDialogs:true,session:wc.session,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}},createWindow:options=>{
@@ -178,7 +186,7 @@ function attachPage(wc,mode,tab=null,initialURL=''){
  }
  wc.on('context-menu',(_,p)=>{
   const {buildPageMenu}=require('./context-menu.cjs');
-  const items=buildPageMenu(wc,p,{open:url=>newTab(url,mode),back:()=>tab?back():wc.navigationHistory.goBack(),forward:()=>tab?forward():wc.navigationHistory.goForward(),copyText:text=>clipboard.writeText(text),download:url=>{directDownloads.set(wc.id,{url,time:Date.now()});wc.downloadURL(url)},translate:tr});
+  const items=buildPageMenu(wc,p,{open:url=>newTab(url,mode),back:()=>tab?back():wc.navigationHistory.goBack(),forward:()=>tab?forward():wc.navigationHistory.goForward(),copyText:text=>clipboard.writeText(text),openExternal:url=>{void externalApps.request(wc,url,p.frameURL||wc.getURL())},download:url=>{directDownloads.set(wc.id,{url,time:Date.now()});wc.downloadURL(url)},translate:tr});
   const extensionItems=ublock?.menu(wc,p)||[];if(extensionItems.length)items.push({type:'separator'},...extensionItems);Menu.buildFromTemplate(items).popup({window:BrowserWindow.fromWebContents(wc)||win});
  });
 }
@@ -198,12 +206,12 @@ async function navigate(t,input,historyMode='push'){
  catch(error){if(tabs.includes(t)&&t.generation===generation){t.loading=false;t.error=error.message;layout();emit()}}
 }
 function newTab(url='veyra://newtab',mode='private'){
- appDialog?.finish(null);clipboardPrompt?.finish(false);
+ externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);
  if(!['private','google','temporary'].includes(mode))mode='private';
  const t={id:++seq,mode,url:'veyra://newtab',title:tr('Новая вкладка'),loading:false,error:null,generation:0,lastActive:Date.now(),sleeping:false,dirty:false,pinned:false,keepAwake:false,fakePresence:true,blocked:0,googleBlocked:false,reader:null,zoomLevel:0,muted:false,audible:false,navEntries:[],navIndex:-1,pendingNavigation:false,traversing:false};
  if(active())active().lastActive=Date.now();tabs.push(t);selected=t.id;void navigate(t,url);layout();emit();return t;
 }
-function choose(id){appDialog?.finish(null);clipboardPrompt?.finish(false);const t=tabs.find(t=>t.id===id);if(!t)return;if(active())active().lastActive=Date.now();selected=id;t.lastActive=Date.now();if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents)}
+function choose(id){externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);const t=tabs.find(t=>t.id===id);if(!t)return;if(active())active().lastActive=Date.now();selected=id;t.lastActive=Date.now();if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents)}
 async function closeTab(id){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs.find(x=>x.id===t.openerTabId)?.id||tabs[Math.min(i,tabs.length-1)].id);layout();save();emit()}
 function sleepTab(t,manual=false){
  if(!t||t.openerTabId||t.keepAwake||t.id===selected||!t.view||!web(t.url)||t.pinned||t.dirty||t.loading||t.view.webContents.isCurrentlyAudible()||downloads.some(d=>d.status==='progress'&&d.mode===t.mode))return false;
@@ -263,7 +271,7 @@ ipcMain.on('veyra:password-candidate',(e,payload)=>{
  pendingCredential={origin:origin(e.senderFrame.url),username:payload.username,password:payload.password,created:Date.now()};panel='passwords';layout();emit();
 });
 function requestAppDialog(value,wc=null){return new Promise(resolve=>{
- if(appDialog||clipboardPrompt)return resolve(null);const id=crypto.randomUUID();let timer;
+ if(appDialog||clipboardPrompt||externalApps?.pending)return resolve(null);const id=crypto.randomUUID();let timer;
  const cancel=()=>finish(null);const finish=result=>{if(appDialog?.public.id!==id)return;clearTimeout(timer);if(wc){wc.removeListener('did-start-navigation',cancel);wc.removeListener('destroyed',cancel)}appDialog=null;layout();emit();resolve(result)};
  appDialog={public:{id,...value},finish};if(wc){wc.once('did-start-navigation',cancel);wc.once('destroyed',cancel)}timer=setTimeout(cancel,60000);layout();emit();win?.webContents.focus();
 })}
@@ -278,7 +286,7 @@ ipcMain.on('veyra:native-compat',e=>{const ctx=contexts.get(e.sender.id),url=e.s
 ipcMain.on('veyra:presence-config',e=>{const ctx=contexts.get(e.sender.id),url=e.senderFrame?.url||e.sender.getURL();let auth=false;try{auth=new URL(url).hostname==='accounts.google.com'}catch{}e.returnValue=ctx?.tab?.fakePresence===true&&!auth&&!googleHost(ctx.policyURL||url)});
 ipcMain.on('veyra:dark-config',e=>{e.returnValue={...(contexts.has(e.sender.id)?darkConfig(contexts.get(e.sender.id)?.policyURL||e.senderFrame?.url||e.sender.getURL()):{enabled:false}),clipboardMode:db.settings.clipboardMode}});
 let clipboardBusy=false,clipboardPrompt=null;
-function requestClipboard(wc,text,url){return new Promise(resolve=>{const id=crypto.randomUUID();const cancel=()=>finish(false);let timer;const finish=allow=>{if(clipboardPrompt?.id!==id)return;clearTimeout(timer);wc.removeListener('did-start-navigation',cancel);wc.removeListener('destroyed',cancel);clipboardPrompt=null;layout();emit();resolve(!!allow);if(!wc.isDestroyed())wc.focus()};clipboardPrompt={id,origin:origin(url),preview:text.slice(0,12000),length:text.length,finish};wc.once('did-start-navigation',cancel);wc.once('destroyed',cancel);timer=setTimeout(cancel,45000);layout();emit();win.webContents.focus()})}
+function requestClipboard(wc,text,url){if(externalApps?.pending)return Promise.resolve(false);return new Promise(resolve=>{const id=crypto.randomUUID();const cancel=()=>finish(false);let timer;const finish=allow=>{if(clipboardPrompt?.id!==id)return;clearTimeout(timer);wc.removeListener('did-start-navigation',cancel);wc.removeListener('destroyed',cancel);clipboardPrompt=null;layout();emit();resolve(!!allow);if(!wc.isDestroyed())wc.focus()};clipboardPrompt={id,origin:origin(url),preview:text.slice(0,12000),length:text.length,finish};wc.once('did-start-navigation',cancel);wc.once('destroyed',cancel);timer=setTimeout(cancel,45000);layout();emit();win.webContents.focus()})}
 
 ipcMain.handle('veyra:clipboard-write',async(e,text)=>{const wc=e.sender,frame=e.senderFrame,url=frame?.url;if(!contexts.has(wc.id)||(contexts.get(wc.id).tab&&contexts.get(wc.id).tab.id!==selected)||frame!==wc.mainFrame||!secure(url)||origin(url)!==origin(wc.getURL())||typeof text!=='string'||text.length>1000000||clipboardBusy)throw Error('Clipboard write unavailable');const initial=url;clipboardBusy=true;try{if(db.settings.clipboardMode==='ask'){if(!await requestClipboard(wc,text,url))throw Error('Clipboard write declined')}if(wc.isDestroyed()||frame.url!==initial)throw Error('Page changed');clipboard.writeText(text);return true}finally{clipboardBusy=false}});
 ipcMain.handle('veyra:command',async(e,action,payload)=>{
@@ -287,6 +295,9 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  switch(action){
  case 'state':return snapshot();
  case 'game-record':if(active()?.mode!=='temporary'&&Number.isSafeInteger(payload)&&payload>0&&payload<=1000000000){db.gameBest=Math.max(db.gameBest||0,payload);save()}return true;
+ case 'external-app-response':return externalApps.respond(payload);
+ case 'external-apps-reset':externalApps.reset(typeof payload==='string'?payload:undefined);toast('Разрешения приложений сброшены.');return true;
+ case 'copy-clean-link':{const result=require('./clean-link.cjs').cleanLink(active()?.url);clipboard.writeText(result.url);toast(result.removed?'Чистая ссылка скопирована.':'Ссылка скопирована.');return result;}
  case 'app-dialog-response':if(appDialog?.public.id===payload?.id)appDialog.finish(payload.allow===true?(appDialog.public.type==='prompt'?String(payload.text||'').slice(0,10000):true):null);return true;
  case 'dismiss-default-prompt':defaultPromptVisible=false;layout();emit();return true;
  case 'default-browser':await require('./default-browser.cjs').register(app);await shell.openExternal('ms-settings:defaultapps?registeredAppUser=Veyra');return true;
@@ -492,6 +503,7 @@ app.whenReady().then(async()=>{
   db.gameBest=Number.isSafeInteger(stored.gameBest)&&stored.gameBest>=0&&stored.gameBest<=1000000000?stored.gameBest:0;db.history=Array.isArray(stored.history)?stored.history.filter(x=>web(x.url)).slice(0,1000):[];db.lastSession=stored.lastSession;try{if(stored.widgetDraft)db.widgetDraft=require('./widget-package.js').normalize(stored.widgetDraft)}catch{}
  }catch{}
  if(!appearance.themes[db.settings.colorTheme]&&db.settings.colorTheme!=='custom')db.settings.colorTheme='violet';if(!/^#[0-9a-f]{6}$/i.test(db.settings.customAccent))db.settings.customAccent='#bc9ffa';if(!appearance.wallpapers.includes(db.settings.wallpaper))db.settings.wallpaper='aurora';wallpaperData=appearance.readWallpaper(app.getPath('userData'));
+ if(!db.settings.externalAppPermissions||typeof db.settings.externalAppPermissions!=='object'||Array.isArray(db.settings.externalAppPermissions))db.settings.externalAppPermissions={};
  if(!Array.isArray(db.settings.compatibilityDomains))db.settings.compatibilityDomains=['google.com','youtube.com'];if(!Array.isArray(db.settings.shortcuts))db.settings.shortcuts=[];if(!db.settings.darkSites||Array.isArray(db.settings.darkSites))db.settings.darkSites={};
  db.settings.discordInterval=Math.max(15,Math.min(3600,Math.round(Number(db.settings.discordInterval)||60)));if(!db.settings.discordAppId)db.settings.discordAppId='1562807114227777606';if(!['auto','ask'].includes(db.settings.clipboardMode))db.settings.clipboardMode='auto';discord=new DiscordPresence(emit,()=>({language:db.settings.language,url:active()?.url,mode:active()?.mode}));discord.configure(db.settings.discordEnabled,db.settings.discordAppId,{showDomain:db.settings.discordShowDomain,showTime:db.settings.discordShowTime,interval:db.settings.discordInterval});
  nativeTheme.themeSource=db.settings.theme;Menu.setApplicationMenu(null);
@@ -500,6 +512,11 @@ app.whenReady().then(async()=>{
  sync.configureStore(path.join(sharedProfile,'account.session'),safeStorage);
  sitePermissions=new(require('./site-permissions.cjs').SitePermissions)({settings:()=>db.settings,save,changed:()=>{layout();emit()},show:()=>{layout();emit();win?.webContents.focus()},notifications:()=>{try{return windowsNotifications.register(app,shell)}catch{return false}}});
  if(Object.values(db.settings.permissions).some(value=>value?.notifications===true)){try{windowsNotifications.register(app,shell)}catch{}}
+ externalApps=new ExternalApplications({settings:()=>db.settings,save,changed:()=>{layout();emit()},available:()=>!appDialog&&!clipboardPrompt&&!sitePermissions?.pending,
+ active:wc=>{const c=contexts.get(wc.id);return !!c&&(c.tab?c.tab.id===selected:[...popups].some(child=>!child.isDestroyed()&&child.webContents===wc&&(child.isFocused()||externalApps?.pending?.wc===wc)));},
+ temporary:wc=>contexts.get(wc.id)?.mode==='temporary',application:scheme=>app.getApplicationNameForProtocol(scheme),launch:url=>shell.openExternal(url,{activate:true}),failed:()=>toast('Не удалось открыть приложение.'),
+ show:()=>{const hidden=[...popups].filter(child=>!child.isDestroyed()&&child.isVisible());hidden.forEach(child=>child.hide());win?.show();win?.webContents.focus();return ()=>{hidden.forEach(child=>{if(!child.isDestroyed())child.show()});};}
+ });
  sessionFor('private');
  const defaultStatus=require('./default-browser.cjs').isDefault(app);defaultPromptVisible=false;
  win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs'),webviewTag:true,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
@@ -507,7 +524,7 @@ app.whenReady().then(async()=>{
  win.on('focus',async()=>{if(defaultPromptVisible&&await require('./default-browser.cjs').isDefault(app)){defaultPromptVisible=false;if(!win.isDestroyed()){layout();emit();}}});win.once('ready-to-show',openWindow);
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.on('before-input-event',shortcuts);win.webContents.on('did-finish-load',emit);void defaultStatus.then(isDefault=>{if(win&&!win.isDestroyed()){defaultPromptVisible=!isDefault;layout();emit();}});
  for(const event of ['resize','maximize','unmaximize','enter-full-screen','leave-full-screen'])win.on(event,()=>{layout();emit()});
- win.on('close',event=>{clipboardPrompt?.finish(false);if(!closing&&!exitConfirmed&&!storageFlushRunning&&!storageFlushReady&&tabs.some(t=>t.dirty)){event.preventDefault();if(!appDialog)requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть браузер с введёнными данными?'}).then(yes=>{if(yes){exitConfirmed=true;win.close()}});return}if(!storageFlushReady){event.preventDefault();if(!storageFlushRunning){storageFlushRunning=true;save();Promise.race([flushSessions(sessions),new Promise((_,reject)=>setTimeout(()=>reject(Error('Сохранение сессий заняло слишком много времени.')),5000))]).then(()=>{storageFlushReady=true;win.close()}).catch(error=>{storageFlushRunning=false;toast(error.message)})}return}save();closing=true;discord.stop();vault.lock();pendingCredential=null;sitePermissions?.reset();for(const child of popups)child.close();for(const t of tabs)removeView(t)});
+ win.on('close',event=>{externalApps?.cancel();clipboardPrompt?.finish(false);if(!closing&&!exitConfirmed&&!storageFlushRunning&&!storageFlushReady&&tabs.some(t=>t.dirty)){event.preventDefault();if(!appDialog)requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть браузер с введёнными данными?'}).then(yes=>{if(yes){exitConfirmed=true;win.close()}});return}if(!storageFlushReady){event.preventDefault();if(!storageFlushRunning){storageFlushRunning=true;save();Promise.race([flushSessions(sessions),new Promise((_,reject)=>setTimeout(()=>reject(Error('Сохранение сессий заняло слишком много времени.')),5000))]).then(()=>{storageFlushReady=true;win.close()}).catch(error=>{storageFlushRunning=false;toast(error.message)})}return}save();closing=true;discord.stop();vault.lock();pendingCredential=null;externalApps?.cancel();sitePermissions?.reset();for(const child of popups)child.close();for(const t of tabs)removeView(t)});
  powerMonitor.on('lock-screen',()=>vault.lock());powerMonitor.on('suspend',()=>vault.lock());
  win.loadFile(path.join(__dirname,'index.html'));const restored=db.settings.restoreSession&&Array.isArray(db.lastSession?.tabs)?db.lastSession.tabs.filter(t=>web(t.url)&&t.mode!=='temporary').slice(0,30):[];const selectedURL=db.lastSession?.selectedURL;if(restored.length){for(const row of restored){const t=newTab(row.url,row.mode);t.pinned=!!row.pinned;t.zoomLevel=Math.max(-3,Math.min(3,Number(row.zoomLevel)||0));t.muted=!!row.muted;t.view?.webContents.setZoomLevel(t.zoomLevel);t.view?.webContents.setAudioMuted(t.muted)}sortPinned();const selectedTab=tabs.find(t=>t.url===selectedURL);if(selectedTab)choose(selectedTab.id);}else newTab();const startupURL=process.argv.find(value=>/^https?:\/\//i.test(value));if(startupURL)newTab(startupURL);for(const url of pendingExternalURLs.splice(0))newTab(url);save();performanceTick();setInterval(performanceTick,5000).unref();setInterval(()=>{void flushSessions(sessions).catch(()=>toast('Не удалось сохранить сессии на диск.'))},30000).unref();
  if(db.settings.autoUpdateFilters&&(!privacy.updated||Date.now()-new Date(privacy.updated).getTime()>86400000))setTimeout(()=>privacy.update(),1500).unref();

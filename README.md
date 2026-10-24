@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 0.9.2 is an experimental preview with site based compatibility. Windows 0.9.1 is retained for rollback. Android remains 0.6.5. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.0 adds permission based application links and Copy clean link. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.5. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
@@ -31,7 +31,7 @@ Windows uses the original uBlock Origin filtering and cosmetic engine through an
 
 Windows speed controls limit each ordinary tab separately. Google compatibility tabs are excluded to preserve their native runtime. The value is a per tab cap, not a system wide bandwidth reservation.
 
-Windows includes tabs with favicons, bookmarks and folders, history, sidebar panels, themes, custom wallpapers, editable shortcuts and page search. Context menus support links, text and images. Clipboard requests can use a confirmation dialog.
+Windows includes tabs with favicons, bookmarks and folders, history, sidebar panels, themes, custom wallpapers, editable shortcuts and page search. Context menus support links, text and images. Clipboard requests can use a confirmation dialog. External application links have their own confirmation and per site permissions. Copy clean link removes known advertising parameters while preserving other URL values.
 
 The password vault uses a master password, authenticated encryption and Windows protection. Filling requires the exact HTTPS origin and never submits a form automatically.
 
