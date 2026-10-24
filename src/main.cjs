@@ -128,8 +128,9 @@ let emitTimer;
 function scheduleEmit(){if(!emitTimer)emitTimer=setTimeout(()=>{emitTimer=null;emit()},150)}
 function applyWebRTC(wc){if(typeof wc.setWebRTCIPHandlingPolicy==='function')wc.setWebRTCIPHandlingPolicy(db.settings.webrtc?'disable_non_proxied_udp':'default')}
 function attachPage(wc,mode,tab=null){
+ const attachedView=tab?.view;
  contexts.set(wc.id,{wc,mode,tab});applyWebRTC(wc);tab?.view?.setBackgroundColor('#121418');wc.on('did-start-navigation',(_,url,inPlace,main)=>{if(main&&!inPlace&&web(url))void applyDark(wc,url)});
- wc.on('destroyed',()=>{contexts.delete(wc.id);if(tab&&tabs.includes(tab)&&tab.view?.webContents===wc){win.contentView.removeChildView(tab.view);tab.view=null;tab.dirty=false;void closeTab(tab.id)}});
+ wc.on('destroyed',()=>{contexts.delete(wc.id);if(tab&&tabs.includes(tab)&&tab.view===attachedView){if(win&&!win.isDestroyed())win.contentView.removeChildView(attachedView);tab.view=null;tab.dirty=false;if(!closing)void closeTab(tab.id)}});
  const guard=(e,url)=>{if(!web(url)){e.preventDefault();toast('Поддерживаются HTTP и HTTPS ссылки.');return}if(tab&&!tab.openerTabId&&tab.mode!=='temporary'&&googleHost(url)!==(tab.mode==='google')){e.preventDefault();void navigate(tab,url,tab.pendingNavigation?'replace':'push')}};
  wc.on('will-navigate',guard);wc.on('will-redirect',guard);
  wc.setWindowOpenHandler(({url})=>{
@@ -149,7 +150,7 @@ function attachPage(wc,mode,tab=null){
   child.on('closed',()=>popups.delete(child));
  });
  if(tab){
-  wc.on('close',()=>{if(tab.openerTabId&&tabs.includes(tab)){tab.dirty=false;void closeTab(tab.id)}});
+  wc.on('close',()=>{if(!closing&&tab.openerTabId&&tabs.includes(tab)){tab.dirty=false;void closeTab(tab.id)}});
   wc.on('before-input-event',shortcuts);
   wc.on('did-start-loading',()=>{tab.loading=true;tab.error=null;emit()});
   wc.on('did-stop-loading',()=>{tab.loading=false;emit()});
@@ -182,7 +183,7 @@ function makeView(t,options={}){
  t.view=new WebContentsView({...(options.webContents?{webContents:options.webContents}:{}),webPreferences:{...options.webPreferences,disableDialogs:true,session:sessionFor(t.mode),preload:t.mode==='google'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:!t.keepAwake}});
  win.contentView.addChildView(t.view);attachPage(t.view.webContents,t.mode,t);ublock?.addTab(t.view.webContents,win);t.view.webContents.setZoomLevel(t.zoomLevel||0);t.view.webContents.setAudioMuted(!!t.muted);t.sleeping=false;layout();
 }
-function removeView(t){const v=t.view;t.view=null;if(v&&!v.webContents.isDestroyed()){win.contentView.removeChildView(v);v.webContents.close()}}
+function removeView(t){const v=t.view;t.view=null;if(!v)return;if(win&&!win.isDestroyed())win.contentView.removeChildView(v);const wc=v.webContents;if(wc&&!wc.isDestroyed())wc.close()}
 async function navigate(t,input,historyMode='push'){
  if(!t)return;const url=address(input);if(!url){toast('Этот адрес не поддерживается.');return}
  recordNavigation(t,url,historyMode);t.pendingNavigation=true;
@@ -496,7 +497,7 @@ app.whenReady().then(async()=>{
  sync.configureStore(path.join(sharedProfile,'account.session'),safeStorage);
  sessionFor('private');sessionFor('google');sessionFor('temporary');await Promise.all([ublock.install(sessions.get('private')),ublock.install(sessions.get('google'))]);
  const defaultStatus=require('./default-browser.cjs').isDefault(app);defaultPromptVisible=false;
- win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),webviewTag:true,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
+ win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs'),webviewTag:true,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
  widgetRuntime.attach(win.webContents);
  win.on('focus',async()=>{if(defaultPromptVisible&&await require('./default-browser.cjs').isDefault(app)){defaultPromptVisible=false;if(!win.isDestroyed()){layout();emit();}}});win.once('ready-to-show',openWindow);
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.on('before-input-event',shortcuts);win.webContents.on('did-finish-load',emit);void defaultStatus.then(isDefault=>{if(win&&!win.isDestroyed()){defaultPromptVisible=!isDefault;layout();emit();}});
