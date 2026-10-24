@@ -18,8 +18,15 @@ jobs:
       - run: node tests/game-engine.cjs
       - run: node tests/localization-070.cjs
       - run: node tests/site-070.mjs
-      - run: powershell -NoProfile -ExecutionPolicy Bypass -File installer/TEST-INSTALLER.ps1
+      - run: powershell -NoProfile -ExecutionPolicy Bypass -File installer/TEST-INSTALLER.ps1 -OutputDirectory installer/bin
       - run: npm run build:win
+      - run: python scripts/archive-windows.py dist-v0.8.0/Veyra-win32-x64 outputs/Veyra-0.8.0-Windows.zip
+      - run: powershell -NoProfile -ExecutionPolicy Bypass -File installer/TEST-RELEASE-ARCHIVE.ps1 -ArchivePath outputs/Veyra-0.8.0-Windows.zip -InstallerPath installer/bin/VeyraSetup.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Veyra-Windows-installer-ZIP
+          path: outputs/Veyra-0.8.0-Windows.zip
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         with:
           name: Veyra-Windows-0.8.0
