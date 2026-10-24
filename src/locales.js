@@ -1755,6 +1755,7 @@ function errorMessage(error,language='ru'){
  if(/[А-Яа-яЁё]/.test(message)){const result=translate(message,language);if(language==='ru'||result!==message)return result;}
  return translate('Не удалось выполнить действие. Попробуй снова.',language);
 }
+Object.assign(catalog,{"Обычные ссылки открываются вкладками. Явные всплывающие окна сайтов сохраняются.":{"en":"Ordinary links open in tabs. Explicit site popups keep their own windows.","uk":"Звичайні посилання відкриваються у вкладках. Явні спливні вікна сайтів зберігаються."}});
 const api={translate,errorMessage,languages,catalog};
 if(typeof module==='object'&&module.exports)module.exports=api;
 else root.VeyraI18n=Object.freeze(api);
