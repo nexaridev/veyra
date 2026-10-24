@@ -1,9 +1,9 @@
 # Veyra
 
 > [!WARNING]
-> Do not use Windows versions 0.7.0 through 0.8.3 for daily browsing. They contain a tab activation recursion bug and inefficient widget rendering that can cause high CPU use, freezes and excessive memory use. Reports reached about 8 GB of RAM. The fixes are being validated and are not yet available in a published update. This warning concerns the Windows browser; an equivalent Android memory issue has not been confirmed.
+> Do not use Windows versions 0.7.0 through 0.8.3 for daily browsing. They contain a tab activation recursion bug and inefficient widget rendering that can cause high CPU use, freezes and excessive memory use. Reports reached about 8 GB of RAM. Upgrade to Windows 0.9.0 or newer. This warning concerns the Windows browser; an equivalent Android memory issue has not been confirmed.
 >
-> Не используйте Windows версии с 0.7.0 по 0.8.3 для повседневной работы. Рекурсивное переключение вкладок и неэффективная отрисовка виджетов могут вызывать высокую нагрузку на процессор, зависания и чрезмерный расход памяти. По сообщениям расход достигал примерно 8 ГБ ОЗУ. Исправления проходят проверку и пока не опубликованы. Предупреждение относится к Windows; аналогичная проблема с памятью на Android не подтверждена.
+> Не используйте Windows версии с 0.7.0 по 0.8.3 для повседневной работы. Рекурсивное переключение вкладок и неэффективная отрисовка виджетов могут вызывать высокую нагрузку на процессор, зависания и чрезмерный расход памяти. По сообщениям расход достигал примерно 8 ГБ ОЗУ. Обновитесь до Windows 0.9.0 или новее. Предупреждение относится к Windows; аналогичная проблема с памятью на Android не подтверждена.
 
 A browser for Windows and Android by Nexaridev.
 
@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 0.8.3 and Android 0.6.1 are the current preview releases. See the Windows memory warning above before downloading. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 0.9.0 and Android 0.6.5 are the current preview releases. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 

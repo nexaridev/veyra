@@ -28,4 +28,5 @@ function attach(host){
  host.on('did-attach-webview',(event,guest)=>{if(guest.session!==widgetSession){guest.close();return}guest.setWebRTCIPHandlingPolicy('disable_non_proxied_udp');guest.setAudioMuted(true);guest.setWindowOpenHandler(()=>({action:'deny'}));guest.on('will-navigate',event=>event.preventDefault());guest.on('will-frame-navigate',event=>{if(event.url&&!validURL(event.url))event.preventDefault()});});
 }
 function open(value,locale){const html=packages.documentHTML(value,locale);for(const [key,entry] of documents)if(entry.expires<Date.now())documents.delete(key);while(documents.size>=48)documents.delete(documents.keys().next().value);const id=randomUUID();documents.set(id,{html,expires:Date.now()+60*60*1000});return 'veyra-widget://'+id+'/host'}
-module.exports={register,attach,open,PARTITION};
+function release(value){try{const u=new URL(value);if(u.protocol!=='veyra-widget:'||!['/host','/'].includes(u.pathname))return false;return documents.delete(u.hostname)}catch{return false}}
+module.exports={register,attach,open,release,stats:()=>({documents:documents.size}),PARTITION};

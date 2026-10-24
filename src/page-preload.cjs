@@ -1,4 +1,25 @@
 const {ipcRenderer} = require('electron');
+// A site gets device labels only after the user grants native media access.
+// The initial stream stays private to this wrapper until device selection ends.
+if(process.isMainFrame){
+ const {contextBridge}=require('electron');
+ contextBridge.exposeInMainWorld('__veyraMediaPicker',Object.freeze({choose:payload=>ipcRenderer.invoke('veyra:media-pick',payload)}));
+ contextBridge.executeInMainWorld({func:()=>{
+  if(!navigator.mediaDevices?.getUserMedia)return;const native=navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  navigator.mediaDevices.getUserMedia=async constraints=>{
+   if(!constraints||!constraints.audio&&!constraints.video||constraints.video?.mandatory?.chromeMediaSource||constraints.audio?.mandatory?.chromeMediaSource)return native(constraints);
+   let stream;try{
+    stream=await native(constraints);const devices=await navigator.mediaDevices.enumerateDevices(),audio=!!constraints.audio,video=!!constraints.video;
+    const current={audio:stream.getAudioTracks()[0]?.getSettings().deviceId,video:stream.getVideoTracks()[0]?.getSettings().deviceId};
+    const selected=await window.__veyraMediaPicker.choose({audio,video,current,devices:devices.map(d=>({kind:d.kind,deviceId:d.deviceId,label:d.label}))});
+    if(!selected)throw new DOMException('Device selection cancelled','NotAllowedError');
+    if((!audio||selected.audio===current.audio)&&(!video||selected.video===current.video))return stream;
+    const chosen={...constraints};for(const kind of ['audio','video'])if(selected[kind])chosen[kind]={...(typeof constraints[kind]==='object'?constraints[kind]:{}),deviceId:{exact:selected[kind]}};
+    for(const track of stream.getTracks())track.stop();stream=null;return await native(chosen);
+   }catch(error){for(const track of stream?.getTracks()||[])track.stop();throw error;}
+  };
+ }});
+}
 if(!ipcRenderer.sendSync('veyra:native-compat')){
 // Isolated handlers; clipboard bridge exposes text-only writes, never reads.
 if(process.isMainFrame){

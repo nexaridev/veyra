@@ -1,0 +1,38 @@
+'use strict';
+const {app}=require('electron'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),Module=require('node:module');
+app.commandLine.appendSwitch('use-fake-device-for-media-stream');
+const root=path.resolve(__dirname,'..'),profile=fs.mkdtempSync(path.join(require('node:os').tmpdir(),'veyra-media-'));
+app.setPath('userData',profile);fs.writeFileSync(path.join(profile,'profile.json'),JSON.stringify({settings:{trackers:false,autoUpdateFilters:false,eco:false,language:'en'}}));
+const file=path.join(root,'src/main.cjs'),m=new Module(file,module);m.filename=file;m.paths=Module._nodeModulePaths(path.dirname(file));
+m._compile(fs.readFileSync(file,'utf8').replace("win.once('ready-to-show',openWindow);",'').replace("webPreferences:{backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs')","webPreferences:{offscreen:true,backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs')")+'\nmodule.exports={getWindow:()=>win,getTabs:()=>tabs,sessionFor};',file);
+const delay=ms=>new Promise(r=>setTimeout(r,ms));async function until(f){for(let i=0;i<800;i++){if(await f())return;await delay(25)}throw Error('Timed out')}
+const timer=setTimeout(()=>app.exit(2),45000);
+app.whenReady().then(async()=>{try{
+ await until(()=>m.exports.getWindow());const win=m.exports.getWindow();win.webContents.on('console-message',e=>console.log('UI',e.message));await until(()=>!win.webContents.isLoading());
+ const ui=s=>win.webContents.executeJavaScript(s,true),cmd=(a,p)=>ui('window.veyra.command('+JSON.stringify(a)+','+JSON.stringify(p)+')');
+ m.exports.sessionFor('private').protocol.handle('https',()=>new Response('<!doctype html><title>Media fixture</title><body>Local permission fixture</body>',{headers:{'Content-Type':'text/html'}}));
+ await cmd('navigate','https://media.veyra.test/');await until(()=>m.exports.getTabs().some(t=>t.view&&!t.loading));const tab=m.exports.getTabs().find(t=>t.view),wc=tab.view.webContents;
+ await wc.executeJavaScript("window.mediaState='waiting';navigator.mediaDevices.getUserMedia({audio:true,video:true}).then(s=>{window.testStream=s;window.mediaState='ok'},e=>{window.mediaState=e.name});true",true);
+ await until(async()=> (await cmd('state')).permission?.stage==='permission');let request=(await cmd('state')).permission;
+ assert(request.mediaTypes.includes('audio')&&request.mediaTypes.includes('video'));await until(()=>ui('document.querySelector("#site-permission").open'));
+ assert(await ui('document.querySelector("#permission-body").textContent.includes("Microphone")'));assert(await ui('document.querySelector("#permission-body").textContent.includes("Camera")'));
+ await cmd('permission-response',{id:request.id,allow:true});await until(async()=> (await cmd('state')).permission?.stage==='devices');request=(await cmd('state')).permission;
+ assert(request.devices.some(d=>d.kind==='audioinput'));assert(request.devices.some(d=>d.kind==='videoinput'));await until(()=>ui('!!document.querySelector("#permission-video")'));
+ const selected={audio:request.devices.find(d=>d.kind==='audioinput').id,video:request.devices.find(d=>d.kind==='videoinput').id};
+ await cmd('permission-response',{id:request.id,allow:true,...selected});await until(()=>wc.executeJavaScript("window.mediaState!=='waiting'"));
+ assert.equal(await wc.executeJavaScript('window.mediaState'),'ok');assert.equal(await wc.executeJavaScript('testStream.getTracks().length'),2);await wc.executeJavaScript('testStream.getTracks().forEach(t=>t.stop());true');
+ console.log('PASS visible microphone/camera consent and actual synthetic device selection before returning stream to site');
+ await cmd('navigate','https://deny.veyra.test/');await until(()=>wc.getURL()==='https://deny.veyra.test/'&&!wc.isLoading());
+ await wc.executeJavaScript("window.denied='waiting';navigator.mediaDevices.getUserMedia({audio:true}).then(s=>{s.getTracks().forEach(t=>t.stop());window.denied='allowed'},e=>window.denied=e.name);true",true);
+ await until(async()=>!!(await cmd('state')).permission);request=(await cmd('state')).permission;await cmd('permission-response',{id:request.id,allow:false});
+ await until(()=>wc.executeJavaScript("window.denied!=='waiting'"));assert.equal(await wc.executeJavaScript('window.denied'),'NotAllowedError');console.log('PASS refusal stops media flow and navigation clears one-time grants');
+ await wc.executeJavaScript("window.notice='waiting';Notification.requestPermission().then(v=>window.notice=v);true",true);
+ await until(async()=> (await cmd('state')).permission?.permission==='notifications');request=(await cmd('state')).permission;await cmd('permission-response',{id:request.id,allow:true,remember:true});
+ await until(()=>wc.executeJavaScript("window.notice!=='waiting'"));assert.equal(await wc.executeJavaScript('window.notice'),'granted');console.log('PASS website Notification permission granted through custom consent');
+ const notification=require(path.join(root,'src/windows-notifications.cjs')),shell=require('electron').shell;
+ const shortcut=path.join(profile,'notification-identity.lnk');
+ assert(shell.writeShortcutLink(shortcut,'create',{target:process.execPath,appUserModelId:notification.APP_ID,toastActivatorClsid:notification.CLSID}));
+ const link=shell.readShortcutLink(shortcut);assert.equal(link.appUserModelId,notification.APP_ID);assert.equal(link.toastActivatorClsid.toLowerCase(),notification.CLSID.toLowerCase());
+ console.log('PASS native Windows Shell notification identity and toast activator in an isolated shortcut');
+ clearTimeout(timer);app.exit(0);
+}catch(error){console.error(error?.stack||String(error));clearTimeout(timer);app.exit(1)}});
