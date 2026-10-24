@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 1.0.0 adds permission based application links and Copy clean link. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.5. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.1 adds permission based application links and Copy clean link. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.6. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 

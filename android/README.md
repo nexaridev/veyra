@@ -1,4 +1,4 @@
-# Veyra Android 0.6.5 preview
+# Veyra Android 0.6.6 preview
 
 The Android application uses GeckoView 158 with a native interface. It requires Android 8 or newer and an ARM64 device.
 
