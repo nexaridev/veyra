@@ -1,4 +1,4 @@
-param([string]$OutputPath=(Join-Path $PSScriptRoot 'bin\VeyraSetup.exe'))
+﻿param([string]$OutputPath=(Join-Path $PSScriptRoot 'bin\VeyraSetup.exe'))
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -22,7 +22,7 @@ try{$inputStream.CopyTo($gzip)}finally{$inputStream.Dispose();$gzip.Dispose();$o
 $compiler=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if(!(Test-Path -LiteralPath $compiler)){throw '.NET Framework 4.8 / 64-bit Windows is required to build the installer.'}
 $OutputPath=[IO.Path]::GetFullPath($OutputPath);New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($OutputPath)) -Force | Out-Null
-$arguments=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/out:'+$OutputPath),('/win32manifest:'+(Join-Path $PSScriptRoot 'app.manifest')),('/win32icon:'+(Join-Path $PSScriptRoot '..\src\assets\app.ico')),('/resource:'+$compressed+',bc.gz'),('/resource:'+$license+',bc-license.txt'),('/reference:'+$dll),'/reference:System.Net.Http.dll','/reference:System.IO.Compression.dll','/reference:System.IO.Compression.FileSystem.dll','/reference:System.Web.Extensions.dll','/reference:Microsoft.CSharp.dll',(Join-Path $PSScriptRoot 'Core.cs'),(Join-Path $PSScriptRoot 'Program.cs'),(Join-Path $PSScriptRoot 'Launcher.cs'))
+$arguments=@('/nologo','/target:winexe','/platform:x64','/optimize+',('/out:'+$OutputPath),('/win32manifest:'+(Join-Path $PSScriptRoot 'app.manifest')),('/win32icon:'+(Join-Path $PSScriptRoot '..\src\assets\app.ico')),('/resource:'+$compressed+',bc.gz'),('/resource:'+$license+',bc-license.txt'),('/reference:'+$dll),'/reference:System.Net.Http.dll','/reference:System.IO.Compression.dll','/reference:System.IO.Compression.FileSystem.dll','/reference:System.Web.Extensions.dll','/reference:Microsoft.CSharp.dll',(Join-Path $PSScriptRoot 'Core.cs'),(Join-Path $PSScriptRoot 'Program.cs'),(Join-Path $PSScriptRoot 'Launcher.cs'),(Join-Path $PSScriptRoot 'ManagerUpdates.cs'))
 & $compiler @arguments
 if($LASTEXITCODE){throw 'Installer compilation failed.'}
 Copy-Item -LiteralPath $license -Destination (Join-Path ([IO.Path]::GetDirectoryName($OutputPath)) 'VeyraSetup-LICENSE.txt') -Force

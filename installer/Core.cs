@@ -19,6 +19,7 @@ namespace Veyra.Setup {
   static string LanguageFile {get{return System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"VeyraInstaller","language.txt");}}
   static bool ReadLanguage(){try{return System.IO.File.ReadAllText(LanguageFile).Trim()=="en";}catch{return System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName!="ru";}}
   internal static readonly Dictionary<string,string> Messages=new Dictionary<string,string>{{" МБ"," MB"},{" установлена"," installed"},{". Доступна версия ",". Available version: "},{". Обновить перед запуском?",". Update before opening?"},{". Проверяем обновления…",". Checking for updates…"},{"Veyra не найдена. Установи браузер в стандартную папку или положи лаунчер рядом с Veyra.exe.","Veyra was not found. Install it in the default folder or put the launcher next to Veyra.exe."},{"Veyra удалена","Veyra removed"},{"Veyra установлена. Можно открывать браузер.","Veyra is installed. You can open the browser."},{"Архив повреждён.","The archive is damaged."},{"Архив превышает допустимый размер.","The archive exceeds the size limit."},{"Архив содержит повторяющиеся пути.","The archive contains duplicate paths."},{"Архив содержит ссылки.","The archive contains links."},{"Браузер должен быть закрыт.","Close the browser before continuing."},{"В архиве отсутствуют необходимые файлы Veyra.","Required Veyra files are missing from the archive."},{"Версия обновления не поддерживается этим установщиком.","This installer does not support the update version."},{"Всё готово","All done"},{"Готовим браузер к запуску","Getting Veyra ready"},{"Готово","Done"},{"Завершаем текущую операцию…","Finishing the current operation…"},{"Завершение установки","Finishing installation"},{"Загружено больше данных, чем ожидалось.","More data was downloaded than expected."},{"Загрузка Veyra ","Downloading Veyra "},{"Загрузка отменена или истекло время ожидания.","The download was cancelled or timed out."},{"Закрой Veyra и нажми кнопку ещё раз.","Close Veyra and try again."},{"Закрыть","Close"},{"Запустить Veyra","Open Veyra"},{"Запустить без обновления","Open without updating"},{"Ищем установленную версию…","Looking for an installed version…"},{"Лицензии","Licenses"},{"Лицензии Veyra Installer","Veyra Installer licenses"},{"Личный профиль сохранён.","Your profile has been kept."},{"На ПК: ","Installed: "},{"Найдена Veyra ","Found Veyra "},{"Не удалось завершить операцию. ","Could not complete the operation. "},{"Не удалось запустить Veyra: ","Could not open Veyra: "},{"Не удалось прочитать список обновлений.","Could not read the update list."},{"Не указана контрольная сумма обновления.","The update checksum is missing."},{"Недопустимая папка удаления.","Invalid uninstall folder."},{"Недопустимое имя файла в архиве.","Invalid filename in the archive."},{"Недопустимое число файлов в архиве.","Invalid file count in the archive."},{"Недопустимый адрес сборки.","Invalid build address."},{"Недопустимый путь в архиве.","Invalid archive path."},{"Недопустимый размер сборки.","Invalid build size."},{"Неизвестная структура архива.","Unknown archive structure."},{"Неизвестный формат обновления.","Unknown update format."},{"Некорректная папка архива.","Invalid archive folder."},{"Некорректная подпись обновления.","Invalid update signature."},{"Некорректное перенаправление.","Invalid redirect."},{"Некорректный ответ сервера обновлений.","Invalid update server response."},{"Некорректный размер сборки.","Invalid build size."},{"Некорректный размер файла.","Invalid file size."},{"Некорректный список обновлений.","Invalid update list."},{"Обновить","Update"},{"Отказ от удаления ссылки.","Refusing to delete a link."},{"Отмена","Cancel"},{"Отменить","Cancel"},{"Папка установки не должна содержать ссылки или точки перенаправления.","The installation folder must not contain links or reparse points."},{"Папка установки содержит посторонние файлы. Освободи папку Veyra в LocalAppData\\Programs.","The installation folder contains unrelated files. Clear the Veyra folder in LocalAppData\\Programs."},{"Папка: %LOCALAPPDATA%\\Programs\\Veyra","Folder: %LOCALAPPDATA%\\Programs\\Veyra"},{"Переустановить","Reinstall"},{"Подпись обновления недействительна. Установка остановлена.","The update signature is invalid. Installation stopped."},{"Проверка SHA-256 не пройдена. Файлы не будут установлены.","SHA256 verification failed. The files will not be installed."},{"Проверка обновлений недоступна. Запускаем установленную версию.","Update checking is unavailable. Opening the installed version."},{"Проверка обновления","Checking the update"},{"Профиль, закладки и пароли останутся на этом ПК.","Your profile, bookmarks and passwords will stay on this PC."},{"Размер загрузки не совпадает с подписанным описанием.","Download size does not match the signed manifest."},{"Распаковка файлов","Extracting files"},{"Сборка пока не опубликована. Попробуй позже.","The build has not been published yet. Try again later."},{"Сервер загрузки недоступен (","Download server unavailable ("},{"Сервер перенаправил загрузку на недопустимый адрес.","The server redirected the download to an invalid address."},{"Скачаем и проверим актуальную тестовую сборку.","Download and verify the current preview build."},{"Слишком большой ответ сервера.","The server response is too large."},{"Слишком много перенаправлений загрузки.","Too many download redirects."},{"Удаление Veyra","Uninstall Veyra"},{"Удалить","Uninstall"},{"Удалить Veyra, сохранив профиль","Remove Veyra and keep your profile"},{"Удалить браузер?","Uninstall the browser?"},{"Уже установлена более новая версия Veyra.","A newer Veyra version is already installed."},{"Установить","Install"},{"Установить Veyra","Install Veyra"},{"Установка Veyra","Install Veyra"},{"Установка отменена.","Installation cancelled."},{"Установленная версия больше не найдена.","The installed version could no longer be found."},{"Эта папка не принадлежит установщику Veyra.","This folder is not managed by the Veyra installer."},{"Эта сборка предназначена для 64-разрядной Windows.","This build requires 64-bit Windows."},{"Ярлык в меню «Пуск»","Start menu shortcut"},{"Ярлык на рабочем столе","Desktop shortcut"}};
+  static L(){Messages["Загрузка служебных программ "]="Downloading maintenance tools ";Messages["Уже установлен более новый установщик. Запусти его."]="A newer installer is already installed. Open it instead.";Messages["Некорректное обновление установщика."]="Invalid installer update.";Messages["Обновляется установщик, лаунчер и удаление…"]="Updating setup, launcher and uninstall…";Messages["Версия файла установщика не совпадает с обновлением."]="The installer file does not match the update version.";Messages["Доступно обновление браузера или служебных программ. Обновить перед запуском?"]="A browser or maintenance update is available. Update before opening?";Messages["Предыдущая программа ещё открыта. Закрой её и повтори обновление."]="The previous program is still open. Close it and try again.";}
   internal static string T(string text){if(text==null)return "";string translated;if(English){if(Messages.TryGetValue(text,out translated))return translated;return text;}foreach(var item in Messages)if(item.Value==text)return item.Key;return text;}
   static string SwitchText(string text){foreach(var item in Messages.OrderByDescending(x=>English?x.Key.Length:x.Value.Length))text=text.Replace(English?item.Key:item.Value,English?item.Value:item.Key);return text;}
   internal static void Apply(System.Windows.Forms.Control root){if(!(root is System.Windows.Forms.TextBox))root.Text=SwitchText(root.Text);foreach(System.Windows.Forms.Control child in root.Controls)Apply(child);}
@@ -28,6 +29,7 @@ namespace Veyra.Setup {
  internal sealed class Release {
   public string Version, Url, Hash, Envelope;
   public long Size;
+  public Release Manager;
  }
  internal sealed class ProgressInfo {
   public readonly string Text; public readonly int Percent;
@@ -80,7 +82,14 @@ namespace Veyra.Setup {
    if(!System.Text.RegularExpressions.Regex.IsMatch(hash,"^[a-f0-9]{64}$"))throw new IOException(L.T("Не указана контрольная сумма обновления."));
    Uri uri;if(!Uri.TryCreate(url,UriKind.Absolute,out uri)||!Network.InitialArtifact(uri))throw new IOException(L.T("Недопустимый адрес сборки."));
    long size;try{size=Convert.ToInt64(win["size"]);}catch(Exception){throw new IOException(L.T("Некорректный размер сборки."));}if(size<1||size>600000000)throw new IOException(L.T("Недопустимый размер сборки."));
-   return new Release{Version=version,Url=url,Hash=hash,Size=size,Envelope=text};
+   var result=new Release{Version=version,Url=url,Hash=hash,Size=size,Envelope=text};
+   object manager;if(data.TryGetValue("installer",out manager)&&manager!=null){
+    var info=manager as Dictionary<string,object>;if(info==null)throw new IOException(L.T("Некорректное обновление установщика."));
+    string mv=Value(info,"version"),mu=Value(info,"url"),mh=Value(info,"sha256");Version managerVersion;Uri managerUri;long managerSize;
+    try{managerSize=Convert.ToInt64(info["size"]);}catch{throw new IOException(L.T("Некорректное обновление установщика."));}
+    if(!Version.TryParse(mv,out managerVersion)||managerVersion.Build<0||managerVersion.Revision>=0||!Uri.TryCreate(mu,UriKind.Absolute,out managerUri)||!Network.InitialArtifact(managerUri)||!managerUri.AbsolutePath.EndsWith("/VeyraSetup.exe",StringComparison.Ordinal)||!System.Text.RegularExpressions.Regex.IsMatch(mh,"^[a-f0-9]{64}$")||managerSize<1||managerSize>30000000)throw new IOException(L.T("Некорректное обновление установщика."));
+    result.Manager=new Release{Version=mv,Url=mu,Hash=mh,Size=managerSize};
+   }return result;
   }
   static string Value(Dictionary<string,object> data,string key){object value;if(data==null||!data.TryGetValue(key,out value)||!(value is string))throw new IOException(L.T("Некорректный список обновлений."));return (string)value;}
  }
@@ -105,7 +114,7 @@ namespace Veyra.Setup {
     if(response.Content.Headers.ContentLength.HasValue&&response.Content.Headers.ContentLength.Value!=release.Size)throw new IOException(L.T("Размер загрузки не совпадает с подписанным описанием."));
     using(var stream=await response.Content.ReadAsStreamAsync().ConfigureAwait(false))using(var output=new FileStream(file,FileMode.CreateNew,FileAccess.Write,FileShare.None,65536,true))using(var hash=SHA256.Create()){
      byte[] buffer=new byte[65536];int count;long total=0;int last=-1;
-     while((count=await stream.ReadAsync(buffer,0,buffer.Length,token).ConfigureAwait(false))>0){total+=count;if(total>release.Size)throw new IOException(L.T("Загружено больше данных, чем ожидалось."));await output.WriteAsync(buffer,0,count,token).ConfigureAwait(false);hash.TransformBlock(buffer,0,count,null,0);int percent=(int)(total*70/release.Size);if(percent!=last){last=percent;progress.Report(new ProgressInfo(L.T("Загрузка Veyra ")+release.Version+" — "+(total/1048576)+" / "+(release.Size/1048576)+L.T(" МБ"),percent));}}
+     while((count=await stream.ReadAsync(buffer,0,buffer.Length,token).ConfigureAwait(false))>0){total+=count;if(total>release.Size)throw new IOException(L.T("Загружено больше данных, чем ожидалось."));await output.WriteAsync(buffer,0,count,token).ConfigureAwait(false);hash.TransformBlock(buffer,0,count,null,0);int percent=(int)(total*70/release.Size);if(percent!=last){last=percent;progress.Report(new ProgressInfo((release.Url.EndsWith("/VeyraSetup.exe",StringComparison.Ordinal)?L.T("Загрузка служебных программ "):L.T("Загрузка Veyra "))+release.Version+" — "+(total/1048576)+" / "+(release.Size/1048576)+L.T(" МБ"),percent));}}
      hash.TransformFinalBlock(new byte[0],0,0);string actual=BitConverter.ToString(hash.Hash).Replace("-","").ToLowerInvariant();if(total!=release.Size||actual!=release.Hash)throw new IOException(L.T("Проверка SHA-256 не пройдена. Файлы не будут установлены."));
     }
    }
@@ -131,21 +140,24 @@ namespace Veyra.Setup {
   }
  }
  internal sealed class Installer {
-  readonly Layout layout;readonly IIntegration integration;readonly string ownExe;readonly Action guard;
-  public Installer(Layout value,IIntegration desktop,string sourceExe,Action beforeCommit=null){layout=value;integration=desktop;ownExe=sourceExe;guard=beforeCommit??delegate{};}
-  public async Task<string> Install(Network network,Options options,IProgress<ProgressInfo> progress,CancellationToken token){
+  readonly Layout layout;readonly IIntegration integration;readonly string ownExe;readonly Action guard;readonly Func<string,Release> verifyRecord;
+  public Installer(Layout value,IIntegration desktop,string sourceExe,Action beforeCommit=null,Func<string,Release> recordVerifier=null){layout=value;integration=desktop;ownExe=sourceExe;guard=beforeCommit??delegate{};verifyRecord=recordVerifier??Manifest.Verify;}
+  public async Task<string> Install(Network network,Options options,IProgress<ProgressInfo> progress,CancellationToken token,Release verifiedRelease=null,bool reuseBrowser=false){
    string work=Path.Combine(Path.GetTempPath(),"VeyraSetup-"+Guid.NewGuid().ToString("N")),stage=null,backup=null;Directory.CreateDirectory(work);
    try{
-    progress.Report(new ProgressInfo(L.T("Проверка обновления"),-1));Release release=await network.Latest(token).ConfigureAwait(false);
+    progress.Report(new ProgressInfo(L.T("Проверка обновления"),-1));Release release=verifiedRelease??await network.Latest(token).ConfigureAwait(false);
+    if(layout.Owns())ManagerUpdates.RejectDowngrade(layout,ownExe);
     if(layout.Owns()){var lines=File.ReadAllLines(layout.Marker);Version installed,current;if(lines.Length>1&&Version.TryParse(lines[1],out installed)&&Version.TryParse(release.Version,out current)&&current<installed)throw new IOException(L.T("Уже установлена более новая версия Veyra."));}
-    string zip=Path.Combine(work,"veyra.zip");await network.Download(release,zip,progress,token).ConfigureAwait(false);token.ThrowIfCancellationRequested();
-    layout.Prepare();stage=Paths.Child(layout.Root,".stage-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(stage);Archive.Extract(zip,stage,progress,token);token.ThrowIfCancellationRequested();
+    bool reuse=reuseBrowser&&SameBrowser(release);if(!reuse){
+     string zip=Path.Combine(work,"veyra.zip");await network.Download(release,zip,progress,token).ConfigureAwait(false);token.ThrowIfCancellationRequested();
+     layout.Prepare();stage=Paths.Child(layout.Root,".stage-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(stage);Archive.Extract(zip,stage,progress,token);token.ThrowIfCancellationRequested();
+    }else layout.RequireOwned();
     guard();progress.Report(new ProgressInfo(L.T("Завершение установки"),95));
     bool moved=false,committed=false;string oldMarker=File.ReadAllText(layout.Marker),manager=layout.SetupExe,oldManager=null;
     try{
      layout.RequireOwned();Paths.NoLinks(layout.App);
-     if(Directory.Exists(layout.App)){backup=Paths.Child(layout.Root,".previous-"+Guid.NewGuid().ToString("N"));Directory.Move(layout.App,backup);}
-     Directory.Move(stage,layout.App);stage=null;moved=true;
+     if(!reuse&&Directory.Exists(layout.App)){backup=Paths.Child(layout.Root,".previous-"+Guid.NewGuid().ToString("N"));Directory.Move(layout.App,backup);}
+     if(!reuse){Directory.Move(stage,layout.App);stage=null;moved=true;}
      if(!String.Equals(Path.GetFullPath(ownExe),manager,StringComparison.OrdinalIgnoreCase)){
       if(File.Exists(manager)){oldManager=Paths.Child(layout.Root,".setup-previous-"+Guid.NewGuid().ToString("N"));File.Move(manager,oldManager);}File.Copy(ownExe,manager,false);
      }
@@ -161,6 +173,10 @@ namespace Veyra.Setup {
     try{Paths.DeleteTree(Path.GetTempPath().TrimEnd('\\'),work);}catch(IOException){}
    }
   }
+  internal bool SameBrowser(Release release){try{layout.RequireOwned();Paths.NoLinks(layout.Exe);string record=Path.Combine(layout.Root,"installed-release.json");Paths.NoLinks(record);var previous=verifyRecord(File.ReadAllText(record));var installed=BrowserFinder.Read(layout.Exe);return installed!=null&&installed.Version==new Version(release.Version)&&previous.Version==release.Version&&previous.Hash==release.Hash&&previous.Size==release.Size;}catch{return false;}}
   public void Uninstall(){layout.RequireOwned();Paths.DeleteTree(layout.Root,layout.App);integration.Remove(layout);foreach(string name in new[]{"installed-release.json","ThirdPartyNotices.txt"}){string file=Path.Combine(layout.Root,name);if(File.Exists(file))File.Delete(file);}foreach(string dir in Directory.EnumerateDirectories(layout.Root)){string name=Path.GetFileName(dir);Guid id;if((name.StartsWith(".stage-")&&Guid.TryParseExact(name.Substring(7),"N",out id))||(name.StartsWith(".previous-")&&Guid.TryParseExact(name.Substring(10),"N",out id)))Paths.DeleteTree(layout.Root,dir);}}
  }
 }
+
+
+

@@ -67,3 +67,5 @@ Electron, Chromium, GeckoView, uBlock Origin and other dependencies retain their
 Veyra is released under GPLv3. See [LICENSE](LICENSE) and [third party source details](vendor/SOURCES.md). The VPN architecture is described in [VPN design](VPN-DESIGN.md).
 
 Russian and English are supported throughout the browser interface. The website and privacy information are available in both languages. Extension language on Windows follows the selected browser language after a restart.
+
+Maintenance tools 1.3.0 check and update setup, launcher and uninstall together with the browser. Run the latest setup once over tools 1.1 or 1.2 to enable future maintenance updates.
