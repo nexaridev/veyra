@@ -1,5 +1,6 @@
+import './widget-package.mjs';
 const ORIGIN='https://veyra.veyra-nexaridev.workers.dev';
-const operations=new Set(['signup','verify','login','reset-request','reset','logout','logout-all','me','delete','password','sync-list','sync-put','sync-delete','profile','profile-save','session-revoke','widget-list','widget-publish','widget-delete']);
+const operations=new Set(['signup','verify','login','reset-request','reset','logout','logout-all','me','delete','password','sync-list','sync-put','sync-delete','profile','profile-save','session-revoke','widget-list','widget-get','widget-publish','widget-delete','mfa-status','mfa-begin','mfa-confirm','mfa-disable','mfa-recovery']);
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers});
 async function readBody(request){
@@ -14,6 +15,7 @@ export async function accountAPI(request,env,ctx){
  if(!env.ACCOUNT_GATEWAY_SECRET||!env.SUPABASE_PUBLISHABLE_KEY)return reply({error:'Account service unavailable'},503);
  if(['signup','reset-request'].includes(operation)&&!env.BREVO_API_KEY)return reply({error:'Отправка писем ещё не настроена.'},503);
  let body;try{body=await readBody(request)}catch{return reply({error:'Некорректный или слишком большой запрос.'},400)}
+ if(operation==='widget-publish'&&body.template?.kind==='custom')try{body.template={kind:'custom',style:'plain',package:globalThis.VeyraWidgetPackage.normalize(body.template.package)}}catch{return reply({error:'Invalid widget package'},400)}
  const authorization=request.headers.get('Authorization')||'';const token=/^Bearer ([a-f0-9]{64})$/.exec(authorization)?.[1]||'';
  const data={...body,token};
  const ip=request.headers.get('CF-Connecting-IP')||'unknown';

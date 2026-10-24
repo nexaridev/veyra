@@ -1,5 +1,6 @@
 const {app,BrowserWindow,WebContentsView,session,ipcMain,Menu,nativeTheme,shell,safeStorage,powerMonitor,dialog,nativeImage,clipboard}=require('electron');
 const fs=require('node:fs');
+const widgetRuntime=require('./widget-runtime.cjs');
 const path=require('node:path');
 const crypto=require('node:crypto');
 const {pathToFileURL}=require('node:url');
@@ -40,7 +41,7 @@ function local(url){try{return ['localhost','127.0.0.1','[::1]'].includes(new UR
 function origin(url){try{return new URL(url).origin}catch{return ''}}
 function address(value){
  const s=String(value||'').trim();if(!s)return 'veyra://newtab';
- if(/^veyra:\/\/(newtab|settings|history|bookmarks|passwords|diagnostics|google|themes|shortcuts|compatibility|discord|dark|downloads|performance|privacy|sync|offline|widgets|sidebar)$/.test(s))return s;
+ if(/^veyra:\/\/(newtab|settings|history|bookmarks|passwords|diagnostics|google|themes|shortcuts|compatibility|discord|dark|downloads|performance|privacy|sync|offline|widgets|widget-studio|sidebar)$/.test(s))return s;
  if(/^https?:\/\//i.test(s)){try{return new URL(s).href}catch{return null}}
  if(/^[a-z][a-z\d+.-]*:/i.test(s)&&!/^localhost:\d+/i.test(s)&&!/^[\w.-]+:\d+/.test(s))return null;
  if(!/\s/.test(s)&&/^(localhost(?::\d+)?|(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?|(?:[\p{L}\d-]+\.)+[\p{L}\d-]{2,}(?::\d+)?)(?:[/?#].*)?$/u.test(s)){
@@ -182,7 +183,7 @@ async function navigate(t,input,historyMode='push'){
  recordNavigation(t,url,historyMode);t.pendingNavigation=true;
  if(web(url)&&t.mode!=='temporary'){const mode=googleHost(url)?'google':'private';if(mode!==t.mode){removeView(t);t.mode=mode}}
  const generation=++t.generation;t.reader=null;t.googleBlocked=false;if(web(url)&&new URL(url).hostname!=='accounts.google.com')t.serviceURL=url;t.url=url;t.error=null;t.loading=false;t.lastActive=Date.now();panel=null;
- if(url.startsWith('veyra:')){t.favicon='';t.iconRequest=(t.iconRequest||0)+1;t.pendingNavigation=false;removeView(t);t.sleeping=false;t.title=({'veyra://widgets':'Виджеты','veyra://sidebar':'Боковая панель','veyra://offline':'Veyra Pulse','veyra://sync':'Синхронизация','veyra://themes':'Темы и обои','veyra://shortcuts':'Ярлыки главной','veyra://compatibility':'Список совместимости','veyra://discord':'Discord Rich Presence','veyra://dark':'Auto Dark Mode','veyra://downloads':'Загрузки','veyra://performance':'Производительность','veyra://privacy':'Приватность','veyra://newtab':'Новая вкладка','veyra://history':'История','veyra://bookmarks':'Закладки','veyra://settings':'Настройки','veyra://passwords':'Пароли','veyra://diagnostics':'Диагностика','veyra://google':'Google'})[url];layout();emit();return}
+ if(url.startsWith('veyra:')){t.favicon='';t.iconRequest=(t.iconRequest||0)+1;t.pendingNavigation=false;removeView(t);t.sleeping=false;t.title=({'veyra://widget-studio':'Конструктор виджетов','veyra://widgets':'Виджеты','veyra://sidebar':'Боковая панель','veyra://offline':'Veyra Pulse','veyra://sync':'Синхронизация','veyra://themes':'Темы и обои','veyra://shortcuts':'Ярлыки главной','veyra://compatibility':'Список совместимости','veyra://discord':'Discord Rich Presence','veyra://dark':'Auto Dark Mode','veyra://downloads':'Загрузки','veyra://performance':'Производительность','veyra://privacy':'Приватность','veyra://newtab':'Новая вкладка','veyra://history':'История','veyra://bookmarks':'Закладки','veyra://settings':'Настройки','veyra://passwords':'Пароли','veyra://diagnostics':'Диагностика','veyra://google':'Google'})[url];layout();emit();return}
  t.title=new URL(url).hostname;t.loading=true;emit();
  try{if(!t.view)makeView(t);if(!tabs.includes(t)||t.generation!==generation)return;layout();if(!t.view.webContents.getURL())await t.view.webContents.loadURL('about:blank');if(!tabs.includes(t)||t.generation!==generation||!t.view)return;t.loading=true;await applyDark(t.view.webContents,url);await t.view.webContents.loadURL(url)}
  catch(error){if(tabs.includes(t)&&t.generation===generation){t.loading=false;t.error=error.message;layout();emit()}}
@@ -283,19 +284,28 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'update-download':{if(!checkedUpdate||updateDownloading)throw Error('Сначала проверь обновления.');updateDownloading=true;try{const result=await dialog.showSaveDialog(win,{title:tr('Сохранить обновление'),defaultPath:'Veyra-'+checkedUpdate.version+'-Windows.zip',filters:[{name:'ZIP',extensions:['zip']}]});if(result.canceled||!result.filePath)return false;await require('./updates.cjs').download(checkedUpdate,result.filePath);shell.showItemInFolder(result.filePath);return true}finally{updateDownloading=false}}
 
  case 'widget-list':return sync.request('widget-list',{},!!sync.auth);
+ case 'widget-get':return sync.request('widget-get',{id:payload?.id},!!sync.auth);
+ case 'widget-preview':return widgetRuntime.open(payload,db.settings.language);
+ case 'widget-draft-get':return db.widgetDraft||null;
+ case 'widget-draft-save':db.widgetDraft=require('./widget-package.js').normalize(payload);save();return true;
+ case 'widget-import':{const result=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Veyra Widget',extensions:['veyrawidget','json']}]});if(result.canceled)return null;const file=result.filePaths[0];if(fs.statSync(file).size>180000)throw Error('Файл виджета слишком большой.');return require('./widget-package.js').normalize(JSON.parse(fs.readFileSync(file,'utf8')))}
+ case 'widget-export':{const value=require('./widget-package.js').normalize(payload);const result=await dialog.showSaveDialog(win,{defaultPath:'widget.veyrawidget',filters:[{name:'Veyra Widget',extensions:['veyrawidget']}]});if(result.canceled)return false;fs.writeFileSync(result.filePath,JSON.stringify(value),'utf8');return true}
  case 'widget-publish':{const template=require('./widgets.js').template(payload?.template);return sync.request('widget-publish',{title:String(payload?.title||'').slice(0,60),description:String(payload?.description||'').slice(0,240),template},true)}
  case 'widget-delete':return sync.request('widget-delete',{id:payload?.id},true);
  case 'account-profile':return sync.request('profile',{},true);
- case 'account-profile-save':return sync.request('profile-save',{display_name:payload?.display_name,device_name:payload?.device_name,platform:'windows'},true);
+ case 'account-recovery-save':{if(!Array.isArray(payload)||payload.length!==10||payload.some(x=>typeof x!=='string'||!/^([A-F0-9]{5}-){3}[A-F0-9]{5}$/.test(x)))throw Error('Invalid recovery codes');const result=await dialog.showSaveDialog(win,{defaultPath:'Veyra-recovery-codes.txt',filters:[{name:'Text',extensions:['txt']}]});if(result.canceled)return false;fs.writeFileSync(result.filePath,'Veyra recovery codes\n\n'+payload.join('\n')+'\n','utf8');return true}
+ case 'account-profile-save':return sync.request('profile-save',{display_name:payload?.display_name,device_name:payload?.device_name,...(typeof payload?.avatar==='string'?{avatar:payload.avatar}:{}),platform:'windows'},true);
+ case 'account-avatar-pick':{const result=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:tr('Изображение'),extensions:['png','jpg','jpeg','webp']}]});if(result.canceled)return null;const file=result.filePaths[0];if(fs.statSync(file).size>10000000)throw Error('Изображение слишком большое.');const image=nativeImage.createFromPath(file);if(image.isEmpty())throw Error('Не удалось прочитать изображение.');const size=image.getSize(),edge=Math.min(size.width,size.height);const cropped=image.crop({x:Math.floor((size.width-edge)/2),y:Math.floor((size.height-edge)/2),width:edge,height:edge});let png=cropped.resize({width:128,height:128}).toPNG();if(png.length>65000)png=cropped.resize({width:96,height:96}).toPNG();if(png.length>65000)throw Error('Изображение слишком большое.');return 'data:image/png;base64,'+png.toString('base64')}
+ case 'account-mfa':{if(!['mfa-status','mfa-begin','mfa-confirm','mfa-disable','mfa-recovery'].includes(payload?.operation))throw Error('Invalid operation');const result=await sync.request(payload.operation,{currentPassword:payload.currentPassword,mfa_code:payload.mfa_code},true);if(result?.secret){const uri='otpauth://totp/'+encodeURIComponent('Veyra:'+result.email)+'?secret='+result.secret+'&issuer=Veyra&algorithm=SHA1&digits=6&period=30';result.qr=await require('qrcode').toDataURL(uri,{width:240,margin:3,errorCorrectionLevel:'M'})}return result}
  case 'account-session-revoke':return sync.request('session-revoke',{id:payload?.id},true);
  case 'sync-copy-delete':return sync.request('sync-delete',{device_id:payload?.device_id},true);
  case 'sync-copies':return (await sync.rows()).map(({device_id,platform,updated_at})=>({device_id,platform,updated_at}));
- case 'sync-login':case 'sync-signup':{const result=await sync.login(payload?.email,payload?.password,action==='sync-signup');emit();return result}
- case 'sync-verify':{const result=await sync.verify(payload?.email,payload?.code);emit();return result}
+ case 'sync-login':case 'sync-signup':{const result=await sync.login(payload?.email,payload?.password,action==='sync-signup',payload?.mfa_code);emit();return result}
+ case 'sync-verify':{const result=await sync.verify(payload?.email,payload?.code,payload?.password,payload?.mfa_code);emit();return result}
  case 'sync-reset-request':return sync.resetRequest(payload?.email);
- case 'sync-reset':{const result=await sync.reset(payload?.email,payload?.code,payload?.password);emit();return result}
- case 'sync-password':{const result=await sync.changePassword(payload?.currentPassword,payload?.password);emit();return result}
- case 'sync-delete':if(!await requestAppDialog({type:'confirm',title:'Удалить аккаунт?',message:'Аккаунт и облачные копии закладок будут удалены без возможности восстановления.'}))return false;await sync.deleteAccount(payload?.currentPassword);emit();return true;
+ case 'sync-reset':{const result=await sync.reset(payload?.email,payload?.code,payload?.password,payload?.mfa_code);emit();return result}
+ case 'sync-password':{const result=await sync.changePassword(payload?.currentPassword,payload?.password,payload?.mfa_code);emit();return result}
+ case 'sync-delete':if(!await requestAppDialog({type:'confirm',title:'Удалить аккаунт?',message:'Аккаунт и облачные копии закладок будут удалены без возможности восстановления.'}))return false;const result=await sync.deleteAccount(payload?.currentPassword,payload?.mfa_code);emit();return result;
  case 'sync-logout-all':await sync.logout(true);emit();return true;
  case 'sync-logout':await sync.logout();emit();return true;
  case 'sync-push':{
@@ -462,6 +472,7 @@ async function pickWallpaper(){const result=await dialog.showOpenDialog(win,{tit
 
 function openWindow(){if(!win||win.isDestroyed())return;win.show();win.webContents.send('veyra:opened');}
 app.whenReady().then(async()=>{
+ await widgetRuntime.register();
  profile=path.join(app.getPath('userData'),'profile.json');
  try{const stored=JSON.parse(fs.readFileSync(profile,'utf8'));const s=stored.settings||{};db.settings={...defaults};for(const k of Object.keys(defaults))if(typeof s[k]===typeof defaults[k])db.settings[k]=s[k];
   if(!I18n.languages.includes(db.settings.language))db.settings.language='ru';
@@ -469,7 +480,7 @@ app.whenReady().then(async()=>{
   if(!Array.isArray(db.settings.siteExceptions))db.settings.siteExceptions=[];if(!Array.isArray(db.settings.httpExceptions))db.settings.httpExceptions=[];
   if(!db.settings.permissions||Array.isArray(db.settings.permissions))db.settings.permissions={};
   db.bookmarks=Array.isArray(stored.bookmarks)?stored.bookmarks.filter(x=>web(x.url)).slice(0,3000).map(x=>({...x,id:x.id||crypto.randomUUID(),folder:x.folder||'Избранное'})):[];
-  db.gameBest=Number.isSafeInteger(stored.gameBest)&&stored.gameBest>=0&&stored.gameBest<=1000000000?stored.gameBest:0;db.history=Array.isArray(stored.history)?stored.history.filter(x=>web(x.url)).slice(0,1000):[];db.lastSession=stored.lastSession;
+  db.gameBest=Number.isSafeInteger(stored.gameBest)&&stored.gameBest>=0&&stored.gameBest<=1000000000?stored.gameBest:0;db.history=Array.isArray(stored.history)?stored.history.filter(x=>web(x.url)).slice(0,1000):[];db.lastSession=stored.lastSession;try{if(stored.widgetDraft)db.widgetDraft=require('./widget-package.js').normalize(stored.widgetDraft)}catch{}
  }catch{}
  if(!appearance.themes[db.settings.colorTheme]&&db.settings.colorTheme!=='custom')db.settings.colorTheme='violet';if(!/^#[0-9a-f]{6}$/i.test(db.settings.customAccent))db.settings.customAccent='#bc9ffa';if(!appearance.wallpapers.includes(db.settings.wallpaper))db.settings.wallpaper='aurora';wallpaperData=appearance.readWallpaper(app.getPath('userData'));
  if(!Array.isArray(db.settings.compatibilityDomains))db.settings.compatibilityDomains=['google.com','youtube.com'];if(!Array.isArray(db.settings.shortcuts))db.settings.shortcuts=[];if(!db.settings.darkSites||Array.isArray(db.settings.darkSites))db.settings.darkSites={};
@@ -480,7 +491,8 @@ app.whenReady().then(async()=>{
  sync.configureStore(path.join(sharedProfile,'account.session'),safeStorage);
  sessionFor('private');sessionFor('google');sessionFor('temporary');await Promise.all([ublock.install(sessions.get('private')),ublock.install(sessions.get('google'))]);
  const defaultStatus=require('./default-browser.cjs').isDefault(app);defaultPromptVisible=false;
- win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
+ win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{preload:path.join(__dirname,'preload.cjs'),webviewTag:true,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
+ widgetRuntime.attach(win.webContents);
  win.on('focus',async()=>{if(defaultPromptVisible&&await require('./default-browser.cjs').isDefault(app)){defaultPromptVisible=false;if(!win.isDestroyed()){layout();emit();}}});win.once('ready-to-show',openWindow);
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.on('before-input-event',shortcuts);win.webContents.on('did-finish-load',emit);void defaultStatus.then(isDefault=>{if(win&&!win.isDestroyed()){defaultPromptVisible=!isDefault;layout();emit();}});
  for(const event of ['resize','maximize','unmaximize','enter-full-screen','leave-full-screen'])win.on(event,()=>{layout();emit()});

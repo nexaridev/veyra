@@ -20,7 +20,7 @@ class SyncClient{
   try{if(safeStorage.isEncryptionAvailable()){const value=JSON.parse(safeStorage.decryptString(fs.readFileSync(file)));if(/^[a-f0-9]{64}$/.test(value.access_token)&&typeof value.user?.email==='string')this.auth=value}}catch{}
  }
  persist(){if(!this.store)return;const fs=require('node:fs'),{file,safeStorage}=this.store;try{if(this.auth&&safeStorage.isEncryptionAvailable()){fs.writeFileSync(file+'.tmp',safeStorage.encryptString(JSON.stringify(this.auth)));fs.renameSync(file+'.tmp',file)}else fs.rmSync(file,{force:true})}catch{try{fs.rmSync(file,{force:true})}catch{}}}
- accept(result){if(result?.access_token){this.auth={access_token:result.access_token,user:result.user};this.persist()}return {confirmation:!result?.access_token}}
+ accept(result){if(result?.access_token){this.auth={access_token:result.access_token,user:result.user};this.persist()}return {confirmation:!result?.access_token,mfa_required:result?.mfa_required===true}}
  status(){return {signedIn:!!this.auth,email:this.auth?.user?.email||'',busy:this.busy}}
  async request(route,body={},authenticated=false){
   if(authenticated&&!this.auth?.access_token)throw Error('Сначала войди в аккаунт.');
@@ -28,12 +28,12 @@ class SyncClient{
   if(!response.ok){if(authenticated&&response.status===401){this.auth=null;this.persist()}const error=await response.json().catch(()=>({}));throw Error(String(error.error||'Запрос не выполнен: '+response.status).slice(0,300))}
   return response.status===204?null:response.json().catch(()=>null);
  }
- async login(email,password,signup=false){if(typeof email!=='string'||email.length>254||typeof password!=='string'||password.length<12||Buffer.byteLength(password)>72)throw Error('Пароль: минимум 12 символов, максимум 72 байта UTF-8.');return this.accept(await this.request(signup?'signup':'login',{email,password}))}
- async verify(email,code){return this.accept(await this.request('verify',{email,code}))}
+ async login(email,password,signup=false,mfa_code=''){if(typeof email!=='string'||email.length>254||typeof password!=='string'||password.length<12||Buffer.byteLength(password)>72)throw Error('Пароль: минимум 12 символов, максимум 72 байта UTF-8.');return this.accept(await this.request(signup?'signup':'login',{email,password,mfa_code}))}
+ async verify(email,code,password,mfa_code=''){return this.accept(await this.request('verify',{email,code,password,mfa_code}))}
  async resetRequest(email){return this.request('reset-request',{email})}
- async reset(email,code,password){return this.accept(await this.request('reset',{email,code,password}))}
- async changePassword(currentPassword,password){await this.request('password',{currentPassword,password},true);this.auth=null;this.persist();return true}
- async deleteAccount(currentPassword){await this.request('delete',{currentPassword},true);this.auth=null;this.persist();return true}
+ async reset(email,code,password,mfa_code=''){return this.accept(await this.request('reset',{email,code,password,mfa_code}))}
+ async changePassword(currentPassword,password,mfa_code=''){const result=await this.request('password',{currentPassword,password,mfa_code},true);if(result?.mfa_required)return result;this.auth=null;this.persist();return true}
+ async deleteAccount(currentPassword,mfa_code=''){const result=await this.request('delete',{currentPassword,mfa_code},true);if(result?.mfa_required)return result;this.auth=null;this.persist();return true}
  async rows(){return (await this.request('sync-list',{},true)).rows}
  async upload(deviceID,platform,data,passphrase){const payload=await seal(data,passphrase);return this.request('sync-put',{device_id:deviceID,platform,payload},true)}
  async logout(all=false){try{if(this.auth)await this.request(all?'logout-all':'logout',{},true)}finally{this.auth=null;this.persist()}}

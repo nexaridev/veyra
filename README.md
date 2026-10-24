@@ -6,7 +6,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 0.7.0 and Android 0.5.0 are available as preview releases. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 0.8.0 and Android 0.6.0 are available as preview releases. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
@@ -18,9 +18,9 @@ On Android, install the APK from the releases page. Updates retain the existing 
 
 ## Features
 
-Home widgets include a clock, calendar, notes, focus timer and recent searches. Move and resize them directly on the home page. The free collection also supports publishing declarative designs to the community. Note contents are never part of a publication.
+Home widgets include a clock, calendar, notes, focus timer and recent searches. Move and resize them directly on the home page. On Windows, Veyra Studio provides a visual canvas with text, shapes, images, clocks, buttons, layers and undo. Import or export `.veyrawidget` packages and publish them with a preview and explicit confirmation. Custom HTML, CSS and JavaScript run in a sandbox without network or browser data access. Builtin notes remain local; all content inside a published custom package becomes public.
 
-The profile screen lists active sessions and encrypted bookmark copies. You can name devices, revoke individual sessions and remove cloud copies. Sidebar order, visibility and width are customizable on Windows.
+The profile screen supports a custom avatar, authenticator based two factor authentication, one time recovery codes, active sessions and encrypted bookmark copies. You can name devices, revoke individual sessions and remove cloud copies. Sidebar order, visibility and width are customizable on Windows.
 
 Windows uses the original uBlock Origin filtering and cosmetic engine through an Electron API adapter. Private Windows tabs use its network filtering without storing their browser session on disk; cosmetic filtering is unavailable there. Android can install the bundled Mozilla signed extension after displaying its permissions.
 
@@ -40,7 +40,7 @@ Both platforms include Veyra Pulse, an offline game with increasingly difficult 
 
 ## Accounts and bookmarks
 
-Veyra accounts use a separate login system with email confirmation and password recovery. The API runs on Cloudflare Workers. Supabase PostgreSQL stores account data without Supabase Auth. Brevo delivers transactional email.
+Veyra accounts use a separate login system with email confirmation and password recovery. The API runs on Cloudflare Workers. Supabase PostgreSQL stores account data without Supabase Auth. Brevo delivers transactional email. Registration confirmation also checks the chosen account password. An enabled second factor is required for login, password recovery and security changes.
 
 Bookmark transfers are manual and encrypted on the device using a separate phrase. Use the same phrase on each device. It is never sent to the server and cannot be recovered. Passwords, history and cookies are not synchronized. Deletions are not propagated between copies.
 

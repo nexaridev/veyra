@@ -25,3 +25,9 @@ electron-chrome-extensions 4.9.0 is used under its GPLv3 option. The exact npm p
 ## Other dependencies
 
 Electron and Chromium notices are shipped with the Windows runtime. GeckoView dependencies and Android metadata are pinned in the Android build configuration. The Windows installer includes Bouncy Castle notices. Consult those distributions for their respective licenses.
+
+## Local QR generation
+
+The Windows profile uses node-qrcode 1.5.4 under the MIT license. QR images are generated locally and never sent to an external QR service. Package versions and dependency integrity hashes are pinned in package-lock.json. Packaged npm dependencies retain their license files.
+
+[QR generator source](https://github.com/soldair/node-qrcode)

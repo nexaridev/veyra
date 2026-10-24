@@ -13,3 +13,15 @@ Operations: signup, verify, login, reset-request, reset; authenticated me, logou
 GitHub: https://github.com/nexaridev/veyra . Windows 0.6.1 / Android 0.3.0 test artifacts and signed update manifest are prepared separately from the older draft. Physical Android acceptance remains outstanding; see `RELEASE-0.6.1.md`. Windows updates verify and download a ZIP; installation is manual. Android update checking is not implemented yet.
 
 R2 is not enabled in the Cloudflare account and is optional while GitHub hosts binary assets. No paid resource upgrade was requested or enabled during preparation.
+
+## Profile, widgets and MFA migration
+
+The existing project received `security-v4.sql`, `accounts-v4.sql`, `browser-v4.sql` and `legacy-quota-v4.sql` in one migration. Apply these only after the earlier schema, browser v3 and mail outbox migrations. Registration verification now requires the chosen registration password as well as the email code. Existing signed-in sessions remain valid until account security changes revoke them.
+
+TOTP uses SHA1, six digits and 30 second steps. The previous/current/next step window is checked with atomic replay prevention. Enabling, disabling and regenerating recovery codes require the account password; enabled factors also require a valid factor. Password recovery does not remove MFA. Secrets are encrypted with a purpose-specific key derived from the gateway secret. Coordinate key rotation with re-encryption; replacing the binding alone would invalidate factors and pending email.
+
+Widget catalogue responses contain metadata. `widget-get` retrieves one complete public package. Packages use `.veyrawidget` JSON, bounded images and code; unsupported permissions are rejected. Client execution isolation is independent of package validation. Custom code gets no network or browser data access. Profiles and avatars remain private to authenticated owners.
+
+Legacy Supabase Auth data is retained. A transaction-locked trigger now limits new legacy backup allocations to ten devices per account. Existing rows remain readable and removable. `tests/accounts-v4.sql` exercises security properties with transaction-rolled-back fixtures and a temporary transaction-local gateway configuration; it sends no email.
+
+Executable widgets use a separate nonpersistent Electron session. A mandatory dead proxy and WebRTC nonproxied UDP restriction complement request interception and CSP. Host and guest profiles never share cookies or account storage. An opaque sandboxed child holds the package code; guest Node, preload, nested webview, native permissions, audio, downloads and new windows are disabled. The main process accepts attachments only for issued runtime URLs in the expected partition.

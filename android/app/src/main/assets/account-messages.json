@@ -718,5 +718,29 @@
   "Invalid backup": {
     "ru": "Некорректная копия.",
     "en": "Invalid backup."
+  },
+  "mfa_required": {
+    "ru": "Введи код 2ФА или резервный код и повтори вход.",
+    "en": "Enter your 2FA code or recovery code and try again.",
+    "uk": "Введи код 2ФА або резервний код і спробуй знову."
+  },
+  "mfa_invalid_code": {
+    "ru": "Неверный или уже использованный код. Дождись нового кода.",
+    "en": "Invalid or already used code. Wait for a new code.",
+    "uk": "Неправильний або вже використаний код. Зачекай новий код."
+  },
+  "mfa_rate_limited": {
+    "ru": "Слишком много попыток. Попробуй через 10 минут.",
+    "en": "Too many attempts. Try again in 10 minutes.",
+    "uk": "Забагато спроб. Спробуй за 10 хвилин."
+  },
+  "mfa_enrollment_expired": {
+    "ru": "Время настройки истекло. Начни заново.",
+    "en": "Setup expired. Start again.",
+    "uk": "Час налаштування сплив. Почни знову."
+  },
+  "Проверь пароль регистрации и код из письма.": {
+    "ru": "Проверь пароль регистрации и код из письма.",
+    "en": "Check your registration password and email code."
   }
 }
