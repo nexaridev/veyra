@@ -5,9 +5,9 @@ function renderExternalApp(){
  document.getElementById('external-app-title').textContent=tr(request.found?'Открыть внешнее приложение?':'Приложение не найдено');
  document.getElementById('external-app-name').textContent=request.application||request.scheme;
  document.getElementById('external-app-scheme').textContent=request.scheme+':';
- document.getElementById('external-app-description').textContent=tr(request.found?'Этот сайт хочет открыть приложение на компьютере.':'Установи приложение для этого типа ссылок и попробуй снова.');
+ document.getElementById('external-app-description').textContent=tr(request.found?'Этот сайт хочет открыть приложение на компьютере.':'Не удалось определить приложение для этой ссылки. Можно попробовать открыть её через Windows.');
  document.getElementById('external-app-remember-label').hidden=!request.canRemember||!request.found;
- document.getElementById('external-app-remember').checked=false;document.getElementById('external-app-open').disabled=!request.found;
+ document.getElementById('external-app-remember').checked=false;document.getElementById('external-app-open').disabled=false;document.getElementById('external-app-open').textContent=tr(request.found?'Открыть приложение':'Попробовать открыть');
  if(!dialog.open)dialog.showModal();document.getElementById('external-app-cancel').focus();
 }
 function answerExternalApp(allow){if(state.externalAppRequest)void command('external-app-response',{id:state.externalAppRequest.id,allow,remember:document.getElementById('external-app-remember').checked});}

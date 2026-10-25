@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 1.0.4 adds consent based permissions for isolated community widgets. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.6. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.4 is the current stable release. Test build 1.0.5 is available as a GitHub prerelease and does not replace the stable update channel. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.6. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current stable release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 

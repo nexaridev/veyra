@@ -32,7 +32,10 @@ class ExternalApplications{
  respond(payload){
   const p=this.pending;if(!p||p.public.id!==payload?.id)return false;
   if(p.wc.isDestroyed()||p.wc.getURL()!==p.documentURL||!this.options.active(p.wc)){p.finish(false);return false;}
-  const allow=payload.allow===true&&p.public.found;
+  // Handler discovery can fail on Windows even when shell.openExternal can
+  // resolve the protocol (for example via the app picker). A user-confirmed
+  // one-time attempt is safe; only persist permissions for identified apps.
+  const allow=payload.allow===true;
   if(allow&&payload.remember===true&&p.public.canRemember){const settings=this.options.settings(),entries=settings.externalAppPermissions||{};
    if(Object.keys(entries).length<200||entries[p.public.origin]){const values=entries[p.public.origin]||{};if(Object.keys(values).length<32||values[p.public.scheme]){entries[p.public.origin]={...values,[p.public.scheme]:true};settings.externalAppPermissions=entries;this.options.save();}}
   }

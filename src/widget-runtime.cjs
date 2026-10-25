@@ -6,15 +6,17 @@ protocol.registerSchemesAsPrivileged([
  {scheme:'veyra-widget',privileges:{standard:true,secure:true}},
  {scheme:'veyra-widget-host',privileges:{standard:true,secure:true}}
 ]);
-const documents=new Map(),sessions=new Map(),PREVIEW='veyra-widget-runtime';
+const documents=new Map(),sessions=new Map(),sessionRecords=new WeakMap(),PREVIEW='veyra-widget-runtime';
 const hash=value=>createHash('sha256').update(value).digest('hex').slice(0,40);
 const policy=(permissions,storage)=>`default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src ${permissions.network.length?permissions.network.join(' '):"'none'"}; frame-src 'none'; worker-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';${storage?'':' manifest-src \'none\';'}`;
 const permissionsPolicy="camera=(), microphone=(), geolocation=(), clipboard-read=(), clipboard-write=(), display-capture=(), fullscreen=(), payment=(), usb=(), serial=(), speaker-selection=()";
 function tokenFor(url){try{return new URL(url).pathname.split('/').filter(Boolean).at(-1)||''}catch{return ''}}
 function validFrame(url,entry,kind){try{const u=new URL(url);return u.protocol===(kind==='host'?'veyra-widget-host:':'veyra-widget:')&&u.hostname===entry.originId&&tokenFor(url)===entry.token&&(kind==='host'?u.pathname==='/'+entry.token:u.pathname==='/'+entry.token+'/')}catch{return false}}
 function createSession(partition,options){
- let record=sessions.get(partition);if(record){record.network=new Set(options.network);record.storage=options.storage;return record}
- const ses=session.fromPartition(partition,{cache:false});record={ses,network:new Set(options.network),storage:options.storage,partition,preview:options.preview,guests:new Set()};sessions.set(partition,record);
+ let record=sessions.get(partition);if(record){record.network=new Set(options.network);record.storage=options.storage;record.preview=options.preview;return record}
+ const ses=session.fromPartition(partition,{cache:false});record=sessionRecords.get(ses);
+ if(record){record.network=new Set(options.network);record.storage=options.storage;record.preview=options.preview;sessions.set(partition,record);return record}
+ record={ses,network:new Set(options.network),storage:options.storage,partition,preview:options.preview,guests:new Set()};sessionRecords.set(ses,record);sessions.set(partition,record);
  ses.setPermissionCheckHandler(()=>false);ses.setPermissionRequestHandler((wc,p,cb)=>cb(false));ses.setDevicePermissionHandler?.(()=>false);ses.on('will-download',event=>event.preventDefault());
  ses.webRequest.onBeforeRequest((details,callback)=>{
   let u;try{u=new URL(details.url)}catch{return callback({cancel:true})}
