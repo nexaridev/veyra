@@ -14,6 +14,8 @@ function buildPageMenu(wc, p, {open, back, forward, copyText, openExternal, down
  }
  if(['video','audio'].includes(p.mediaType)&&web(p.srcURL))add('Сохранить медиа как…',()=>download(p.srcURL));
  if(items.length)items.push({type:'separator'});
+ add('Проверить элемент',()=>wc.inspectElement(p.x,p.y));
+ items.push({type:'separator'});
  if(p.isEditable){
   add('Отменить',()=>wc.undo(),!!p.editFlags?.canUndo);add('Повторить',()=>wc.redo(),!!p.editFlags?.canRedo);
   add('Вырезать',()=>wc.cut(),!!p.editFlags?.canCut);add('Копировать',()=>wc.copy(),!!p.editFlags?.canCopy);add('Вставить',()=>wc.paste(),!!p.editFlags?.canPaste);add('Выделить всё',()=>wc.selectAll());

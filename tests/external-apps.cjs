@@ -10,7 +10,7 @@ function fixture({temporary=false,name='Roblox Player'}={}){const wc=new EventEm
  f=fixture();assert.equal(await f.m.request(f.wc,uri,'https://evil.example'),false);assert.equal(f.m.snapshot(),null);
  promise=f.m.request(f.wc,uri,f.wc.url);f.wc.emit('did-start-navigation',{},'https://www.roblox.com/other',false,true);assert.equal(await promise,false);assert.equal(f.launched.length,0);
  f=fixture();promise=f.m.request(f.wc,uri,f.wc.url);p=f.m.snapshot();f.wc.url='https://evil.example';assert.equal(f.m.respond({id:p.id,allow:true}),false);assert.equal(await promise,false);
- for(const options of [{temporary:true},{name:''}]){f=fixture(options);promise=f.m.request(f.wc,uri,f.wc.url);p=f.m.snapshot();assert.equal(p.canRemember,!options.temporary);f.m.respond({id:p.id,allow:true,remember:true});await promise;assert.deepEqual(f.settings.externalAppPermissions,{});assert.equal(f.launched.length,options.name===''?0:1);}
+ for(const options of [{temporary:true},{name:''}]){f=fixture(options);promise=f.m.request(f.wc,uri,f.wc.url);p=f.m.snapshot();assert.equal(p.canRemember,!options.temporary);f.m.respond({id:p.id,allow:true,remember:true});await promise;assert.deepEqual(f.settings.externalAppPermissions,{});assert.equal(f.launched.length,1);}
  f=fixture();f.wc.url='http://www.roblox.com/';promise=f.m.request(f.wc,uri,f.wc.url);assert.equal(f.m.snapshot().canRemember,false);f.m.cancel();await promise;
  console.log('PASS external applications: explicit consent, token redaction, exact origin grants, reset, cooldown, navigation cancellation, private/HTTP and missing handlers');
 })().catch(e=>{console.error(e);process.exitCode=1});

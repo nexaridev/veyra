@@ -91,20 +91,43 @@ if(/^https?:$/.test(location.protocol)){
  contextBridge.executeInMainWorld({func:()=>{window.alert=message=>{window.__veyraSiteDialogs.show('alert',message)};window.confirm=message=>window.__veyraSiteDialogs.show('confirm',message)===true;window.prompt=(message,value='')=>window.__veyraSiteDialogs.show('prompt',message,value)}});
 }
 
-// Optional per-tab compatibility mode; no privileged page bridge.
-if(/^https?:$/.test(location.protocol)&&ipcRenderer.sendSync('veyra:presence-config')){
- require('electron').contextBridge.executeInMainWorld({func:()=>{
-  const define=(o,k,get)=>{try{Object.defineProperty(o,k,{configurable:true,get})}catch{}};
-  define(document,'hidden',()=>false);define(document,'visibilityState',()=> 'visible');
-  document.hasFocus=()=>true;
-  let fullscreen=null;define(document,'fullscreenElement',()=>fullscreen);
-  define(document,'webkitFullscreenElement',()=>fullscreen);
-  define(document,'fullscreenEnabled',()=>true);
-  const signal=()=>document.dispatchEvent(new Event('fullscreenchange'));
-  Element.prototype.requestFullscreen=function(){fullscreen=this;signal();return Promise.resolve()};Element.prototype.webkitRequestFullscreen=Element.prototype.requestFullscreen;
-  document.exitFullscreen=()=>{fullscreen=null;signal();return Promise.resolve()};document.webkitExitFullscreen=document.exitFullscreen;window.addEventListener('keydown',e=>{if(e.key==='Escape'&&fullscreen)document.exitFullscreen()},true);
-  for(const name of ['blur','visibilitychange'])window.addEventListener(name,e=>e.stopImmediatePropagation(),true);
- }});
+// User-controlled site compatibility. This changes only the page-facing DOM APIs;
+// the browser window itself enters fullscreen only after an explicit user choice.
+if(/^https?:$/.test(location.protocol)){
+ const {contextBridge}=require('electron');let config=ipcRenderer.sendSync('veyra:compatibility-config');window.addEventListener('veyra:request-real-fullscreen',()=>ipcRenderer.send('veyra:real-fullscreen-request'),true);
+ const apply=next=>contextBridge.executeInMainWorld({func:settings=>{
+  const d=document,w=window,ElementCtor=w.Element,VideoCtor=w.HTMLVideoElement;
+  if(!w.__veyraCompat){
+   const names=['requestFullscreen','webkitRequestFullscreen','mozRequestFullScreen','msRequestFullscreen'];
+   w.__veyraCompat={fakeFsEl:null,base:{fullscreenEnabled:Object.getOwnPropertyDescriptor(d,'fullscreenEnabled'),webkitFullscreenEnabled:Object.getOwnPropertyDescriptor(d,'webkitFullscreenEnabled'),fullscreenElement:Object.getOwnPropertyDescriptor(d,'fullscreenElement'),webkitFullscreenElement:Object.getOwnPropertyDescriptor(d,'webkitFullscreenElement'),webkitCurrentFullScreenElement:Object.getOwnPropertyDescriptor(d,'webkitCurrentFullScreenElement'),hidden:Object.getOwnPropertyDescriptor(d,'hidden'),visibilityState:Object.getOwnPropertyDescriptor(d,'visibilityState'),hasFocus:d.hasFocus,requests:names.map(n=>Object.getOwnPropertyDescriptor(ElementCtor.prototype,n)),webkitVideo:Object.getOwnPropertyDescriptor(VideoCtor?.prototype||{},'webkitEnterFullscreen'),exit:Object.getOwnPropertyDescriptor(d,'exitFullscreen')},listeners:false};
+  }
+  const state=w.__veyraCompat,define=(obj,key,descriptor)=>{try{Object.defineProperty(obj,key,descriptor)}catch{}};
+  const dispatch=(target,type)=>{try{target?.dispatchEvent(new w.Event(type,{bubbles:true}))}catch{}};
+  const change=target=>{dispatch(d,'fullscreenchange');dispatch(d,'webkitfullscreenchange');dispatch(target,'fullscreenchange')};
+  const restore=(obj,key,desc)=>{try{if(desc)Object.defineProperty(obj,key,desc);else delete obj[key]}catch{}};
+  if(settings.fakeFullscreen){
+   for(const key of ['fullscreenEnabled','webkitFullscreenEnabled'])define(d,key,{configurable:true,get:()=>true});
+   for(const key of ['fullscreenElement','webkitFullscreenElement','webkitCurrentFullScreenElement'])define(d,key,{configurable:true,get:()=>state.fakeFsEl});
+   const askReal=()=>{if(settings.realFullscreen)w.dispatchEvent(new w.Event('veyra:request-real-fullscreen'))};
+   const enter=function(){state.fakeFsEl=this;queueMicrotask(()=>setTimeout(()=>change(this),0));askReal();return Promise.resolve()};
+   const enterLegacy=function(){state.fakeFsEl=this;queueMicrotask(()=>setTimeout(()=>change(this),0));askReal()};
+   for(const key of ['requestFullscreen'])define(ElementCtor.prototype,key,{configurable:true,writable:true,value:enter});
+   for(const key of ['webkitRequestFullscreen','mozRequestFullScreen','msRequestFullscreen'])define(ElementCtor.prototype,key,{configurable:true,writable:true,value:enterLegacy});
+   if(VideoCtor)define(VideoCtor.prototype,'webkitEnterFullscreen',{configurable:true,writable:true,value:function(){state.fakeFsEl=this;queueMicrotask(()=>setTimeout(()=>{change(this);dispatch(this,'webkitbeginfullscreen')},0));askReal()}});
+   const exit=()=>{const old=state.fakeFsEl;state.fakeFsEl=null;queueMicrotask(()=>setTimeout(()=>change(old),0));return Promise.resolve()};
+   define(d,'exitFullscreen',{configurable:true,writable:true,value:exit});define(d,'webkitExitFullscreen',{configurable:true,writable:true,value:exit});
+  }else{
+   for(const [key,desc] of Object.entries({fullscreenEnabled:state.base.fullscreenEnabled,webkitFullscreenEnabled:state.base.webkitFullscreenEnabled,fullscreenElement:state.base.fullscreenElement,webkitFullscreenElement:state.base.webkitFullscreenElement,webkitCurrentFullScreenElement:state.base.webkitCurrentFullScreenElement,exitFullscreen:state.base.exit}))restore(d,key,desc);
+   for(let i=0;i<state.base.requests.length;i++)restore(ElementCtor.prototype,['requestFullscreen','webkitRequestFullscreen','mozRequestFullScreen','msRequestFullscreen'][i],state.base.requests[i]);
+   if(VideoCtor)restore(VideoCtor.prototype,'webkitEnterFullscreen',state.base.webkitVideo);state.fakeFsEl=null;
+  }
+  if(settings.hideFocus){
+   define(d,'hidden',{configurable:true,get:()=>false});define(d,'visibilityState',{configurable:true,get:()=> 'visible'});define(d,'hasFocus',{configurable:true,writable:true,value:()=>true});
+   if(!state.listeners){state.listeners=true;w.addEventListener('blur',()=>setTimeout(()=>{if(w.__veyraCompat?.settings?.hideFocus){dispatch(w,'focus');dispatch(d,'visibilitychange')}},50),true);d.addEventListener('visibilitychange',e=>{if(w.__veyraCompat?.settings?.hideFocus)e.stopImmediatePropagation()},true)}
+  }else{restore(d,'hidden',state.base.hidden);restore(d,'visibilityState',state.base.visibilityState);restore(d,'hasFocus',state.base.hasFocus?{configurable:true,writable:true,value:state.base.hasFocus}:null)}
+  state.settings={...settings};
+ },args:[next]});
+ apply(config);ipcRenderer.on('veyra:compatibility-settings',(_,next)=>{config=next;apply(config)});
 }
 
 }

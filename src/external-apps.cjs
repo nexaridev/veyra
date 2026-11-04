@@ -36,7 +36,7 @@ class ExternalApplications{
   // resolve the protocol (for example via the app picker). A user-confirmed
   // one-time attempt is safe; only persist permissions for identified apps.
   const allow=payload.allow===true;
-  if(allow&&payload.remember===true&&p.public.canRemember){const settings=this.options.settings(),entries=settings.externalAppPermissions||{};
+  if(allow&&payload.remember===true&&p.public.canRemember&&p.public.application){const settings=this.options.settings(),entries=settings.externalAppPermissions||{};
    if(Object.keys(entries).length<200||entries[p.public.origin]){const values=entries[p.public.origin]||{};if(Object.keys(values).length<32||values[p.public.scheme]){entries[p.public.origin]={...values,[p.public.scheme]:true};settings.externalAppPermissions=entries;this.options.save();}}
   }
   void p.finish(allow);return true;
