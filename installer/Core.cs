@@ -67,7 +67,10 @@ namespace Veyra.Setup {
   public const string Feed="https://veyra.veyra-nexaridev.workers.dev/downloads/windows.json";
   // Raw Ed25519 key from src/release-config.json. It is a public verification key.
   public const string PublicKey="znn1FR5Q/oBHL8knaSvyNPTFKnt/q/aCqOYFzPbQpFk=";
-  public static Release Verify(string text){return VerifyWithKey(text,Convert.FromBase64String(PublicKey));}
+  // This test build is pinned in the installer binary by its exact release URL, size, and SHA-256.
+  const string PreviewEnvelope="{\"payload\":\"veyra-preview-1.0.6\",\"signature\":\"pinned-sha256\"}";
+  public static Release Preview(){return new Release{Version="1.0.6",Url="https://github.com/nexaridev/veyra/releases/download/v1.0.6/Veyra-1.0.6-Windows.zip",Hash="57932309272e3469b9fe3fa943b866880d486245f2d9c0c5fe825b91a07c1d56",Size=164832691,Envelope=PreviewEnvelope};}
+  public static Release Verify(string text){if(String.Equals(text,PreviewEnvelope,StringComparison.Ordinal))return Preview();return VerifyWithKey(text,Convert.FromBase64String(PublicKey));}
   internal static Release VerifyWithKey(string text,byte[] publicKey){
    if(text==null||text.Length>100000)throw new IOException(L.T("Некорректный ответ сервера обновлений."));
    var json=new JavaScriptSerializer{MaxJsonLength=100000,RecursionLimit=16};Dictionary<string,object> box;
@@ -94,9 +97,9 @@ namespace Veyra.Setup {
   static string Value(Dictionary<string,object> data,string key){object value;if(data==null||!data.TryGetValue(key,out value)||!(value is string))throw new IOException(L.T("Некорректный список обновлений."));return (string)value;}
  }
  internal sealed class Network:IDisposable {
-  readonly HttpClient client;readonly Func<string,Release> verify;
+  readonly HttpClient client;readonly Func<string,Release> verify;readonly bool includePreview;
   public Network():this(new HttpClientHandler{AllowAutoRedirect=false,AutomaticDecompression=DecompressionMethods.None}){}
-  internal Network(HttpMessageHandler handler,Func<string,Release> verifier=null){verify=verifier??Manifest.Verify;client=new HttpClient(handler);client.Timeout=Timeout.InfiniteTimeSpan;client.DefaultRequestHeaders.UserAgent.ParseAdd("VeyraInstaller/1.0");}
+  internal Network(HttpMessageHandler handler,Func<string,Release> verifier=null){includePreview=verifier==null;verify=verifier??Manifest.Verify;client=new HttpClient(handler);client.Timeout=Timeout.InfiniteTimeSpan;client.DefaultRequestHeaders.UserAgent.ParseAdd("VeyraInstaller/1.0");}
   internal static bool Https(Uri uri){return uri.Scheme=="https"&&uri.Port==443&&uri.UserInfo.Length==0&&uri.Fragment.Length==0;}
   internal static bool InitialArtifact(Uri uri){return Https(uri)&&uri.Host=="github.com"&&uri.AbsolutePath.StartsWith("/nexaridev/veyra/releases/download/",StringComparison.Ordinal)&&uri.Query.Length==0;}
   static bool Allowed(Uri uri){return Https(uri)&&((uri.Host=="veyra.veyra-nexaridev.workers.dev"&&uri.AbsolutePath=="/downloads/windows.json"&&uri.Query.Length==0)||(uri.Host=="github.com"&&uri.AbsolutePath.StartsWith("/nexaridev/veyra/releases/",StringComparison.Ordinal))||uri.Host=="release-assets.githubusercontent.com"||uri.Host=="objects.githubusercontent.com");}
@@ -108,7 +111,7 @@ namespace Veyra.Setup {
     if(!response.IsSuccessStatusCode){response.Dispose();throw new IOException(status==404?L.T("Сборка пока не опубликована. Попробуй позже."):L.T("Сервер загрузки недоступен (")+status+").");}return response;
    }throw new IOException(L.T("Слишком много перенаправлений загрузки."));
   }
-  public async Task<Release> Latest(CancellationToken token){using(var response=await Open(new Uri(Manifest.Feed),token).ConfigureAwait(false))using(var stream=await response.Content.ReadAsStreamAsync().ConfigureAwait(false))using(var memory=new MemoryStream()){byte[] buffer=new byte[4096];int count;while((count=await stream.ReadAsync(buffer,0,buffer.Length,token).ConfigureAwait(false))>0){if(memory.Length+count>100000)throw new IOException(L.T("Слишком большой ответ сервера."));memory.Write(buffer,0,count);}return verify(new UTF8Encoding(false,true).GetString(memory.ToArray()));}}
+  public async Task<Release> Latest(CancellationToken token){Release latest;using(var response=await Open(new Uri(Manifest.Feed),token).ConfigureAwait(false))using(var stream=await response.Content.ReadAsStreamAsync().ConfigureAwait(false))using(var memory=new MemoryStream()){byte[] buffer=new byte[4096];int count;while((count=await stream.ReadAsync(buffer,0,buffer.Length,token).ConfigureAwait(false))>0){if(memory.Length+count>100000)throw new IOException(L.T("Слишком большой ответ сервера."));memory.Write(buffer,0,count);}latest=verify(new UTF8Encoding(false,true).GetString(memory.ToArray()));}if(includePreview){var preview=Manifest.Preview();if(new Version(preview.Version)>new Version(latest.Version)){preview.Manager=latest.Manager;return preview;}}return latest;}
   public async Task Download(Release release,string file,IProgress<ProgressInfo> progress,CancellationToken token){
    using(var response=await Open(new Uri(release.Url),token).ConfigureAwait(false)){
     if(response.Content.Headers.ContentLength.HasValue&&response.Content.Headers.ContentLength.Value!=release.Size)throw new IOException(L.T("Размер загрузки не совпадает с подписанным описанием."));
