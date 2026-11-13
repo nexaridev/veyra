@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 1.0.8 is the current release candidate. Android 0.7.1 is the current preview build. Google site compatibility remains experimental. Windows 0.7.0 through 0.8.3 carry a memory warning; use a newer release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.9 and Android 0.7.2 are the current release builds. The Android APK is signed with the existing release key and was installed and launched from the phone home screen. Google sign-in compatibility remains dependent on Google and the embedded browser engine. Windows 0.7.0 through 0.8.3 carry a memory warning; use Windows 0.9.0 or newer. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
@@ -63,7 +63,7 @@ See [macOS instructions](MACOS-BUILD.md) for Intel and Apple Silicon packaging. 
 
 Veyra does not hide your IP address or replace a VPN. Google can reject login through embedded browser engines. Full fingerprint resistance and general browser extension support are not implemented.
 
-Windows executables are not Authenticode signed. SmartScreen can warn about unfamiliar downloads. Android builds pass compilation and Lint, but acceptance testing on a physical phone is still outstanding.
+The Windows executables are not Authenticode signed, so SmartScreen can warn about unfamiliar downloads. Android 0.7.2 passes compilation and Android Lint; it was installed and launched on a physical phone. Website-specific Android acceptance tests are not included in this release check.
 
 ## Third party software
 

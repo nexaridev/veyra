@@ -10,7 +10,7 @@ Brevo Free sends numeric confirmation/recovery codes from the verified sender. T
 
 Operations: signup, verify, login, reset-request, reset; authenticated me, logout, logout-all, password, delete, sync-list, sync-put, sync-delete. JSON POST only. Sessions last 30 days. The API strips private mail/code fields, accepts no browser-origin cross-site requests, and derives rate-limit IP keys itself. Codes expire after 10 minutes, five attempts. A global mail cap of 150/day keeps below the free mail quota. Login attempts are limited by email, requests by IP. Each account has at most 10 device copies, up to 2 MiB each. Synchronization is manual and bookmark-only, encrypted on clients with a separate phrase. Operational maintenance should periodically remove expired codes and old rate counters; verified accounts and backups must not be purged by that maintenance.
 
-GitHub: https://github.com/nexaridev/veyra . Windows 0.6.1 / Android 0.3.0 test artifacts and signed update manifest are prepared separately from the older draft. Physical Android acceptance remains outstanding; see `RELEASE-0.6.1.md`. Windows updates verify and download a ZIP; installation is manual. Android update checking is not implemented yet.
+GitHub: https://github.com/nexaridev/veyra . Windows 0.6.1 / Android 0.3.0 test artifacts and signed update manifest are prepared separately from the older draft. Physical Android acceptance remains outstanding; see `../old-readme/RELEASE-0.6.1.md`. Windows updates verify and download a ZIP; installation is manual. Android update checking is not implemented yet.
 
 R2 is not enabled in the Cloudflare account and is optional while GitHub hosts binary assets. No paid resource upgrade was requested or enabled during preparation.
 

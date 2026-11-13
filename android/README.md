@@ -1,4 +1,4 @@
-# Veyra Android 0.6.6 preview
+# Veyra Android 0.7.2
 
 The Android application uses GeckoView 158 with a native interface. It requires Android 8 or newer and an ARM64 device.
 
@@ -12,4 +12,4 @@ Use JDK 17, Gradle 9.3.1, Android platform 37 and build tools 36.0.0. Run `gradl
 
 ## Verification
 
-The release compiles and passes Android Lint. Physical device acceptance testing remains outstanding. Google can reject sign in through embedded browser engines. This application does not provide a VPN or hide your IP address.
+The 0.7.2 release variant compiles, passes Android Lint, and is signed with the existing release key. It was installed and launched from the phone home screen. Website-specific fullscreen and Google sign-in acceptance tests were not part of this device check. This application does not provide a VPN or hide your IP address.

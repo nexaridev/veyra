@@ -6,7 +6,7 @@ const paths={
  volume:'<path d="M11 4 6 8H3v8h3l5 4V4ZM15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>',
  'volume-off':'<path d="M11 4 6 8H3v8h3l5 4V4Zm5 5 6 6m0-6-6 6"/>',
 
- back:'<path d="m14 6-6 6 6 6M8 12h13"/>',forward:'<path d="m10 6 6 6-6 6M3 12h13"/>',
+ back:'<path d="m15 5-7 7 7 7"/>',forward:'<path d="m9 5 7 7-7 7"/>',
  reload:'<path d="M20 8a8 8 0 1 0 .5 7M20 3v5h-5"/>',close:'<path d="m6 6 12 12M18 6 6 18"/>',plus:'<path d="M12 5v14M5 12h14"/>',
  minus:'<path d="M5 12h14"/>',maximize:'<rect x="5" y="5" width="14" height="14" rx="2"/>',
  search:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/>',
@@ -33,7 +33,7 @@ const paths={
  pin:'<path d="m15 3 6 6-4 1-4 5-4-4 5-4 1-4ZM9 15l-6 6M7 9l8 8"/>',
  chart:'<path d="M4 3v18h17M8 17v-5m5 5V7m5 10V4"/>',chevron:'<path d="m9 5 7 7-7 7"/>',
  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v.1"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
- upload:'<path d="M12 16V3m-5 5 5-5 5 5M4 17v4h16v-4"/>',refresh:'<path d="M20 8a8 8 0 1 0 .5 7M20 3v5h-5"/>',
+ upload:'<path d="M12 16V3m-5 5 5-5 5 5M4 17v4h16v-4"/>',refresh:'<path d="M20 8a8 8 0 1 0 .5 7M20 3v5h-5"/>',palette:'<path d="M12 3a9 9 0 1 0 0 18h1.2a2 2 0 0 0 1.5-3.3 1.8 1.8 0 0 1 1.4-3h.9A4 4 0 0 0 21 10.5C21 6.4 17 3 12 3Z"/><circle cx="7.5" cy="10" r=".8"/><circle cx="11" cy="7" r=".8"/><circle cx="15.5" cy="8" r=".8"/>',
  sidebar:'<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/>'
 };
 window.icon=(name,extra='')=>`<svg class="svg-icon ${extra}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]||paths.globe}</svg>`;
