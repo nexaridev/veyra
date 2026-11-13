@@ -1861,6 +1861,12 @@ Object.assign(catalog,{
   uk:'Облікові записи профілю сумісності зберігаються окремо. Ці параметри не гарантують вхід у Google і не вимикають захист від трекерів.'
  }
 });
+Object.assign(catalog,{
+ 'Search engine':{en:'Search engine',uk:'Пошукова система'},'Search':{en:'Search',uk:'Пошук'},'Search with':{en:'Search with',uk:'Шукати через'},'Recent search':{en:'Recent search',uk:'Недавній пошук'},
+ 'Перезапускать при высоком расходе памяти':{en:'Restart when memory use is high',uk:'Перезапускати за високого використання пам’яті'},
+ 'Срабатывает после 15 секунд выше порога; сначала открытые сайты сохраняются как спящие вкладки. Не срабатывает при загрузках, звуке или несохранённых полях.':{en:'Triggers after 15 seconds above the limit. Open sites are saved as sleeping tabs first. Paused during downloads, audio playback or unsaved form entries.',uk:'Спрацьовує після 15 секунд вище порога. Спочатку відкриті сайти зберігаються як приспані вкладки. Не спрацьовує під час завантажень, відтворення звуку або незбережених полів.'},
+ 'Порог перезапуска, МБ':{en:'Restart threshold, MB',uk:'Поріг перезапуску, МБ'}
+});
 const api={translate,errorMessage,languages,catalog};
 if(typeof module==='object'&&module.exports)module.exports=api;
 else root.VeyraI18n=Object.freeze(api);

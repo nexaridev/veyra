@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 1.0.10 and Android 0.7.2 are the current release builds. The Android APK is signed with the existing release key and was installed and launched from the phone home screen. Google sign-in compatibility remains dependent on Google and the embedded browser engine. Windows 0.7.0 through 0.8.3 carry a memory warning; use Windows 0.9.0 or newer. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.11 and Android 0.7.2 are the current release builds. The Android APK is signed with the existing release key and was installed and launched from the phone home screen. Google sign-in compatibility remains dependent on Google and the embedded browser engine. Windows 0.7.0 through 0.8.3 carry a memory warning; use Windows 0.9.0 or newer. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
@@ -53,7 +53,7 @@ Bookmark transfers are manual and encrypted on the device using a separate phras
 
 ## Development
 
-Use Node.js 24 or newer. Run `npm ci`, then `npm start`. Run `npm run build:win` to package Windows. See [installer documentation](installer/README.md) for its build and tests.
+Use Node.js 24 or newer. Run `npm ci`, then `npm start`. Run `npm run build:win` to package Windows. To build a universal macOS app, run `npm ci`, `npm run build:mac`, then `npm run build:mac:dmg` on macOS. This creates `outputs/Veyra-1.0.11-macOS-universal.dmg`; open it and drag Veyra to Applications. The macOS app is not signed or notarized, so Gatekeeper may require the user to approve opening it. See [installer documentation](installer/README.md) for the Windows installer build and tests.
 
 Android requires JDK 17, Gradle 9.3.1, Android platform 37 and build tools 36.0.0. Release signing keys stay outside this repository.
 
