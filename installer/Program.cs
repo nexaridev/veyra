@@ -18,8 +18,8 @@ using Microsoft.Win32;
 [assembly:AssemblyTitle("Veyra Installer")]
 [assembly:AssemblyProduct("Veyra Installer")]
 [assembly:AssemblyCompany("Nexaridev")]
-[assembly:AssemblyVersion("1.3.4.0")]
-[assembly:AssemblyFileVersion("1.3.4.0")]
+[assembly:AssemblyVersion("1.3.5.0")]
+[assembly:AssemblyFileVersion("1.3.5.0")]
 
 namespace Veyra.Setup {
  internal static class Program {
@@ -62,8 +62,23 @@ namespace Veyra.Setup {
    foreach(string path in new[]{DesktopLink,MenuLink,Path.Combine(MenuDirectory,"Delete Veyra.lnk")})if(OurShortcut(path,layout))File.Delete(path);if(Directory.Exists(MenuDirectory)&&!Directory.EnumerateFileSystemEntries(MenuDirectory).Any())Directory.Delete(MenuDirectory);
    using(var key=Registry.CurrentUser.OpenSubKey(RegistryPath))if(key!=null&&!String.Equals((string)key.GetValue("InstallLocation"),layout.Root,StringComparison.OrdinalIgnoreCase))return;
    Registry.CurrentUser.DeleteSubKey(RegistryPath,false);
+   RemoveFileAssociations(layout);
    // Remove default-browser registrations only when they still point to this installation.
    const string command="Software\\Classes\\VeyraURL\\shell\\open\\command";using(var key=Registry.CurrentUser.OpenSubKey(command)){string value=key==null?"":(string)key.GetValue("");if(value!=null&&value.StartsWith("\""+layout.Exe+"\"",StringComparison.OrdinalIgnoreCase)){Registry.CurrentUser.DeleteSubKeyTree("Software\\Classes\\VeyraURL",false);Registry.CurrentUser.DeleteSubKeyTree("Software\\Clients\\StartMenuInternet\\Veyra",false);using(var apps=Registry.CurrentUser.OpenSubKey("Software\\RegisteredApplications",true))if(apps!=null)apps.DeleteValue("Veyra",false);}}
+  }
+  static void RemoveFileAssociations(Layout layout){
+   const string appsPath="Software\\RegisteredApplications",capPath="Software\\Clients\\StartMenuInternet\\Veyra\\Capabilities",classesPath="Software\\Classes";
+   bool registered=false;using(var apps=Registry.CurrentUser.OpenSubKey(appsPath,true)){registered=apps!=null&&String.Equals((string)apps.GetValue("Veyra"),capPath,StringComparison.OrdinalIgnoreCase);if(registered)apps.DeleteValue("Veyra",false);}
+   using(var cap=Registry.CurrentUser.OpenSubKey(capPath)){string icon=cap==null?null:(string)cap.GetValue("ApplicationIcon");if(registered&&icon!=null&&icon.StartsWith(layout.Exe+",",StringComparison.OrdinalIgnoreCase))Registry.CurrentUser.DeleteSubKeyTree("Software\\Clients\\StartMenuInternet\\Veyra",false);}
+   var groups=new Dictionary<string,string[]>{{"VeyraHTML",new[]{".html",".htm",".xhtml",".xht",".shtml"}},{"VeyraSVG",new[]{".svg"}},{"VeyraXML",new[]{".xml"}},{"VeyraText",new[]{".txt",".json",".css",".js",".mjs",".csv",".md"}},{"VeyraPDF",new[]{".pdf"}},{"VeyraImage",new[]{".avif",".png",".jpg",".jpeg",".gif",".webp",".bmp",".ico"}}};
+   foreach(var group in groups){
+    string prog=group.Key,command=classesPath+"\\"+prog+"\\shell\\open\\command";bool owned=false;
+    using(var key=Registry.CurrentUser.OpenSubKey(command)){string value=key==null?null:(string)key.GetValue("");owned=value!=null&&value.StartsWith("\""+layout.Exe+"\"",StringComparison.OrdinalIgnoreCase);}
+    if(!owned)continue;
+    Registry.CurrentUser.DeleteSubKeyTree(classesPath+"\\"+prog,false);
+    foreach(string ext in group.Value)using(var key=Registry.CurrentUser.OpenSubKey(classesPath+"\\"+ext+"\\OpenWithProgids",true))if(key!=null)key.DeleteValue(prog,false);
+   }
+   using(var key=Registry.CurrentUser.OpenSubKey(classesPath+"\\VeyraURL\\shell\\open\\command")){string value=key==null?null:(string)key.GetValue("");if(value!=null&&value.StartsWith("\""+layout.Exe+"\"",StringComparison.OrdinalIgnoreCase))Registry.CurrentUser.DeleteSubKeyTree("Software\\Clients\\StartMenuInternet\\Veyra",false);}
   }
  }
  internal sealed class ProgressBarView:Control {

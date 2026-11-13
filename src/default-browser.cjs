@@ -18,9 +18,20 @@ async function isDefault(app,platform=process.platform,query=run){
 }
 async function registerHTML(app){
  if(process.platform!=='win32'||!app.isPackaged)return;
- const exe=process.execPath;if(exe.includes('"'))return;const base='HKCU\\Software\\Classes';
- const add=(key,name,value)=>run('reg.exe',['add',key,...(name?['/v',name]:['/ve']),'/t','REG_SZ','/d',value,'/f'],{windowsHide:true});
- await add(base+'\\VeyraHTML','','Veyra HTML Document');await add(base+'\\VeyraHTML\\DefaultIcon','',exe+',0');await add(base+'\\VeyraHTML\\shell\\open\\command','',`"${exe}" "%1"`);
- for(const ext of ['.html','.htm'])await add(base+'\\'+ext+'\\OpenWithProgids','VeyraHTML','');
+ const exe=process.execPath;if(exe.includes('"'))return;
+ const classes='HKCU\\Software\\Classes',client='HKCU\\Software\\Clients\\StartMenuInternet\\Veyra',cap=client+'\\Capabilities';
+ const add=(key,name,value,type='REG_SZ')=>run('reg.exe',['add',key,...(name?['/v',name]:['/ve']),'/t',type,'/d',value,'/f'],{windowsHide:true,timeout:5000});
+ await add(client,'','Veyra');await add(client+'\\DefaultIcon','',exe+',0');await add(client+'\\shell\\open\\command','',`"${exe}"`);
+ await add(cap,'ApplicationName','Veyra');await add(cap,'ApplicationDescription','Veyra Browser');await add(cap,'ApplicationIcon',exe+',0');
+ const groups={VeyraHTML:['.html','.htm','.xhtml','.xht','.shtml'],VeyraSVG:['.svg'],VeyraXML:['.xml'],VeyraText:['.txt','.json','.css','.js','.mjs','.csv','.md'],VeyraPDF:['.pdf'],VeyraImage:['.avif','.png','.jpg','.jpeg','.gif','.webp','.bmp','.ico']};
+ for(const [prog,extensions] of Object.entries(groups)){
+  await add(classes+'\\'+prog,'',({VeyraHTML:'Veyra HTML Document',VeyraSVG:'Veyra SVG Image',VeyraXML:'Veyra XML Document',VeyraText:'Veyra Text Document',VeyraPDF:'Veyra PDF Document',VeyraImage:'Veyra Image'}[prog]));
+  await add(classes+'\\'+prog+'\\DefaultIcon','',exe+',0');await add(classes+'\\'+prog+'\\shell\\open\\command','',`"${exe}" "%1"`);
+  for(const ext of extensions){
+   await add(cap+'\\FileAssociations',ext,prog);
+   await add(classes+'\\'+ext+'\\OpenWithProgids',prog,'','REG_NONE');
+  }
+ }
+ await add('HKCU\\Software\\RegisteredApplications','Veyra','Software\\Clients\\StartMenuInternet\\Veyra\\Capabilities');
 }
 module.exports={register,isDefault,registerHTML};

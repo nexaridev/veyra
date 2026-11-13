@@ -1,10 +1,12 @@
 (() => {
   'use strict';
   const defaults = { hideFocus: true, fakeFullscreen: true, realFullscreen: false };
-  let options = { ...defaults }, activated = false, fakeFsEl = null;
+  let options = { ...defaults }, activated = false, fakeFsEl = null, focusListeners = false, suppressedFocusReturn = false, suppressedVisibilityReturn = false;
   const d = document, elementProto = Element.prototype;
+  const inherited = (obj, key) => { for (let p = obj; p; p = Object.getPrototypeOf(p)) { const desc = Object.getOwnPropertyDescriptor(p, key); if (desc) return desc; } return null; };
   const descriptors = {
-    doc: Object.fromEntries(['fullscreenEnabled','webkitFullscreenEnabled','fullscreenElement','webkitFullscreenElement','webkitCurrentFullScreenElement','exitFullscreen','webkitExitFullscreen','hidden','visibilityState','hasFocus'].map(k => [k, Object.getOwnPropertyDescriptor(d, k)])),
+    doc: Object.fromEntries(['fullscreenEnabled','webkitFullscreenEnabled','fullscreenElement','webkitFullscreenElement','webkitCurrentFullScreenElement','exitFullscreen','webkitExitFullscreen','hidden','webkitHidden','mozHidden','visibilityState','webkitVisibilityState','mozVisibilityState','hasFocus'].map(k => [k, Object.getOwnPropertyDescriptor(d, k)])),
+    nativeHidden: inherited(d, 'hidden'), nativeVisibility: inherited(d, 'visibilityState'), nativeHasFocus: d.hasFocus,
     requests: Object.fromEntries(['requestFullscreen','webkitRequestFullscreen','mozRequestFullScreen','msRequestFullscreen'].map(k => [k, Object.getOwnPropertyDescriptor(elementProto, k)])),
     video: window.HTMLVideoElement && Object.getOwnPropertyDescriptor(HTMLVideoElement.prototype, 'webkitEnterFullscreen')
   };
@@ -15,6 +17,38 @@
   const nativeExit = descriptors.doc.exitFullscreen?.value;
   function apply(next) {
     options = { ...options, ...(next || {}) };
+    if (options.hideFocus) {
+      for (const key of ['hidden','webkitHidden','mozHidden']) { try { Object.defineProperty(d, key, { configurable: true, get: () => false }); } catch (_) {} }
+      for (const key of ['visibilityState','webkitVisibilityState','mozVisibilityState']) { try { Object.defineProperty(d, key, { configurable: true, get: () => 'visible' }); } catch (_) {} }
+      try { Object.defineProperty(d, 'hasFocus', { configurable: true, writable: true, value: () => true }); } catch (_) {}
+      if (!focusListeners) {
+        focusListeners = true;
+        const nativeHidden = () => { try { if (descriptors.nativeVisibility?.get) return descriptors.nativeVisibility.get.call(d) === 'hidden'; return descriptors.nativeHidden?.get ? descriptors.nativeHidden.get.call(d) === true : false; } catch (_) { return false; } };
+        const nativeFocus = () => { try { return !!descriptors.nativeHasFocus?.call(d); } catch (_) { return true; } };
+        const trap = event => {
+          if (!options.hideFocus) return;
+          const background = nativeHidden() || !nativeFocus();
+          const visibility = ['visibilitychange','webkitvisibilitychange','mozvisibilitychange'].includes(event.type);
+          const windowBlur = event.type === 'blur' && event.target === window;
+          const windowFocus = event.type === 'focus' && event.target === window && suppressedFocusReturn;
+          const hiddenChange = visibility && nativeHidden();
+          const visibleReturn = visibility && !nativeHidden() && suppressedVisibilityReturn;
+          const focusLeaving = event.type === 'focusout' && (background || event.relatedTarget === null && !nativeFocus());
+          const lifecycle = ['pagehide','freeze'].includes(event.type) && background;
+          const pointerBoundary = ['mouseenter','mouseleave'].includes(event.type) && event.relatedTarget === null && (event.target === window || event.target === d || event.target === d.documentElement);
+          if (!hiddenChange && !visibleReturn && !windowBlur && !windowFocus && !focusLeaving && !lifecycle && !pointerBoundary) return;
+          if (hiddenChange) suppressedVisibilityReturn = true;
+          if (visibleReturn) suppressedVisibilityReturn = false;
+          if (windowBlur) suppressedFocusReturn = true;
+          if (windowFocus) suppressedFocusReturn = false;
+          event.stopImmediatePropagation();
+        };
+        for (const type of ['visibilitychange','webkitvisibilitychange','mozvisibilitychange','blur','focus','focusout','pagehide','freeze','mouseenter','mouseleave']) window.addEventListener(type, trap, true);
+      }
+    } else {
+      suppressedFocusReturn = false; suppressedVisibilityReturn = false;
+      for (const key of ['hidden','webkitHidden','mozHidden','visibilityState','webkitVisibilityState','mozVisibilityState','hasFocus']) restore(d, key, descriptors.doc[key]);
+    }
     if (!activated) return;
     if (options.fakeFullscreen) {
       for (const key of ['fullscreenEnabled','webkitFullscreenEnabled']) {
@@ -60,15 +94,6 @@
       if (window.HTMLVideoElement) restore(HTMLVideoElement.prototype, 'webkitEnterFullscreen', descriptors.video);
       fakeFsEl = null;
     }
-    if (options.hideFocus) {
-      try { Object.defineProperty(d, 'hidden', { configurable: true, get: () => false }); } catch (_) {}
-      try { Object.defineProperty(d, 'visibilityState', { configurable: true, get: () => 'visible' }); } catch (_) {}
-      try { Object.defineProperty(d, 'hasFocus', { configurable: true, writable: true, value: () => true }); } catch (_) {}
-    } else {
-      restore(d, 'hidden', descriptors.doc.hidden);
-      restore(d, 'visibilityState', descriptors.doc.visibilityState);
-      restore(d, 'hasFocus', descriptors.doc.hasFocus);
-    }
   }
   function activate(event) {
     if (activated || !event.isTrusted) return;
@@ -80,11 +105,7 @@
   }
   d.addEventListener('pointerdown', activate, true);
   d.addEventListener('touchend', activate, true);
-  window.addEventListener('blur', event => {
-    if (!activated || !options.hideFocus) return;
-    event.stopImmediatePropagation();
-    setTimeout(() => { if (options.hideFocus) { window.dispatchEvent(new Event('focus')); d.dispatchEvent(new Event('visibilitychange')); } }, 50);
-  }, true);
+  apply(options);
   window.addEventListener('message', event => {
     if (event.source === window && event.data?.__veyraPresence === true && event.data.type === 'config') apply(event.data.config);
   });

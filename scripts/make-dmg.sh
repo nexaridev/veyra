@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP_PATH="${1:-$ROOT/dist-v1.0.11a-mac/Veyra-darwin-universal/Veyra.app}"
-OUTPUT_PATH="${2:-$ROOT/outputs/Veyra-1.0.11a-macOS-universal.dmg}"
+APP_PATH="${1:-$ROOT/dist-v1.1.0-mac/Veyra-darwin-universal/Veyra.app}"
+OUTPUT_PATH="${2:-$ROOT/outputs/Veyra-1.1.0-macOS-universal.dmg}"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "Create the DMG on macOS using hdiutil." >&2

@@ -68,8 +68,8 @@ namespace Veyra.Setup {
   // Raw Ed25519 key from src/release-config.json. It is a public verification key.
   public const string PublicKey="znn1FR5Q/oBHL8knaSvyNPTFKnt/q/aCqOYFzPbQpFk=";
   // This test build is pinned in the installer binary by its exact release URL, size, and SHA-256.
-  const string PreviewEnvelope="{\"payload\":\"veyra-preview-1.0.11a\",\"signature\":\"pinned-sha256\"}";
-  public static Release Preview(){return new Release{Version="1.0.11",Url="https://github.com/nexaridev/veyra/releases/download/v1.0.11a/Veyra-1.0.11a-Windows.zip",Hash="2123a5507d38825f8a9304fe6392ecab029da0eb1c9af501f983deb5159f0b9a",Size=164827738,Envelope=PreviewEnvelope};}
+  const string PreviewEnvelope="{\"payload\":\"veyra-preview-1.1.0\",\"signature\":\"pinned-sha256\"}";
+  public static Release Preview(){return new Release{Version="1.1.0",Url="https://github.com/nexaridev/veyra/releases/download/v1.1.0/Veyra-1.1.0-Windows.zip",Hash="FBE7D2A0FB4E9D03B1BECE5687665EAF88A68AEAB009EE6C3BA58B4419F4C93E".ToLowerInvariant(),Size=164831067,Envelope=PreviewEnvelope};}
   public static Release Verify(string text){if(String.Equals(text,PreviewEnvelope,StringComparison.Ordinal))return Preview();return VerifyWithKey(text,Convert.FromBase64String(PublicKey));}
   internal static Release VerifyWithKey(string text,byte[] publicKey){
    if(text==null||text.Length>100000)throw new IOException(L.T("Некорректный ответ сервера обновлений."));

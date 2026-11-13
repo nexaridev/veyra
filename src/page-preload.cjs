@@ -131,7 +131,8 @@ if(/^https?:$/.test(location.protocol)){
   const d=document,w=window,ElementCtor=w.Element,VideoCtor=w.HTMLVideoElement;
   if(!w.__veyraCompat){
    const names=['requestFullscreen','webkitRequestFullscreen','mozRequestFullScreen','msRequestFullscreen'];
-   w.__veyraCompat={fakeFsEl:null,base:{fullscreenEnabled:Object.getOwnPropertyDescriptor(d,'fullscreenEnabled'),webkitFullscreenEnabled:Object.getOwnPropertyDescriptor(d,'webkitFullscreenEnabled'),fullscreenElement:Object.getOwnPropertyDescriptor(d,'fullscreenElement'),webkitFullscreenElement:Object.getOwnPropertyDescriptor(d,'webkitFullscreenElement'),webkitCurrentFullScreenElement:Object.getOwnPropertyDescriptor(d,'webkitCurrentFullScreenElement'),hidden:Object.getOwnPropertyDescriptor(d,'hidden'),visibilityState:Object.getOwnPropertyDescriptor(d,'visibilityState'),hasFocus:d.hasFocus,requests:names.map(n=>Object.getOwnPropertyDescriptor(ElementCtor.prototype,n)),webkitVideo:Object.getOwnPropertyDescriptor(VideoCtor?.prototype||{},'webkitEnterFullscreen'),exit:Object.getOwnPropertyDescriptor(d,'exitFullscreen')},listeners:false};
+   const inherited=(obj,key)=>{for(let p=obj;p;p=Object.getPrototypeOf(p)){const desc=Object.getOwnPropertyDescriptor(p,key);if(desc)return desc}return null};
+  w.__veyraCompat={fakeFsEl:null,suppressedFocusReturn:false,suppressedVisibilityReturn:false,base:{fullscreenEnabled:Object.getOwnPropertyDescriptor(d,'fullscreenEnabled'),webkitFullscreenEnabled:Object.getOwnPropertyDescriptor(d,'webkitFullscreenEnabled'),fullscreenElement:Object.getOwnPropertyDescriptor(d,'fullscreenElement'),webkitFullscreenElement:Object.getOwnPropertyDescriptor(d,'webkitFullscreenElement'),webkitCurrentFullScreenElement:Object.getOwnPropertyDescriptor(d,'webkitCurrentFullScreenElement'),hidden:Object.getOwnPropertyDescriptor(d,'hidden'),webkitHidden:Object.getOwnPropertyDescriptor(d,'webkitHidden'),mozHidden:Object.getOwnPropertyDescriptor(d,'mozHidden'),visibilityState:Object.getOwnPropertyDescriptor(d,'visibilityState'),webkitVisibilityState:Object.getOwnPropertyDescriptor(d,'webkitVisibilityState'),mozVisibilityState:Object.getOwnPropertyDescriptor(d,'mozVisibilityState'),nativeHidden:inherited(d,'hidden'),nativeVisibilityState:inherited(d,'visibilityState'),hasFocus:d.hasFocus,requests:names.map(n=>Object.getOwnPropertyDescriptor(ElementCtor.prototype,n)),webkitVideo:Object.getOwnPropertyDescriptor(VideoCtor?.prototype||{},'webkitEnterFullscreen'),exit:Object.getOwnPropertyDescriptor(d,'exitFullscreen')},listeners:false};
   }
   const state=w.__veyraCompat,define=(obj,key,descriptor)=>{try{Object.defineProperty(obj,key,descriptor)}catch{}};
   const dispatch=(target,type)=>{try{target?.dispatchEvent(new w.Event(type,{bubbles:true}))}catch{}};
@@ -154,9 +155,39 @@ if(/^https?:$/.test(location.protocol)){
    if(VideoCtor)restore(VideoCtor.prototype,'webkitEnterFullscreen',state.base.webkitVideo);state.fakeFsEl=null;
   }
   if(settings.hideFocus){
-   define(d,'hidden',{configurable:true,get:()=>false});define(d,'visibilityState',{configurable:true,get:()=> 'visible'});define(d,'hasFocus',{configurable:true,writable:true,value:()=>true});
-   if(!state.listeners){state.listeners=true;w.addEventListener('blur',()=>setTimeout(()=>{if(w.__veyraCompat?.settings?.hideFocus){dispatch(w,'focus');dispatch(d,'visibilitychange')}},50),true);d.addEventListener('visibilitychange',e=>{if(w.__veyraCompat?.settings?.hideFocus)e.stopImmediatePropagation()},true)}
-  }else{restore(d,'hidden',state.base.hidden);restore(d,'visibilityState',state.base.visibilityState);restore(d,'hasFocus',state.base.hasFocus?{configurable:true,writable:true,value:state.base.hasFocus}:null)}
+   for(const key of ['hidden','webkitHidden','mozHidden'])define(d,key,{configurable:true,get:()=>false});
+   for(const key of ['visibilityState','webkitVisibilityState','mozVisibilityState'])define(d,key,{configurable:true,get:()=> 'visible'});
+   define(d,'hasFocus',{configurable:true,writable:true,value:()=>true});
+   if(!state.listeners){
+    state.listeners=true;
+    const nativeHidden=()=>{try{const visibility=state.base.nativeVisibilityState,hidden=state.base.nativeHidden;if(visibility?.get)return visibility.get.call(d)==='hidden';return hidden?.get?hidden.get.call(d)===true:false}catch{return false}};
+    const nativeFocus=()=>{try{return !!state.base.hasFocus?.call(d)}catch{return true}};
+    const hideEvent=event=>{
+     const compat=w.__veyraCompat;if(!compat?.settings?.hideFocus)return;
+     const background=nativeHidden()||!nativeFocus();
+     const visibility=['visibilitychange','webkitvisibilitychange','mozvisibilitychange'].includes(event.type);
+     const windowBlur=event.type==='blur'&&event.target===w;
+     const windowFocus=event.type==='focus'&&event.target===w&&compat.suppressedFocusReturn;
+     const hiddenChange=visibility&&nativeHidden();
+     const visibleReturn=visibility&&!nativeHidden()&&compat.suppressedVisibilityReturn;
+     const focusLeaving=event.type==='focusout'&&(background||event.relatedTarget===null&&!nativeFocus());
+     const lifecycle=['pagehide','freeze'].includes(event.type)&&background;
+     const pointerBoundary=['mouseenter','mouseleave'].includes(event.type)&&event.relatedTarget===null&&(event.target===w||event.target===d||event.target===d.documentElement);
+     if(!hiddenChange&&!visibleReturn&&!windowBlur&&!windowFocus&&!focusLeaving&&!lifecycle&&!pointerBoundary)return;
+     if(hiddenChange)compat.suppressedVisibilityReturn=true;
+     if(visibleReturn)compat.suppressedVisibilityReturn=false;
+     if(windowBlur)compat.suppressedFocusReturn=true;
+     if(windowFocus)compat.suppressedFocusReturn=false;
+     event.stopImmediatePropagation();
+    };
+    for(const type of ['visibilitychange','webkitvisibilitychange','mozvisibilitychange','blur','focus','focusout','pagehide','freeze','mouseenter','mouseleave'])w.addEventListener(type,hideEvent,true);
+   }
+  }else{
+   state.suppressedFocusReturn=false;state.suppressedVisibilityReturn=false;
+   for(const key of ['hidden','webkitHidden','mozHidden'])restore(d,key,state.base[key]);
+   for(const key of ['visibilityState','webkitVisibilityState','mozVisibilityState'])restore(d,key,state.base[key]);
+   restore(d,'hasFocus',state.base.hasFocus?{configurable:true,writable:true,value:state.base.hasFocus}:null)
+  }
   state.settings={...settings};
  },args:[next]});
  apply(config);ipcRenderer.on('veyra:compatibility-settings',(_,next)=>{config=next;apply(config)});

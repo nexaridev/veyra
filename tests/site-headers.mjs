@@ -11,8 +11,16 @@ for(const [path,method,status] of [['/','GET',200],['/privacy?lang=ru','GET',200
  if(status===200&&(path==='/'||path.startsWith('/privacy'))){assert.ok(text.includes('href="/assets/site.css"'));assert.ok(!/<style|\sstyle=/i.test(text));}
  if(path==='/assets/site.css'){assert.match(response.headers.get('Content-Type'),/^text\/css/);assert.ok(text.includes('.language-switch{margin-left:auto}'));}
  if(path==='/health'){assert.equal(response.headers.get('Cache-Control'),'no-store');assert.equal(JSON.parse(text).status,'ok');}
+ if(path==='/'&&status===200){
+  assert.match(text,/<a class="primary" href="\/download\/windows"[^>]*><span class="download-icon">↓<\/span>Download installer for Windows 1\.1\.0<\/a>/);
+  assert.match(text,/href="https:\/\/github\.com\/nexaridev\/veyra\/releases\/download\/v1\.1\.0\/Veyra-1\.1\.0-Windows\.zip"/);
+ }
  if(path.startsWith('/api/'))assert.equal(response.headers.get('Cache-Control'),'no-store');
 }
+const win=await worker.fetch(new Request(origin+'/download/windows'),{},{});
+assert.equal(win.headers.get('Location'),'https://github.com/nexaridev/veyra/releases/download/installer-v1.3.5/VeyraSetup.exe');
+const android=await worker.fetch(new Request(origin+'/download/android'),{},{});
+assert.equal(android.headers.get('Location'),'https://github.com/nexaridev/veyra/releases/download/v1.1.0/Veyra-Android-0.7.3.apk');
 for(const path of ['/','/privacy','/assets/site.css','/health','/downloads/windows.json','/missing']){
  const response=await worker.fetch(new Request(origin+path,{method:'HEAD'}),{},{});assert.equal(await response.text(),'');
 }
