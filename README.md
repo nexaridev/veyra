@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 1.0.4 is the current stable release. Test build 1.0.5 is available as a GitHub prerelease and does not replace the stable update channel. Google site compatibility remains experimental. Windows 0.9.1 and 0.9.2 are retained for rollback. Android remains 0.6.6. Windows 0.7.0 through 0.8.3 carry a memory warning; use the current stable release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.8 is the current release candidate. Android 0.7.1 is the current preview build. Google site compatibility remains experimental. Windows 0.7.0 through 0.8.3 carry a memory warning; use a newer release. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
@@ -35,11 +35,13 @@ Windows includes tabs with favicons, bookmarks and folders, history, sidebar pan
 
 The password vault uses a master password, authenticated encryption and Windows protection. Filling requires the exact HTTPS origin and never submits a form automatically.
 
+Windows session restoration is opt-in. When enabled, it restores tab order, selected tab, and which tabs were sleeping. It can also restore ordinary text drafts on the exact HTTPS page, stored only with OS-backed encryption; passwords, one time codes and payment fields are excluded. Draft restoration stays on this device and is skipped if secure OS encryption is unavailable.
+
 Privacy controls include tracker filtering, HTTPS upgrades, third party cookie restrictions, WebRTC settings, site permissions and temporary profiles. Memory controls can suspend eligible background tabs. Individual tabs can remain awake. Discord Rich Presence is optional.
 
 Focus compatibility reports a visible and focused page. Virtual fullscreen acknowledges a site request without resizing the window. This mode is enabled by default and can be disabled for an individual tab. It can affect site behavior and does not guarantee compatibility with every check.
 
-Android includes tabs, bookmarks, history, page search, desktop site mode, sharing, default browser selection, file uploads and a saved downloads list. Its interface and password features do not yet match the Windows version.
+Android includes tabs, bookmarks, history, page search, desktop site mode, sharing, default browser selection, file uploads, a saved downloads list and website notifications. Notifications use Android's notification shade, ask before granting a site permission, honor Android's notification permission, and stay disabled in private tabs. Its interface and password features do not yet match the Windows version.
 
 Both platforms include Veyra Pulse, an offline game with increasingly difficult waves and local records.
 
@@ -69,7 +71,7 @@ Electron, Chromium, GeckoView, uBlock Origin and other dependencies retain their
 
 ## License
 
-Veyra is released under GPLv3. See [LICENSE](LICENSE) and [third party source details](vendor/SOURCES.md). The VPN architecture is described in [VPN design](VPN-DESIGN.md).
+Veyra is licensed under the standard MIT License. Commercial use, sale, forks, and derivatives are allowed. The MIT notice requires preserving the copyright and license text, which credits Nexaridev and the original Veyra project. Third-party components retain their own licenses; see [third party source details](vendor/SOURCES.md). See [VPN design](VPN-DESIGN.md).
 
 Russian and English are supported throughout the browser interface. The website and privacy information are available in both languages. Extension language on Windows follows the selected browser language after a restart.
 

@@ -22,8 +22,39 @@ if(process.isMainFrame&&!nativeCompatibility){
  }});
 }
 if(!nativeCompatibility){
+// Keep native scrollbars readable on dark browser themes without recoloring page content.
+try{const config=ipcRenderer.sendSync('veyra:dark-config');if(config.scrollbars)require('electron').webFrame.insertCSS('@media(prefers-color-scheme:dark){html{scrollbar-color:#716b7d #17151d!important;scrollbar-width:thin!important}*::-webkit-scrollbar{width:11px!important;height:11px!important}*::-webkit-scrollbar-track,*::-webkit-scrollbar-corner{background:#17151d!important}*::-webkit-scrollbar-thumb{background:#5c5667!important;border:2px solid #17151d!important;border-radius:8px!important}*::-webkit-scrollbar-thumb:hover{background:#81798f!important}}')}catch{}
 // Isolated handlers; clipboard bridge exposes text-only writes, never reads.
 if(process.isMainFrame){
+  if(location.protocol==='https:'){
+   let pending=ipcRenderer.sendSync('veyra:form-restore'),timer=0,observer=null,restored=false,formDirty=false;
+   const sensitive=/(?:pass(?:word)?|otp|one.?time|token|secret|credit.?card|card.?number|cvv|cvc|security.?code|payment|billing|pin)/i;
+   const controls=()=>[...document.querySelectorAll('input,textarea,[contenteditable="true"]')].filter(el=>{
+    if(el.disabled||el.readOnly||el.type==='hidden'||el.type==='password'||el.type==='file'||el.type==='checkbox'||el.type==='radio'||el.type==='submit'||el.type==='button'||el.type==='reset')return false;
+    if(el instanceof HTMLInputElement&&!['text','search','email','url','tel'].includes(el.type))return false;
+    if(el.isContentEditable&&el.parentElement?.closest('[contenteditable="true"]'))return false;
+    return !sensitive.test([el.id,el.getAttribute('name'),el.getAttribute('autocomplete'),el.getAttribute('aria-label')].filter(Boolean).join(' '));
+   });
+   const valueOf=el=>el.isContentEditable?el.innerText:el.value;
+   const setValue=(el,value)=>{if(el.isContentEditable)el.innerText=value;else{const setter=Object.getOwnPropertyDescriptor(el instanceof HTMLTextAreaElement?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value')?.set;if(setter)setter.call(el,value);else el.value=value;}el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));};
+   const apply=()=>{
+    if(restored||!pending||pending.url!==location.href)return;
+    const elements=controls();let resolved=0;
+    for(const field of pending.fields){const el=elements[field.index];if(!el||field.id&&field.id!==el.id||field.name&&field.name!==el.getAttribute('name'))continue;resolved++;if(el.matches(':focus')||valueOf(el))continue;setValue(el,field.value);}
+    if(resolved>=pending.fields.length){restored=true;observer?.disconnect();observer=null;clearTimeout(timer);pending=null;}
+   };
+   const capture=()=>{
+    if(location.protocol!=='https:')return;
+    const fields=controls().slice(0,128).map((el,index)=>({index,kind:el.isContentEditable?'editable':el instanceof HTMLTextAreaElement?'textarea':'input',type:el.type||'',id:el.id||'',name:el.getAttribute('name')||'',autocomplete:el.getAttribute('autocomplete')||'',value:String(valueOf(el)||'').slice(0,4096)}));
+    ipcRenderer.send('veyra:form-state',{fields});formDirty=false;
+   };
+   if(pending){
+    const begin=()=>{observer=new MutationObserver(apply);observer.observe(document.documentElement,{subtree:true,childList:true});timer=setTimeout(()=>{observer?.disconnect();observer=null;pending=null;},8000);apply();};
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',begin,{once:true});else begin();
+   }
+   let saveTimer=0;document.addEventListener('input',event=>{const target=event.target instanceof Element?(event.target.closest('[contenteditable="true"]')||event.target):null;if(!event.isTrusted||!controls().includes(target))return;formDirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(capture,300);},true);
+   window.addEventListener('pagehide',()=>{clearTimeout(saveTimer);if(formDirty)capture();},{once:true});
+  }
   let lastOffer=0,dirty=false;
   document.addEventListener('input',event=>{
     if(event.isTrusted && !dirty){dirty=true;ipcRenderer.send('veyra:page-dirty');}

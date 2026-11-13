@@ -1803,7 +1803,50 @@ Object.assign(catalog,{'Разрешить полноэкранный режим
 Object.assign(catalog,{'Локальный файл':{en:'Local file'},'Открыть HTML-файл':{en:'Open HTML file'},'Не удалось открыть HTML-файл.':{en:'Could not open the HTML file.'}});
 Object.assign(catalog,{'Приватность и совместимость':{en:'Privacy and compatibility',uk:'Приватність і сумісність'},'Скрывать от сайтов, что окно не в фокусе':{en:'Hide from sites when the window is unfocused',uk:'Приховувати від сайтів, що вікно не у фокусі'},'Страница получает состояние «в фокусе» и «видима», даже когда окно браузера не активно.':{en:'Pages see the browser as focused and visible even while its window is inactive.',uk:'Сторінки бачать браузер активним і видимим, навіть коли його вікно неактивне.'},'Всегда сообщать сайтам fullscreen':{en:'Always report fullscreen to sites',uk:'Завжди повідомляти сайтам про fullscreen'},'Веб API fullscreen имитируется внутри страницы. Размер окна браузера не меняется.':{en:'Fullscreen APIs are simulated inside the page. The browser window does not resize.',uk:'Fullscreen API імітується на сторінці. Розмір вікна браузера не змінюється.'},'Разрешать настоящий fullscreen окна':{en:'Allow real window fullscreen',uk:'Дозволити справжній fullscreen вікна'},'При запросе страницы Veyra спросит подтверждение перед переходом окна в fullscreen.':{en:'Veyra asks before the window enters fullscreen at a page’s request.',uk:'Veyra запитає підтвердження перед переходом вікна у fullscreen на запит сторінки.'},'Ложный fullscreen не меняет размер окна. Если включён настоящий fullscreen, браузер отдельно покажет запрос подтверждения.':{en:'Simulated fullscreen does not resize the window. If real fullscreen is enabled, Veyra asks separately for confirmation.',uk:'Імітація fullscreen не змінює розмір вікна. Якщо справжній fullscreen дозволено, Veyra окремо запитає підтвердження.'},'Домены профиля совместимости':{en:'Compatibility profile domains',uk:'Домени профілю сумісності'}});
 Object.assign(catalog,{'Сайт запрашивает настоящий полноэкранный режим окна.':{en:'The site requests actual fullscreen for the browser window.',uk:'Сайт запитує справжній повноекранний режим вікна.'}});
+Object.assign(catalog,{
+ 'Настроить':{en:'Customize',uk:'Налаштувати'},'Готово':{en:'Done',uk:'Готово'},
+ 'СОЧЕТАНИЯ КЛАВИШ':{en:'KEYBOARD SHORTCUTS',uk:'КЛАВІАТУРНІ СКОРОЧЕННЯ'},
+ 'Переключает между текущей и последней использованной вкладкой.':{en:'Switches between the current tab and the most recently used tab.',uk:'Перемикає між поточною та останньою використаною вкладкою.'},
+ 'Нажми и введи сочетание клавиш':{en:'Focus and press a key combination',uk:'Натисни та введи комбінацію клавіш'},
+ 'Нажми на поле сочетания, затем введи клавиши. Работает физическая клавиша, поэтому раскладка не влияет.':{en:'Focus a shortcut field and press the keys. Physical keys are used, so keyboard layout does not matter.',uk:'Натисни поле скорочення та введи клавіші. Використовується фізична клавіша, тому розкладка не має значення.'},
+ 'Это сочетание клавиш нельзя использовать.':{en:'This key combination cannot be used.',uk:'Цю комбінацію клавіш не можна використовувати.'},
+ 'Добавь Ctrl, Alt или Shift к клавише.':{en:'Add Ctrl, Alt, or Shift to the key.',uk:'Додай Ctrl, Alt або Shift до клавіші.'},
+ 'Восстановить сочетания по умолчанию':{en:'Restore default shortcuts',uk:'Відновити скорочення за замовчуванням'},
+ 'Это сочетание уже назначено.':{en:'This shortcut is already assigned.',uk:'Це скорочення вже призначене.'}
+});
+Object.assign(catalog,{
+ 'Переключить две последние вкладки':{en:'Switch between the two most recent tabs',uk:'Перемкнутися між двома останніми вкладками'},
+ 'Новая вкладка':{en:'New tab',uk:'Нова вкладка'},'Закрыть вкладку':{en:'Close tab',uk:'Закрити вкладку'},
+ 'Адресная строка':{en:'Address bar',uk:'Адресний рядок'},'Восстановить закрытую вкладку':{en:'Reopen closed tab',uk:'Відновити закриту вкладку'},
+ 'Следующая вкладка':{en:'Next tab',uk:'Наступна вкладка'},'Предыдущая вкладка':{en:'Previous tab',uk:'Попередня вкладка'},
+ 'Поиск на странице':{en:'Find in page',uk:'Знайти на сторінці'},'Загрузки':{en:'Downloads',uk:'Завантаження'},
+ 'Закладки':{en:'Bookmarks',uk:'Закладки'},'История':{en:'History',uk:'Історія'},
+ 'Инструменты разработчика':{en:'Developer tools',uk:'Інструменти розробника'},'Открыть HTML-файл':{en:'Open HTML file',uk:'Відкрити HTML-файл'},
+ 'Новая временная вкладка':{en:'New private tab',uk:'Нова приватна вкладка'},'Обзор вкладок':{en:'Tab overview',uk:'Огляд вкладок'},
+ 'Увеличить масштаб':{en:'Zoom in',uk:'Збільшити масштаб'},'Уменьшить масштаб':{en:'Zoom out',uk:'Зменшити масштаб'},
+ 'Сбросить масштаб':{en:'Reset zoom',uk:'Скинути масштаб'},'Печать':{en:'Print',uk:'Друк'},
+ 'Перезагрузить страницу':{en:'Reload page',uk:'Перезавантажити сторінку'},'Назад':{en:'Back',uk:'Назад'},
+ 'Вперёд':{en:'Forward',uk:'Вперед'},'Полноэкранный режим':{en:'Fullscreen',uk:'Повноекранний режим'},'Закрыть панель':{en:'Close panel',uk:'Закрити панель'},
+ 'Приглушить остальные вкладки':{en:'Mute other tabs',uk:'Вимкнути звук в інших вкладках'},
+ 'Заполнение — только по нажатию для HTTPS-страницы. Данные карт не содержат CVV.':{en:'Filling starts only after you click on an HTTPS page. Card details never include CVV.',uk:'Автозаповнення запускається лише після натискання на сторінці HTTPS. Дані картки не містять CVV.'}
+});
 Object.assign(catalog,{'Choose what to share':{ru:'Выберите, чем поделиться',uk:'Виберіть, чим поділитися'},'The selected screen or window is shared with this site until you stop sharing.':{ru:'Выбранный экран или окно будет доступно сайту, пока вы не остановите трансляцию.',uk:'Вибраний екран або вікно буде доступне сайту, доки ви не зупините трансляцію.'},'The site is asking to read your clipboard. Nothing is shared until you type or paste it here and choose Share.':{ru:'Сайт запрашивает буфер обмена. Ничего не отправится, пока вы не введёте или не вставите текст сюда и не нажмёте «Поделиться».',uk:'Сайт запитує буфер обміну. Нічого не буде надіслано, доки ви не введете або не вставите текст сюди й не натиснете «Поділитися».'},'Share screen':{ru:'Поделиться экраном',uk:'Поділитися екраном'},'Share system audio':{ru:'Передавать системный звук',uk:'Передавати системний звук'},'Camera':{ru:'Камера',uk:'Камера'},'Microphone':{ru:'Микрофон',uk:'Мікрофон'},'Site permissions':{ru:'Разрешения сайта',uk:'Дозволи сайту'},'Choose which camera, microphone, or screen this site may use.':{ru:'Выберите, какие камеру, микрофон или экран разрешить этому сайту.',uk:'Виберіть, які камеру, мікрофон або екран дозволити цьому сайту.'},'Allow selected':{ru:'Разрешить выбранное',uk:'Дозволити вибране'}});
+// Exact strings used by compatibilityView(). Translation is exact-match per text node.
+Object.assign(catalog,{
+ 'Эти сайты автоматически открываются в профиле совместимости. Изменения совместимости страницы применяются сразу после сохранения.':{
+  en:'These sites automatically open in the compatibility profile. Page compatibility changes apply as soon as you save.',
+  uk:'Ці сайти автоматично відкриваються у профілі сумісності. Зміни сумісності сторінки застосовуються одразу після збереження.'
+ },
+ 'ПРИВАТНОСТЬ И СОВМЕСТИМОСТЬ':{en:'PRIVACY AND COMPATIBILITY',uk:'ПРИВАТНІСТЬ І СУМІСНІСТЬ'},
+ 'Добавляй домены без https:// и пути, по одному в строке. Поддомены включаются автоматически.':{
+  en:'Enter one domain per line, without https:// or paths. Subdomains are included automatically.',
+  uk:'Додавай домени без https:// і шляху, по одному в рядку. Піддомени додаються автоматично.'
+ },
+ 'Аккаунты профиля совместимости хранятся отдельно. Эти параметры не гарантируют вход в Google и не отключают защиту от трекеров.':{
+  en:'Accounts in the compatibility profile are stored separately. These settings do not guarantee Google sign-in or disable tracker protection.',
+  uk:'Облікові записи профілю сумісності зберігаються окремо. Ці параметри не гарантують вхід у Google і не вимикають захист від трекерів.'
+ }
+});
 const api={translate,errorMessage,languages,catalog};
 if(typeof module==='object'&&module.exports)module.exports=api;
 else root.VeyraI18n=Object.freeze(api);

@@ -8,6 +8,7 @@ const {PasswordVault}=require('./vault.cjs');
 const {SyncClient,unseal}=require('./sync.cjs');const sync=new SyncClient();let checkedUpdate=null,updateDownloading=false;
 const {PrivacyEngine}=require('./privacy.cjs');
 const I18n=require('./locales.js');
+const SessionState=require('./session-state.cjs');
 const external=require('./external-browser.cjs');
 const {ExternalApplications,externalURL}=require('./external-apps.cjs');
 const appearance=require('./appearance.cjs');
@@ -20,7 +21,7 @@ function applySitePolicy(wc,url){
  if(wc.getUserAgent()!==ua)wc.setUserAgent(ua);
 }
 function compatibleRequest(details,source){return googleHost(details.resourceType==='mainFrame'?details.url:contexts.get(details.webContentsId)?.policyURL||source||details.initiator||details.url)}
-function darkConfig(url){let host;try{host=new URL(url).hostname}catch{return {enabled:false}}return {...{enabled:db.settings.autoDark,brightness:100,contrast:100},...db.settings.darkSites[host]}}
+function darkConfig(url){let host;try{host=new URL(url).hostname}catch{return {enabled:false,scrollbars:false}}return {...{enabled:db.settings.autoDark,brightness:100,contrast:100},...db.settings.darkSites[host],scrollbars:db.settings.theme==='dark'||db.settings.theme==='system'&&nativeTheme.shouldUseDarkColors}}
 async function applyDark(wc,url){
  const compatible=googleHost(url),dark=!compatible&&darkConfig(url).enabled,network=!compatible&&(db.settings.networkDownMbps>0||db.settings.networkUpMbps>0);
  if(!dark&&!network){if(wc.debugger.isAttached())try{wc.debugger.detach()}catch{}return}
@@ -37,11 +38,12 @@ const pendingExternalURLs=[];
 app.on('second-instance',(_,argv)=>{const url=argv.map(launchURL).find(Boolean);if(url){if(win)newTab(url);else pendingExternalURLs.push(url);}if(win&&!win.isDestroyed()){if(win.isMinimized())win.restore();win.show();win.focus()}});
 let storageFlushRunning=false,storageFlushReady=false,exitConfirmed=false,appDialog=null;
 const UI=pathToFileURL(path.join(__dirname,'index.html')).href;
-const defaults={homeWidgets:[{id:'clock',kind:'clock',style:'plain'}],sidebarWidth:56,sidebarOrder:['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'],sidebarHidden:[],networkDownMbps:0,networkUpMbps:0,externalAppPermissions:{},popupWindows:false,discordShowDomain:false,discordShowTime:true,discordInterval:60,compatibilityDomains:['google.com','youtube.com'],hideFocus:true,fakeFullscreen:true,realFullscreen:false,autoDark:false,darkSites:{},shortcuts:[],discordEnabled:false,discordAppId:'1562807114227777606',clipboardMode:'auto',colorTheme:'violet',customAccent:'#bc9ffa',wallpaper:'aurora',wallpaperDim:45,bookmarksBar:false,restoreSession:false,externalBrowser:'auto',language:'en',theme:'dark',search:'duckduckgo',trackers:true,dnt:true,thirdPartyCookies:true,httpsFirst:true,webrtc:true,autoUpdateFilters:true,siteExceptions:[],httpExceptions:[],permissions:{},ramTargetMB:2048,maxBackgroundTabs:6,sleepMinutes:15,eco:true,hardwareAcceleration:true};
-let ublock;let win,profile,privacy,vault,selected,panel=null,seq=0,blocked=0,closing=false,pendingCredential=null,sitePermissions,externalApps;
+const defaults={homeWidgets:[{id:'clock',kind:'clock',style:'plain'}],sidebarWidth:56,sidebarOrder:['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'],sidebarHidden:[],networkDownMbps:0,networkUpMbps:0,externalAppPermissions:{},popupWindows:false,discordShowDomain:false,discordShowTime:true,discordInterval:60,compatibilityDomains:['google.com','youtube.com'],hideFocus:true,fakeFullscreen:true,realFullscreen:false,autoDark:false,darkSites:{},shortcuts:[],discordEnabled:false,discordAppId:'1562807114227777606',clipboardMode:'auto',colorTheme:'violet',customAccent:'#bc9ffa',wallpaper:'aurora',wallpaperDim:45,bookmarksBar:false,restoreSession:false,externalBrowser:'auto',language:'en',theme:'dark',search:'duckduckgo',trackers:true,dnt:true,thirdPartyCookies:true,httpsFirst:true,webrtc:true,autoUpdateFilters:true,siteExceptions:[],httpExceptions:[],permissions:{},ramTargetMB:2048,maxBackgroundTabs:6,sleepMinutes:15,eco:true,hardwareAcceleration:true,keybindings:{switchRecent:'Alt+Backquote',newTab:'Ctrl+KeyT',closeTab:'Ctrl+KeyW',focusAddress:'Ctrl+KeyL',restoreClosed:'Ctrl+Shift+KeyT',nextTab:'Ctrl+Tab',previousTab:'Ctrl+Shift+Tab',find:'Ctrl+KeyF',downloads:'Ctrl+KeyJ',bookmarks:'Ctrl+KeyD',history:'Ctrl+KeyH',devtools:'F12',openHTML:'Ctrl+KeyO',newPrivate:'Ctrl+Shift+KeyN',tabOverview:'Ctrl+Shift+KeyA',zoomIn:'Ctrl+Shift+Equal',zoomOut:'Ctrl+Minus',zoomReset:'Ctrl+Digit0',print:'Ctrl+KeyP',reload:'Ctrl+KeyR',back:'Alt+ArrowLeft',forward:'Alt+ArrowRight',fullscreen:'F11',closePanel:'Escape',muteOthers:'Ctrl+Shift+KeyM'}};
+let ublock;let win,profile,privacy,vault,selected,panel=null,seq=0,blocked=0,closing=false,pendingCredential=null,sitePermissions,externalApps,keybindingCapture=false;
 let db={schema:2,settings:{...defaults},bookmarks:[],history:[]};
 const directDownloads=new Map();const recentlyClosed=[];let wallpaperData='',wallpaperVersion=0;
 const tabs=[],downloads=[],sessions=new Map(),contexts=new Map(),popups=new Set();
+const savedFormState=new Map();
 let defaultPromptVisible=true,screenSharePrompt=null;
 let performanceState={memoryMB:0,privateMB:0,processCount:0,cpu:0,liveTabs:0,sleepingTabs:0},runtimeAcceleration=true;
 const earlyProfile=path.join(app.getPath('userData'),'profile.json');
@@ -65,7 +67,8 @@ function address(value){
 }
 const tr=message=>I18n.translate(String(message),db.settings.language);
 function toast(message){if(win&&!win.isDestroyed())win.webContents.send('veyra:toast',tr(message))}
-function save(){if(db.settings.restoreSession)db.lastSession={tabs:tabs.filter(t=>t.mode!=='temporary'&&web(t.url)&&!t.googleBlocked).slice(0,30).map(t=>({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted})),selectedURL:active()?.url};else delete db.lastSession;try{fs.writeFileSync(profile+'.tmp',JSON.stringify(db,null,2));fs.renameSync(profile+'.tmp',profile)}catch(error){toast('Не удалось сохранить профиль: '+error.message)}}
+function canEncryptFormState(){if(!safeStorage.isEncryptionAvailable())return false;if(process.platform==='linux'&&typeof safeStorage.getSelectedStorageBackend==='function')return ['gnome_libsecret','kwallet5','kwallet6'].includes(safeStorage.getSelectedStorageBackend());return true}
+function save(){if(db.settings.restoreSession){const eligible=tabs.filter(t=>t.mode!=='temporary'&&web(t.url)&&!t.googleBlocked);db.lastSession=SessionState.serialize(eligible,selected);if(canEncryptFormState()){const forms=[];for(const t of eligible){const state=savedFormState.get(t.sessionId);if(state&&state.url===SessionState.normalizePageURL(t.url))forms.push(state)}if(forms.length){try{db.lastSession.formsEncrypted=safeStorage.encryptString(JSON.stringify(forms)).toString('base64')}catch{}}}}else{delete db.lastSession;savedFormState.clear()}try{fs.writeFileSync(profile+'.tmp',JSON.stringify(db,null,2));fs.renameSync(profile+'.tmp',profile)}catch(error){toast('Не удалось сохранить профиль: '+error.message)}}
 function active(){return tabs.find(t=>t.id===selected)}
 function snapshot(){return {
  tabs:tabs.map(({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,keepAwake,fakePresence,blocked,googleBlocked,reader,zoomLevel,muted,audible,navEntries,navIndex})=>({id,url,title,favicon,loading,error,mode,sleeping,dirty,pinned,keepAwake,fakePresence,blocked,googleBlocked,reader,zoomLevel,muted,audible,compatibility:googleHost(url),canGoBack:navIndex>0,canGoForward:navIndex<navEntries.length-1})),selected,panel,blocked,defaultPromptVisible,
@@ -201,7 +204,7 @@ function attachPage(wc,mode,tab=null,initialURL=''){
    const pageURL=wc.getURL(),request=tab.iconRequest=(tab.iconRequest||0)+1;
    if(!web(pageURL))return;
    const image=await require('./favicon.cjs').pageIcon(wc,urls,pageURL,nativeImage);
-   if(!wc.isDestroyed()&&wc.getURL()===pageURL&&request===tab.iconRequest){tab.favicon=image;emit()}
+   if(!wc.isDestroyed()&&wc.getURL()===pageURL&&request===tab.iconRequest){tab.favicon=image;let changed=false;for(const item of db.settings.shortcuts)if(!item.image&&origin(item.url)===origin(pageURL)&&image&&item.favicon!==image){item.favicon=image;changed=true}if(changed)save();emit()}
   });
   wc.on('did-finish-load',()=>{
    if(!web(tab.url))return;tab.title=wc.getTitle()||new URL(tab.url).hostname;
@@ -217,33 +220,41 @@ function attachPage(wc,mode,tab=null,initialURL=''){
  });
 }
 function makeView(t,options={}){
- t.view=new WebContentsView({...(options.webContents?{webContents:options.webContents}:{}),webPreferences:{...options.webPreferences,disableDialogs:true,session:t.mode==='local'?localHTML.sessionFor(t.url):sessionFor(t.mode),preload:t.mode==='local'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:!t.keepAwake}});
+ // Keep Chromium's background timer/animation throttling enabled for every tab.
+ // "Keep awake" only prevents Veyra's tab-sleep lifecycle from discarding the page;
+ // disabling Chromium throttling here lets hidden pages run unbounded background work.
+ t.view=new WebContentsView({...(options.webContents?{webContents:options.webContents}:{}),webPreferences:{...options.webPreferences,disableDialogs:true,session:t.mode==='local'?localHTML.sessionFor(t.url):sessionFor(t.mode),preload:t.mode==='local'?undefined:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:true}});
  win.contentView.addChildView(t.view);attachPage(t.view.webContents,t.mode,t);ublock?.addTab(t.view.webContents,win);t.view.webContents.setZoomLevel(t.zoomLevel||0);t.view.webContents.setAudioMuted(!!t.muted);t.sleeping=false;layout();
 }
 function removeView(t){const v=t.view;t.view=null;if(!v)return;if(win&&!win.isDestroyed())win.contentView.removeChildView(v);const wc=v.webContents;if(wc&&!wc.isDestroyed())wc.close()}
 async function navigate(t,input,historyMode='push'){
  if(!t)return;const url=address(input);if(!url){toast('Этот адрес не поддерживается.');return}
+ if(t.sessionId&&t.url!==url)savedFormState.delete(t.sessionId);
  recordNavigation(t,url,historyMode);t.pendingNavigation=true;
  if(url.startsWith('file:')&&t.mode!=='local'){removeView(t);t.mode='local'}
  if(url.startsWith('file:')&&t.view&&!localHTML.allowed(t.view.webContents.session,url)){removeView(t)}
  if(web(url)&&!t.openerTabId&&t.mode!=='temporary'){const mode=googleHost(url)?'google':'private';if(mode!==t.mode){removeView(t);t.mode=mode}}
  const generation=++t.generation;t.reader=null;t.googleBlocked=false;if(web(url)&&new URL(url).hostname!=='accounts.google.com')t.serviceURL=url;t.url=url;t.error=null;t.loading=false;t.lastActive=Date.now();panel=null;
- if(url.startsWith('veyra:')){t.favicon='';t.iconRequest=(t.iconRequest||0)+1;t.pendingNavigation=false;removeView(t);t.sleeping=false;t.title=({'veyra://widget-studio':'Конструктор виджетов','veyra://widgets':'Виджеты','veyra://sidebar':'Боковая панель','veyra://offline':'Veyra Pulse','veyra://sync':'Синхронизация','veyra://themes':'Темы и обои','veyra://shortcuts':'Ярлыки главной','veyra://compatibility':'Список совместимости','veyra://discord':'Discord Rich Presence','veyra://dark':'Auto Dark Mode','veyra://downloads':'Загрузки','veyra://performance':'Производительность','veyra://privacy':'Приватность','veyra://newtab':'Новая вкладка','veyra://history':'История','veyra://bookmarks':'Закладки','veyra://settings':'Настройки','veyra://passwords':'Пароли','veyra://diagnostics':'Диагностика','veyra://google':'Google'})[url];layout();emit();return}
+ if(url.startsWith('veyra:')){t.favicon='';t.iconRequest=(t.iconRequest||0)+1;t.pendingNavigation=false;removeView(t);t.sleeping=false;t.title=({'veyra://widget-studio':'Конструктор виджетов','veyra://widgets':'Виджеты','veyra://sidebar':'Боковая панель','veyra://offline':'Veyra Pulse','veyra://sync':'Синхронизация','veyra://themes':'Темы и обои','veyra://shortcuts':'Ярлыки главной','veyra://compatibility':'Список совместимости','veyra://discord':'Discord Rich Presence','veyra://dark':'Auto Dark Mode','veyra://downloads':'Загрузки','veyra://performance':'Производительность','veyra://privacy':'Приватность','veyra://newtab':'Новая вкладка','veyra://history':'История','veyra://bookmarks':'Закладки','veyra://settings':'Настройки','veyra://passwords':'Пароли','veyra://diagnostics':'Диагностика','veyra://google':'Google'})[url];save();layout();emit();return}
  t.title=new URL(url).hostname;t.loading=true;emit();
  try{if(!t.view)makeView(t);if(db.settings.trackers&&t.mode!=='local'){await ublock.install(sessionFor(t.mode==='temporary'?'private':t.mode));if(!tabs.includes(t)||t.generation!==generation||!t.view)return;ublock.addTab(t.view.webContents,win);}if(!tabs.includes(t)||t.generation!==generation)return;layout();if(!t.view.webContents.getURL())await t.view.webContents.loadURL('about:blank');if(!tabs.includes(t)||t.generation!==generation||!t.view)return;t.loading=true;if(t.mode!=='local'){applySitePolicy(t.view.webContents,url);await applyDark(t.view.webContents,url);}await t.view.webContents.loadURL(url)}
  catch(error){if(tabs.includes(t)&&t.generation===generation){t.loading=false;t.error=error.message;layout();emit()}}
 }
-function newTab(url='veyra://newtab',mode='private'){
+function newTab(url='veyra://newtab',mode='private',restoreOptions={}){
  externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);clipboardReadPrompt?.finish(null);
  if(!['private','google','temporary','local'].includes(mode))mode='private';
- const t={id:++seq,mode,url:'veyra://newtab',title:tr('Новая вкладка'),loading:false,error:null,generation:0,lastActive:Date.now(),sleeping:false,dirty:false,pinned:false,keepAwake:false,fakePresence:true,blocked:0,googleBlocked:false,reader:null,zoomLevel:0,muted:false,audible:false,navEntries:[],navIndex:-1,pendingNavigation:false,traversing:false};
- if(active())active().lastActive=Date.now();tabs.push(t);selected=t.id;void navigate(t,url);layout();emit();return t;
+ const t={id:++seq,sessionId:typeof restoreOptions.sessionId==='string'?restoreOptions.sessionId:crypto.randomUUID(),mode,url:'veyra://newtab',title:tr('Новая вкладка'),loading:false,error:null,generation:0,lastActive:Date.now(),sleeping:false,dirty:false,pinned:restoreOptions.pinned===true,keepAwake:false,fakePresence:true,blocked:0,googleBlocked:false,reader:null,zoomLevel:Math.max(-3,Math.min(3,Number(restoreOptions.zoomLevel)||0)),muted:restoreOptions.muted===true,audible:false,navEntries:[],navIndex:-1,pendingNavigation:false,traversing:false};
+ if(active())active().lastActive=++tabUseCounter;t.lastActive=++tabUseCounter;tabs.push(t);selected=t.id;
+ if(restoreOptions.sleeping===true&&web(url)){t.url=url;t.title=new URL(url).hostname;t.sleeping=true;t.pinned=restoreOptions.pinned===true;t.zoomLevel=Math.max(-3,Math.min(3,Number(restoreOptions.zoomLevel)||0));t.muted=restoreOptions.muted===true;t.navEntries=[{url}];t.navIndex=0;layout();emit();return t;}
+ void navigate(t,url);layout();emit();return t;
 }
-function choose(id){externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);screenSharePrompt?.finish(null);const t=tabs.find(t=>t.id===id);if(!t)return;if(active())active().lastActive=Date.now();selected=id;t.lastActive=Date.now();if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents)}
-async function closeTab(id){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs.find(x=>x.id===t.openerTabId)?.id||tabs[Math.min(i,tabs.length-1)].id);layout();save();emit()}
+let tabUseCounter=Date.now();
+function choose(id){externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);screenSharePrompt?.finish(null);const t=tabs.find(t=>t.id===id);if(!t)return;if(active())active().lastActive=++tabUseCounter;selected=id;t.lastActive=++tabUseCounter;if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents)}
+async function closeTab(id){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);savedFormState.delete(t.sessionId);clearTimeout(t.formSaveTimer);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs.find(x=>x.id===t.openerTabId)?.id||tabs[Math.min(i,tabs.length-1)].id);layout();save();emit()}
 function sleepTab(t,manual=false){
- if(!t||t.openerTabId||t.keepAwake||t.id===selected||!t.view||!web(t.url)||t.pinned||t.dirty||t.loading||t.view.webContents.isCurrentlyAudible()||downloads.some(d=>d.status==='progress'&&d.mode===t.mode))return false;
- removeView(t);t.sleeping=true;t.loading=false;emit();return true;
+ const protectedRecents=tabs.slice().sort((a,b)=>b.lastActive-a.lastActive).slice(0,2);
+ if(!t||t.openerTabId||t.keepAwake||protectedRecents.includes(t)||t.id===selected||!t.view||!web(t.url)||t.pinned||t.dirty||t.loading||t.view.webContents.isCurrentlyAudible()||downloads.some(d=>d.status==='progress'&&d.mode===t.mode))return false;
+ removeView(t);t.sleeping=true;t.loading=false;save();emit();return true;
 }
 function recordNavigation(t,url,mode='push'){
  if(mode==='traverse')return;
@@ -260,26 +271,26 @@ function reload(){const t=active();if(t&&web(t.url))void navigate(t,t.url)}
 function bookmark(){const t=active();if(!t||!web(t.url))return;const i=db.bookmarks.findIndex(x=>x.url===t.url);if(i<0)db.bookmarks.unshift({id:crypto.randomUUID(),url:t.url,title:t.title,folder:'Избранное',time:Date.now()});else db.bookmarks.splice(i,1);save();emit()}
 async function openHTML(){const result=await dialog.showOpenDialog(win,{title:tr('Открыть HTML-файл'),properties:['openFile','multiSelections'],filters:[{name:'HTML',extensions:['html','htm']}]});if(!result.canceled)for(const file of result.filePaths){const url=localHTML.url(file);if(url)newTab(url,'local');else toast('Не удалось открыть HTML-файл.')}}
 function shortcuts(e,input,target=active()?.view?.webContents){
- if(input.type!=='keyDown')return;const raw=String(input.key||'').toLowerCase(),code=String(input.code||'');const k=/^Key[A-Z]$/.test(code)?code.slice(3).toLowerCase():/^Digit[0-9]$/.test(code)?code.slice(5):({left:'arrowleft',right:'arrowright'}[raw]||raw),ctrl=(input.control||input.meta)&&!input.alt;let handled=true;
- if(input.key==='F12'||ctrl&&input.shift&&k==='i'||ctrl&&input.shift&&k==='j'){if(target&&!target.isDestroyed()){if(target.isDevToolsOpened())target.closeDevTools();else target.openDevTools({mode:'detach'});}}
- else if(ctrl&&k==='o'){void openHTML()}
- else if(ctrl&&k==='l'){win.webContents.focus();win.webContents.send('veyra:address')}
- else if(input.alt&&!input.control&&!input.meta&&k==='arrowleft')back();else if(input.alt&&!input.control&&!input.meta&&k==='arrowright')forward();
- else if(ctrl&&input.shift&&k==='n')newTab('veyra://newtab','temporary');
- else if(ctrl&&input.shift&&k==='t')restoreClosed();
- else if(ctrl&&input.shift&&k==='a')setPanel('tabs');
- else if(ctrl&&['+','='].includes(k))changeZoom(1);
- else if(ctrl&&k==='-')changeZoom(-1);
- else if(ctrl&&k==='0')changeZoom(0,true);
- else if(ctrl&&k==='p')active()?.view?.webContents.print();
- else if(ctrl&&k==='t'){newTab();win.webContents.focus()}
- else if(ctrl&&k==='w')closeTab(selected);
- else if(ctrl&&k==='tab'){const i=tabs.findIndex(t=>t.id===selected);choose(tabs[(i+(input.shift?-1:1)+tabs.length)%tabs.length].id)}
- else if(ctrl&&k==='d')bookmark();else if(ctrl&&k==='h')setPanel('history');else if(ctrl&&k==='j')setPanel('downloads');else if(ctrl&&k==='f')setPanel('find');else if((ctrl&&k==='r')||k==='f5')reload();
- else if(input.alt&&!input.control&&!input.meta&&k==='arrowleft')back();else if(input.alt&&!input.control&&!input.meta&&k==='arrowright')forward();else if(k==='f11'){const host=target&&BrowserWindow.fromWebContents(target)||win;if(host&&!host.isDestroyed())host.setFullScreen(!host.isFullScreen());}
- else if(k==='escape'&&panel){panel=null;active()?.view?.webContents.stopFindInPage('clearSelection');layout();emit()}
+ if(input.type!=='keyDown'||keybindingCapture)return;const raw=String(input.key||'').toLowerCase(),code=String(input.code||'');const k=/^Key[A-Z]$/.test(code)?code.slice(3).toLowerCase():/^Digit[0-9]$/.test(code)?code.slice(5):({left:'arrowleft',right:'arrowright'}[raw]||raw),ctrl=(input.control||input.meta)&&!input.alt;let handled=true;
+ const custom=Object.entries(db.settings.keybindings||defaults.keybindings).find(([_,combo])=>keybindingMatches(input,combo))?.[0];
+ if(custom==='switchRecent'){const t=tabs.filter(x=>x.id!==selected).sort((a,b)=>b.lastActive-a.lastActive)[0];if(t)choose(t.id)}
+ else if(custom==='newTab'){newTab();win.webContents.focus()}
+ else if(custom==='closeTab')closeTab(selected);
+ else if(custom==='focusAddress'){win.webContents.focus();win.webContents.send('veyra:address')}
+ else if(custom==='restoreClosed')restoreClosed();
+ else if(custom==='nextTab'||custom==='previousTab'){if(tabs.length>1){const i=tabs.findIndex(t=>t.id===selected),step=custom==='previousTab'?-1:1;choose(tabs[(i+step+tabs.length)%tabs.length].id)}}
+ else if(custom==='openHTML')void openHTML();else if(custom==='newPrivate')newTab('veyra://newtab','temporary');else if(custom==='tabOverview')setPanel('tabs');
+ else if(custom==='zoomIn')changeZoom(1);else if(custom==='zoomOut')changeZoom(-1);else if(custom==='zoomReset')changeZoom(0,true);
+ else if(custom==='print')active()?.view?.webContents.print();else if(custom==='reload')reload();else if(custom==='back')back();else if(custom==='forward')forward();
+ else if(custom==='fullscreen'){const host=target&&BrowserWindow.fromWebContents(target)||win;if(host&&!host.isDestroyed())host.setFullScreen(!host.isFullScreen())}
+ else if(custom==='closePanel'&&panel){panel=null;active()?.view?.webContents.stopFindInPage('clearSelection');layout();emit()}
+ else if(custom==='muteOthers'){const mute=tabs.some(t=>t.id!==selected&&!t.muted);for(const t of tabs)if(t.id!==selected){t.muted=mute;t.view?.webContents.setAudioMuted(mute)}save();emit()}
+ else if(custom==='find')setPanel('find');else if(custom==='downloads')setPanel('downloads');else if(custom==='bookmarks')setPanel('bookmarks');else if(custom==='history')setPanel('history');
+ else if(custom==='devtools'){if(target&&!target.isDestroyed()){if(target.isDevToolsOpened())target.closeDevTools();else target.openDevTools({mode:'detach'});}}
+ else if(ctrl&&input.shift&&k==='i'||ctrl&&input.shift&&k==='j'){if(target&&!target.isDestroyed()){if(target.isDevToolsOpened())target.closeDevTools();else target.openDevTools({mode:'detach'});}}
  else handled=false;if(handled)e.preventDefault();
 }
+function keybindingMatches(input,combo){if(typeof combo!=='string')return false;const parts=combo.split('+'),code=parts.pop(),mods=new Set(parts),ctrl=!!(input.control||input.meta);return input.code===code&&ctrl===mods.has('Ctrl')&&!!input.alt===mods.has('Alt')&&!!input.shift===mods.has('Shift')&&(!mods.has('Meta')||!!input.meta)}
 async function diagnose(){
  const t=active(),wc=t?.view?.webContents;if(!wc||!web(t.url))throw Error('Сначала открой сайт.');
  const script=`(async()=>{
@@ -296,6 +307,19 @@ async function diagnose(){
 }
 function candidateExpired(){if(pendingCredential&&Date.now()-pendingCredential.created>120000)pendingCredential=null}
 ipcMain.on('veyra:page-dirty',e=>{const c=contexts.get(e.sender.id);if(c?.tab&&e.senderFrame===e.sender.mainFrame)c.tab.dirty=true});
+ipcMain.on('veyra:form-state',(e,payload)=>{
+ const context=contexts.get(e.sender.id),frame=e.senderFrame,tab=context?.tab;
+ if(!db.settings.restoreSession||!tab||tab.mode==='temporary'||frame!==e.sender.mainFrame||!secure(frame.url)||origin(frame.url)!==origin(e.sender.getURL()))return;
+ const state=SessionState.normalizeForms(frame.url,payload?.fields);if(!state)return;
+ savedFormState.set(tab.sessionId,{sessionId:tab.sessionId,...state});
+ clearTimeout(tab.formSaveTimer);tab.formSaveTimer=setTimeout(()=>{if(tabs.includes(tab))save()},350);
+});
+ipcMain.on('veyra:form-restore',e=>{
+ const context=contexts.get(e.sender.id),frame=e.senderFrame,tab=context?.tab;
+ if(!db.settings.restoreSession||!tab||tab.mode==='temporary'||frame!==e.sender.mainFrame||!secure(frame.url)||origin(frame.url)!==origin(e.sender.getURL())){e.returnValue=null;return;}
+ const state=savedFormState.get(tab.sessionId),url=SessionState.normalizePageURL(frame.url);
+ e.returnValue=state&&state.url===url?{url:state.url,fields:state.fields}:null;
+});
 ipcMain.on('veyra:password-candidate',(e,payload)=>{
  const c=contexts.get(e.sender.id);if(!c||c.mode==='temporary'||e.senderFrame!==e.sender.mainFrame||!secure(e.senderFrame.url)||origin(e.senderFrame.url)!==origin(e.sender.getURL()))return;
  if(typeof payload?.username!=='string'||payload.username.length>512||typeof payload?.password!=='string'||!payload.password||payload.password.length>4096)return;
@@ -386,7 +410,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'compatibility-settings':{const rows=payload?.domains;if(!Array.isArray(rows)||rows.length>100)throw Error('Некорректный список доменов.');const values=rows.map(x=>String(x).trim().toLowerCase()).filter(Boolean);if(values.some(x=>!/^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(x)))throw Error('Укажи домены без https:// и пути.');db.settings.compatibilityDomains=[...new Set(values)];for(const key of ['hideFocus','fakeFullscreen','realFullscreen'])if(typeof payload[key]==='boolean')db.settings[key]=payload[key];save();broadcastCompatibility();emit();toast('Настройки сохранены.');break}
  case 'dark-settings':{if(typeof payload?.global==='boolean')db.settings.autoDark=payload.global;const host=web(active()?.url)?new URL(active().url).hostname:null;if(host&&payload?.site){db.settings.darkSites[host]={enabled:!!payload.site.enabled,brightness:Math.max(60,Math.min(130,Number(payload.site.brightness)||100)),contrast:Math.max(70,Math.min(140,Number(payload.site.contrast)||100))}}save();if(active()?.view)void navigate(active(),active().url);emit();break}
  case 'discord-settings':{if(typeof payload?.showDomain==='boolean')db.settings.discordShowDomain=payload.showDomain;if(typeof payload?.showTime==='boolean')db.settings.discordShowTime=payload.showTime;if(Number.isFinite(Number(payload?.interval)))db.settings.discordInterval=Math.max(15,Math.min(3600,Math.round(Number(payload.interval))));db.settings.discordEnabled=!!payload?.enabled;db.settings.discordAppId=/^\d{17,22}$/.test(payload?.appId||'')?payload.appId:'';save();discord.configure(db.settings.discordEnabled,db.settings.discordAppId,{showDomain:db.settings.discordShowDomain,showTime:db.settings.discordShowTime,interval:db.settings.discordInterval});emit();break}
- case 'shortcut-save':{if(!payload||typeof payload.title!=='string'||!web(payload.url))throw Error('Укажи название и адрес сайта.');const id=db.settings.shortcuts.some(x=>x.id===payload.id)?payload.id:crypto.randomUUID();const prev=db.settings.shortcuts.find(x=>x.id===id);const row={id,title:payload.title.trim().slice(0,60),url:new URL(payload.url).href,image:prev?.image||''};db.settings.shortcuts=db.settings.shortcuts.filter(x=>x.id!==id);if(db.settings.shortcuts.length>=12)throw Error('Можно добавить до 12 ярлыков.');db.settings.shortcuts.push(row);save();emit();break}
+ case 'shortcut-save':{if(!payload||typeof payload.title!=='string'||!web(payload.url))throw Error('Укажи название и адрес сайта.');const id=db.settings.shortcuts.some(x=>x.id===payload.id)?payload.id:crypto.randomUUID();const prev=db.settings.shortcuts.find(x=>x.id===id),page=active(),sameOrigin=page&&web(page.url)&&origin(page.url)===origin(payload.url);const row={id,title:payload.title.trim().slice(0,60),url:new URL(payload.url).href,image:prev?.image||'',favicon:prev?.favicon||(sameOrigin?page.favicon||'':'')};db.settings.shortcuts=db.settings.shortcuts.filter(x=>x.id!==id);if(db.settings.shortcuts.length>=12)throw Error('Можно добавить до 12 ярлыков.');db.settings.shortcuts.push(row);save();emit();break}
  case 'shortcut-delete':db.settings.shortcuts=db.settings.shortcuts.filter(x=>x.id!==payload);save();emit();break;
  case 'shortcut-image':{const row=db.settings.shortcuts.find(x=>x.id===payload);if(!row)return;const result=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Изображения',extensions:['png','jpg','jpeg','webp']}]});if(result.canceled)return;const file=result.filePaths[0];if(fs.statSync(file).size>10*1024*1024)throw Error('Изображение слишком большое.');const img=nativeImage.createFromPath(file);if(img.isEmpty())throw Error('Не удалось прочитать изображение.');if(img.getSize().width*img.getSize().height>40_000_000)throw Error('Изображение слишком большое.');row.image=img.resize({width:128,height:128,quality:'best'}).toDataURL();save();emit();break}
 
@@ -396,6 +420,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'tab-menu':tabMenu(Number(payload));break;
  case 'move-tab':moveTab(payload);break;
  case 'mute-tab':{const t=tabs.find(t=>t.id===Number(payload));if(t){t.muted=!t.muted;t.view?.webContents.setAudioMuted(t.muted);save();emit()}break}
+ case 'mute-others':{const mute=tabs.some(t=>t.id!==selected&&!t.muted);for(const t of tabs)if(t.id!==selected){t.muted=mute;t.view?.webContents.setAudioMuted(mute)}save();emit();break}
  case 'home':void navigate(active(),'veyra://newtab');break;
  case 'zoom-in':changeZoom(1);break;case 'zoom-out':changeZoom(-1);break;case 'zoom-reset':changeZoom(0,true);break;
  case 'reader':await toggleReader();break;
@@ -416,7 +441,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'temporary':newTab('veyra://newtab','temporary');break;
  case 'select':choose(Number(payload));break;case 'close-tab':closeTab(Number(payload));break;
  case 'pin-tab':togglePin(Number(payload));break;
- case 'keep-awake':{const t=active();if(t){t.keepAwake=!t.keepAwake;t.view?.webContents.setBackgroundThrottling(!t.keepAwake);emit();}break;}
+ case 'keep-awake':{const t=active();if(t){t.keepAwake=!t.keepAwake;emit();}break;}
  case 'fake-presence':{const t=active();if(t){t.fakePresence=!t.fakePresence;if(web(t.url))await navigate(t,t.url);emit();}break;}
  case 'sleep-tab':if(!sleepTab(tabs.find(t=>t.id===Number(payload)),true))toast('Вкладка активна, закреплена, воспроизводит звук, загружается или содержит введённые данные.');break;
  case 'back':back();break;case 'forward':forward();break;case 'reload':reload();break;case 'stop':active()?.view?.webContents.stop();break;case 'bookmark':bookmark();break;
@@ -444,6 +469,9 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'language':if(!I18n.languages.includes(payload))throw Error('Этот язык не поддерживается.');db.settings.language=payload;save();emit();break;
  case 'widgets-save':{const previous=db.settings.homeWidgets||[],next=require('./widgets.js').normalize(payload),nextById=new Map(next.map(w=>[w.id,w])),packageApi=require('./widget-package.js');for(const w of previous)if(w.kind==='custom'){const updated=nextById.get(w.id);if(!updated)await widgetRuntime.clear(w.id);else{const oldPermissions=packageApi.permissions(w.package?.permissions),newPermissions=packageApi.permissions(updated.package?.permissions);if(JSON.stringify(oldPermissions)!==JSON.stringify(newPermissions))await widgetRuntime.revoke(w.id,oldPermissions.storage&&!newPermissions.storage)}}db.settings.homeWidgets=next;save();emit();break}
  case 'sidebar-save':{const keys=['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'];if(!Array.isArray(payload?.order)||payload.order.length!==keys.length||new Set(payload.order).size!==keys.length||payload.order.some(x=>!keys.includes(x)))throw Error('Invalid sidebar');db.settings.sidebarOrder=payload.order;db.settings.sidebarHidden=Array.isArray(payload.hidden)?payload.hidden.filter(x=>keys.includes(x)):[];db.settings.sidebarWidth=Math.max(48,Math.min(88,Number(payload.width)||56));save();layout();emit();break}
+ case 'keybinding-capture':keybindingCapture=payload===true;return true;
+ case 'keybinding-set':{const action=payload?.action,combination=payload?.combination;if(!Object.hasOwn(defaults.keybindings,action)||typeof combination!=='string'||combination.length>80||! /^(?:(?:Ctrl|Alt|Shift|Meta)\+){0,3}(?:Key[A-Z]|Digit[0-9]|F(?:[1-9]|1[0-2])|Backquote|Tab|Space|Escape|Arrow(?:Left|Right|Up|Down)|Minus|Equal|BracketLeft|BracketRight)$/.test(combination))throw Error('Некорректное сочетание клавиш.');if(Object.entries(db.settings.keybindings).some(([name,value])=>name!==action&&value===combination))throw Error('Это сочетание уже назначено.');db.settings.keybindings={...defaults.keybindings,...db.settings.keybindings,[action]:combination};keybindingCapture=false;save();emit();break}
+ case 'keybindings-reset':db.settings.keybindings={...defaults.keybindings};keybindingCapture=false;save();emit();break;
  case 'settings':{
   const accelerationChanged=typeof payload?.hardwareAcceleration==='boolean'&&payload.hardwareAcceleration!==db.settings.hardwareAcceleration;
   const s={...db.settings};if(['auto','ask'].includes(payload?.clipboardMode))s.clipboardMode=payload.clipboardMode;for(const k of ['bookmarksBar','restoreSession','popupWindows'])if(typeof payload?.[k]==='boolean')s[k]=payload[k];if(I18n.languages.includes(payload?.language))s.language=payload.language;if(['dark','light','system'].includes(payload?.theme))s.theme=payload.theme;if(['duckduckgo','google'].includes(payload?.search))s.search=payload.search;
@@ -505,7 +533,7 @@ function performanceTick(){
   for(const t of candidates)if(Date.now()-t.lastActive>db.settings.sleepMinutes*60000)sleepTab(t);
   let background=tabs.filter(t=>t.id!==selected&&t.view).length;
   for(const t of candidates){if(background<=db.settings.maxBackgroundTabs)break;if(sleepTab(t))background--;}
-  if(performanceState.memoryMB>db.settings.ramTargetMB){for(const t of candidates)if(t.view&&sleepTab(t))break;}
+  if(performanceState.memoryMB>db.settings.ramTargetMB){for(const t of candidates)if(t.view)sleepTab(t);}
  }
  candidateExpired();if(panel==='performance')emit();
 }
@@ -530,6 +558,7 @@ async function toggleReader(){const t=active(),wc=t?.view?.webContents;if(!wc||t
  if(!article.blocks.length){toast('На странице не найден текст для чтения.');return}t.reader=article;layout();emit();
 }
 async function savePDF(){const wc=active()?.view?.webContents;if(!wc||!web(wc.getURL()))throw Error('Сначала открой сайт.');const url=wc.getURL();const result=await dialog.showSaveDialog(win,{title:tr('Сохранить PDF'),defaultPath:'Veyra-page.pdf',filters:[{name:'PDF',extensions:['pdf']}]});if(result.canceled||!result.filePath)return;if(wc.isDestroyed()||wc.getURL()!==url)throw Error('Страница изменилась. Повтори сохранение.');const bytes=await wc.printToPDF({printBackground:true});fs.writeFileSync(result.filePath,bytes);toast('PDF сохранён.')}
+function updateWindowIcon(){if(!win||win.isDestroyed())return;const palette={violet:'#bc9ffa',ocean:'#85bdf5',forest:'#8ad4b2',rose:'#efa3c3',amber:'#efc28b'},accent=db.settings.colorTheme==='custom'?db.settings.customAccent:(palette[db.settings.colorTheme]||palette.violet);const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><path fill="${accent}" d="M32 5 55.4 18.5v27L32 59 8.6 45.5v-27L32 5Z"/><path fill="#211c35" d="m16 28 16-9 16 9-16 9-16-9Z"/><path d="m16 36 16 9 16-9" fill="none" stroke="#211c35" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="m32 19 16 9-16 9" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2"/></svg>`;try{win.setIcon(nativeImage.createFromDataURL('data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg)))}catch{}}
 function setAppearance(payload){
  if(!payload||typeof payload!=='object')throw Error('Некорректные настройки.');
  if(['dark','light','system'].includes(payload.theme))db.settings.theme=payload.theme;
@@ -538,7 +567,7 @@ function setAppearance(payload){
  if(appearance.wallpapers.includes(payload.wallpaper)&&(payload.wallpaper!=='custom'||wallpaperData))db.settings.wallpaper=payload.wallpaper;
  if(typeof payload.wallpaperDim==='number'&&Number.isFinite(payload.wallpaperDim))db.settings.wallpaperDim=Math.max(0,Math.min(85,payload.wallpaperDim));
  if(['auto',...external.installedBrowsers().map(b=>b.id)].includes(payload.externalBrowser))db.settings.externalBrowser=payload.externalBrowser;
- nativeTheme.themeSource=db.settings.theme;save();emit();
+ nativeTheme.themeSource=db.settings.theme;updateWindowIcon();save();emit();
 }
 async function pickWallpaper(){const result=await dialog.showOpenDialog(win,{title:tr('Выбрать обои'),properties:['openFile'],filters:[{name:tr('Изображения'),extensions:['png','jpg','jpeg','webp']}]});if(result.canceled||!result.filePaths[0])return;wallpaperData=appearance.importWallpaper(result.filePaths[0],app.getPath('userData'),nativeImage);wallpaperVersion++;db.settings.wallpaper='custom';save();emit()}
 
@@ -551,9 +580,12 @@ app.whenReady().then(async()=>{
   if(!I18n.languages.includes(db.settings.language))db.settings.language='ru';
   if(!['dark','light','system'].includes(db.settings.theme))db.settings.theme='dark';
   if(!Array.isArray(db.settings.siteExceptions))db.settings.siteExceptions=[];if(!Array.isArray(db.settings.httpExceptions))db.settings.httpExceptions=[];
-  if(!db.settings.permissions||Array.isArray(db.settings.permissions))db.settings.permissions={};
+  if(!db.settings.permissions||Array.isArray(db.settings.permissions))db.settings.permissions={};db.settings.keybindings={...defaults.keybindings,...(s.keybindings&&typeof s.keybindings==='object'&&!Array.isArray(s.keybindings)?s.keybindings:{})};
   db.bookmarks=Array.isArray(stored.bookmarks)?stored.bookmarks.filter(x=>web(x.url)).slice(0,3000).map(x=>({...x,id:x.id||crypto.randomUUID(),folder:x.folder||'Избранное'})):[];
-  db.gameBest=Number.isSafeInteger(stored.gameBest)&&stored.gameBest>=0&&stored.gameBest<=1000000000?stored.gameBest:0;db.history=Array.isArray(stored.history)?stored.history.filter(x=>web(x.url)).slice(0,1000):[];db.lastSession=stored.lastSession;try{if(stored.widgetDraft)db.widgetDraft=require('./widget-package.js').normalize(stored.widgetDraft)}catch{}
+  db.gameBest=Number.isSafeInteger(stored.gameBest)&&stored.gameBest>=0&&stored.gameBest<=1000000000?stored.gameBest:0;db.history=Array.isArray(stored.history)?stored.history.filter(x=>web(x.url)).slice(0,1000):[];db.lastSession=stored.lastSession;
+  try{if(canEncryptFormState()&&typeof db.lastSession?.formsEncrypted==='string'){const records=JSON.parse(safeStorage.decryptString(Buffer.from(db.lastSession.formsEncrypted,'base64')));const validIds=new Set((Array.isArray(db.lastSession.tabs)?db.lastSession.tabs:[]).map(row=>row?.sessionId).filter(id=>typeof id==='string'));for(const row of records)if(validIds.has(row?.sessionId)){const state=SessionState.normalizeForms(row.url,row.fields);if(state)savedFormState.set(row.sessionId,{sessionId:row.sessionId,...state});}}}catch{savedFormState.clear()}
+  try{if(db.lastSession)delete db.lastSession.formsEncrypted}catch{}
+  try{if(stored.widgetDraft)db.widgetDraft=require('./widget-package.js').normalize(stored.widgetDraft)}catch{}
  }catch{}
  if(!appearance.themes[db.settings.colorTheme]&&db.settings.colorTheme!=='custom')db.settings.colorTheme='violet';if(!/^#[0-9a-f]{6}$/i.test(db.settings.customAccent))db.settings.customAccent='#bc9ffa';if(!appearance.wallpapers.includes(db.settings.wallpaper))db.settings.wallpaper='aurora';wallpaperData=appearance.readWallpaper(app.getPath('userData'));
  if(!db.settings.externalAppPermissions||typeof db.settings.externalAppPermissions!=='object'||Array.isArray(db.settings.externalAppPermissions))db.settings.externalAppPermissions={};
@@ -572,13 +604,13 @@ app.whenReady().then(async()=>{
  });
  sessionFor('private');
  const defaultStatus=require('./default-browser.cjs').isDefault(app);defaultPromptVisible=false;
- win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs'),webviewTag:true,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
+ win=new BrowserWindow({width:1380,height:900,show:false,minWidth:850,minHeight:600,frame:false,backgroundColor:'#121117',title:'Veyra',icon:path.join(__dirname,'assets','app.ico'),webPreferences:{backgroundThrottling:false,preload:path.join(__dirname,'preload.cjs'),webviewTag:true,nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});updateWindowIcon();
  widgetRuntime.attach(win.webContents);
  win.on('focus',async()=>{if(defaultPromptVisible&&await require('./default-browser.cjs').isDefault(app)){defaultPromptVisible=false;if(!win.isDestroyed()){layout();emit();}}});win.once('ready-to-show',openWindow);
  win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',e=>e.preventDefault());win.webContents.on('before-input-event',(event,input)=>shortcuts(event,input,win.webContents));win.webContents.on('did-finish-load',emit);void defaultStatus.then(isDefault=>{if(win&&!win.isDestroyed()){defaultPromptVisible=!isDefault;layout();emit();}});
  for(const event of ['resize','maximize','unmaximize','enter-full-screen','leave-full-screen'])win.on(event,()=>{layout();emit()});
  win.on('close',event=>{externalApps?.cancel();clipboardPrompt?.finish(false);if(!closing&&!exitConfirmed&&!storageFlushRunning&&!storageFlushReady&&tabs.some(t=>t.dirty)){event.preventDefault();if(!appDialog)requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть браузер с введёнными данными?'}).then(yes=>{if(yes){exitConfirmed=true;win.close()}});return}if(!storageFlushReady){event.preventDefault();if(!storageFlushRunning){storageFlushRunning=true;save();Promise.race([flushSessions(new Map([...sessions,...localHTML.sessions])),new Promise((_,reject)=>setTimeout(()=>reject(Error('Сохранение сессий заняло слишком много времени.')),5000))]).then(()=>{storageFlushReady=true;win.close()}).catch(error=>{storageFlushRunning=false;toast(error.message)})}return}save();closing=true;discord.stop();vault.lock();pendingCredential=null;externalApps?.cancel();sitePermissions?.reset();for(const child of popups)child.close();for(const t of tabs)removeView(t)});
  powerMonitor.on('lock-screen',()=>vault.lock());powerMonitor.on('suspend',()=>vault.lock());
-  win.loadFile(path.join(__dirname,'index.html'));if(uBlockStorageRecovery.length)win.webContents.once('did-finish-load',()=>toast('Oversized uBlock data was backed up and reset. Your site cookies and sessions were kept.'));const restored=db.settings.restoreSession&&Array.isArray(db.lastSession?.tabs)?db.lastSession.tabs.filter(t=>web(t.url)&&t.mode!=='temporary').slice(0,30):[];const selectedURL=db.lastSession?.selectedURL;if(restored.length){for(const row of restored){const t=newTab(row.url,row.mode);t.pinned=!!row.pinned;t.zoomLevel=Math.max(-3,Math.min(3,Number(row.zoomLevel)||0));t.muted=!!row.muted;t.view?.webContents.setZoomLevel(t.zoomLevel);t.view?.webContents.setAudioMuted(t.muted)}sortPinned();const selectedTab=tabs.find(t=>t.url===selectedURL);if(selectedTab)choose(selectedTab.id);}else newTab();const startupURL=process.argv.map(launchURL).find(Boolean);if(startupURL)newTab(startupURL);for(const url of pendingExternalURLs.splice(0))newTab(url);save();performanceTick();setInterval(performanceTick,5000).unref();setInterval(()=>{void flushSessions(new Map([...sessions,...localHTML.sessions])).catch(()=>toast('Не удалось сохранить сессии на диск.'))},30000).unref();
+  win.loadFile(path.join(__dirname,'index.html'));if(uBlockStorageRecovery.length)win.webContents.once('did-finish-load',()=>toast('Oversized uBlock data was backed up and reset. Your site cookies and sessions were kept.'));const restoredSession=db.settings.restoreSession?SessionState.restore(db.lastSession,web):{rows:[],selectedSessionId:null,selectedURL:null};if(restoredSession.rows.length){for(const row of restoredSession.rows){const t=newTab(row.url,row.mode,{sessionId:row.sessionId,sleeping:row.sleeping,pinned:row.pinned,zoomLevel:row.zoomLevel,muted:row.muted});}sortPinned();const selectedTab=tabs.find(t=>t.sessionId===restoredSession.selectedSessionId)||(restoredSession.selectedURL?tabs.find(t=>t.url===restoredSession.selectedURL):null);if(selectedTab)choose(selectedTab.id);}else newTab();const startupURL=process.argv.map(launchURL).find(Boolean);if(startupURL)newTab(startupURL);for(const url of pendingExternalURLs.splice(0))newTab(url);save();performanceTick();setInterval(performanceTick,5000).unref();setInterval(()=>{void flushSessions(new Map([...sessions,...localHTML.sessions])).catch(()=>toast('Не удалось сохранить сессии на диск.'))},30000).unref();
 });
 app.on('window-all-closed',()=>app.quit());

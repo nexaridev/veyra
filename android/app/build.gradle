@@ -3,7 +3,7 @@ android {
  namespace 'dev.veyra.browser'
  compileSdk 37
  buildToolsVersion "36.0.0"
- defaultConfig { applicationId 'dev.veyra.browser'; minSdk 26; targetSdk 35; versionCode 12; versionName '0.7.0'; ndk { abiFilters 'arm64-v8a' } }
+ defaultConfig { applicationId 'dev.veyra.browser'; minSdk 26; targetSdk 35; versionCode 13; versionName '0.7.1'; ndk { abiFilters 'arm64-v8a' } }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  signingConfigs {
   debug { if(project.hasProperty('veyraSigningStore')) { storeFile file(project.property('veyraSigningStore')); storePassword 'android'; keyAlias 'androiddebugkey'; keyPassword 'android' } }
@@ -12,4 +12,7 @@ android {
  packaging { jniLibs { useLegacyPackaging true } }
  buildTypes { debug { debuggable true }; release { minifyEnabled false; debuggable false; if(project.hasProperty('veyraReleaseStore')) signingConfig signingConfigs.release } }
 }
-dependencies { implementation 'org.mozilla.geckoview:geckoview:158.0.20261021001945' }
+dependencies {
+ implementation 'androidx.annotation:annotation-experimental:1.6.0'
+ implementation 'org.mozilla.geckoview:geckoview:158.0.20261021001945'
+}
