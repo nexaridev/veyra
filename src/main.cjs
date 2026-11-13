@@ -214,12 +214,12 @@ function attachPage(wc,mode,tab=null,initialURL=''){
    const pageURL=wc.getURL(),request=tab.iconRequest=(tab.iconRequest||0)+1;
    if(!web(pageURL))return;
    const image=await require('./favicon.cjs').pageIcon(wc,urls,pageURL,nativeImage);
-   if(!wc.isDestroyed()&&wc.getURL()===pageURL&&request===tab.iconRequest){tab.favicon=image;let changed=false;for(const item of db.settings.shortcuts)if(!item.image&&origin(item.url)===origin(pageURL)&&image&&item.favicon!==image){item.favicon=image;changed=true}if(changed)save();emit()}
+   if(!wc.isDestroyed()&&wc.getURL()===pageURL&&request===tab.iconRequest){tab.favicon=image;let changed=false;for(const item of db.settings.shortcuts)if(!item.image&&origin(item.url)===origin(pageURL)&&image&&item.favicon!==image){item.favicon=image;changed=true}const historyItem=db.history.find(x=>x.url===pageURL);if(historyItem&&image&&historyItem.favicon!==image){historyItem.favicon=image;changed=true}if(changed)save();emit()}
   });
   wc.on('did-finish-load',()=>{
    if(!web(tab.url))return;tab.title=wc.getTitle()||new URL(tab.url).hostname;
-   if(!tab.favicon){const iconRequest=tab.iconRequest;void refreshSiteIcon(tab.url,mode).then(image=>{if(image&&!wc.isDestroyed()&&wc.getURL()===tab.url&&tab.iconRequest===iconRequest){tab.favicon=image;for(const item of db.settings.shortcuts)if(!item.image&&origin(item.url)===origin(tab.url))item.favicon=image;save();emit()}})}
-   if(mode!=='temporary'){db.history=db.history.filter(x=>x.url!==tab.url);db.history.unshift({url:tab.url,title:tab.title,time:Date.now()});db.history=db.history.slice(0,1000);save()}emit();
+   if(!tab.favicon){const iconRequest=tab.iconRequest;void refreshSiteIcon(tab.url,mode).then(image=>{if(image&&!wc.isDestroyed()&&wc.getURL()===tab.url&&tab.iconRequest===iconRequest){tab.favicon=image;for(const item of db.settings.shortcuts)if(!item.image&&origin(item.url)===origin(tab.url))item.favicon=image;const historyItem=db.history.find(x=>x.url===tab.url);if(historyItem)historyItem.favicon=image;save();emit()}})}
+   if(mode!=='temporary'){db.history=db.history.filter(x=>x.url!==tab.url);db.history.unshift({url:tab.url,title:tab.title,time:Date.now(),...(tab.favicon?{favicon:tab.favicon}:{})});db.history=db.history.slice(0,1000);save()}emit();
   });
   wc.on('did-fail-load',(_,code,description,url,main)=>{if(main&&code!==-3){tab.loading=false;tab.error=description;layout();emit()}});
   wc.on('render-process-gone',()=>{if(!closing&&tabs.includes(tab)){tab.loading=false;tab.error='Процесс вкладки остановился. Обнови страницу.';layout();emit()}});

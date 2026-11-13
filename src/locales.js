@@ -1772,6 +1772,12 @@ Object.assign(catalog,{'Интерфейс меняется сразу. Язык
 Object.assign(catalog,{"mfa_invalid_code": {"ru": "Неверный или уже использованный код. Дождись нового кода или используй резервный.", "en": "Invalid or already used code. Wait for a new code or use a recovery code."}, "mfa_enrollment_expired": {"ru": "Время подключения истекло. Начни подключение заново.", "en": "Setup expired. Start setup again."}, "mfa_rate_limited": {"ru": "Слишком много попыток. Попробуй через 10 минут.", "en": "Too many attempts. Try again in 10 minutes."}, "mfa_already_enabled": {"ru": "Двухфакторная защита уже включена.", "en": "Two-factor authentication is already enabled."}, "mfa_not_enabled": {"ru": "Двухфакторная защита ещё не включена.", "en": "Two-factor authentication is not enabled."}, "Свой виджет": {"ru": "Свой виджет", "en": "Custom widget"}, "Конструктор виджетов": {"ru": "Конструктор виджетов", "en": "Widget builder"}, "Файл виджета слишком большой.": {"ru": "Файл виджета слишком большой.", "en": "The widget file is too large."}, "Изображение слишком большое.": {"ru": "Изображение слишком большое.", "en": "The image is too large."}, "Не удалось прочитать изображение.": {"ru": "Не удалось прочитать изображение.", "en": "Could not read the image."}});
 Object.assign(catalog,{"Проверь пароль регистрации и код из письма.":{en:"Check your registration password and email code."}});
 Object.assign(catalog,{"Вход выполнен.":{en:"Signed in."},"Изображение":{en:"Image"}});
+Object.assign(catalog,{
+ 'Recent searches':{ru:'Недавние поиски',uk:'Недавні пошуки',en:'Recent searches',de:'Letzte Suchanfragen',fr:'Recherches récentes',es:'Búsquedas recientes',pl:'Ostatnie wyszukiwania'},
+ 'Recent search':{ru:'Недавний поиск',uk:'Недавній пошук',en:'Recent search',de:'Letzte Suche',fr:'Recherche récente',es:'Búsqueda reciente',pl:'Ostatnie wyszukiwanie'},
+ 'Search with':{ru:'Искать через',uk:'Шукати через',en:'Search with',de:'Suchen mit',fr:'Rechercher avec',es:'Buscar con',pl:'Szukaj przez'},
+ 'Search engine':{ru:'Поисковая система',uk:'Пошукова система',en:'Search engine',de:'Suchmaschine',fr:'Moteur de recherche',es:'Motor de búsqueda',pl:'Wyszukiwarka'}
+});
 const languages=['ru','uk','en','de','fr','es','pl'];
 function translate(value,language='ru'){
  let text=String(value??'');if(!languages.includes(language))return text;

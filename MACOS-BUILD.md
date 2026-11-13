@@ -1,5 +1,13 @@
-# macOS preview build
+# macOS build
 
-On a Mac with Node.js 24+, clone this repository, run `npm ci`, then `node scripts/package-mac.cjs`. Outputs: dist-mac/Veyra-darwin-arm64/Veyra.app and dist-mac/Veyra-darwin-x64/Veyra.app. Test each architecture on its matching Mac.
+On a Mac with Node.js 24 or newer, clone the Veyra repository and run:
 
-This produces unsigned app bundles, not a notarized installer. Public distribution needs an Apple Developer Developer ID Application certificate, hardened runtime, Electron entitlements, signing nested frameworks, notarization with notarytool, stapling and a signed DMG. Never disable Gatekeeper globally. Windows-specific default browser registration and secure storage require macOS acceptance testing. No Mac runtime test has been performed here.
+```sh
+npm ci
+npm run build:mac
+npm run build:mac:dmg
+```
+
+The universal app is created in `dist-v1.0.11a-mac/Veyra-darwin-universal/Veyra.app`. The drag-to-Applications disk image is `outputs/Veyra-1.0.11a-macOS-universal.dmg`.
+
+The current bundle is unsigned and not notarized. A public macOS release needs an Apple Developer ID Application certificate, hardened runtime, Electron entitlements, signing of nested frameworks, notarization with `notarytool`, stapling and a signed DMG. Do not disable Gatekeeper. Windows-specific default browser registration and secure storage require macOS acceptance testing.
