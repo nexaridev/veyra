@@ -23,3 +23,7 @@ Setup downloads a newer maintenance executable into its own cache, verifies the 
 When the recorded signed browser artifact and installed browser version match the current feed, an automatic maintenance update keeps the browser files and avoids downloading the archive again. An ordinary manual installation can still repair the browser. Shortcut choices and the browser profile are preserved. Installation uses the existing rollback path on failure.
 
 Versions 1.1 and 1.2 require one manual run of setup 1.3.0 to enable this behavior. Those older executables cannot acquire a self update feature remotely. No browser or Android version change is required.
+
+## Installer 1.3.4
+
+The setup build includes a pinned Windows 1.0.11a archive fallback so fresh installs and repairs install the current website release even while the signed feed is being rotated. It keeps the signed feed as the source of future releases and preserves the existing hash, size, downgrade and rollback checks. This release is provided as a manual installer update; automatic replacement of older maintenance tools still depends on publishing a newly signed feed.

@@ -2,12 +2,13 @@
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
 Add-Type -AssemblyName System.IO.Compression.FileSystem
+function Get-Sha256([string]$Path){$sha=[Security.Cryptography.SHA256]::Create();$stream=[IO.File]::OpenRead($Path);try{([BitConverter]::ToString($sha.ComputeHash($stream))).Replace('-','').ToLowerInvariant()}finally{$stream.Dispose();$sha.Dispose()}}
 $deps=Join-Path $PSScriptRoot '.deps'
 New-Item -ItemType Directory -Path $deps -Force | Out-Null
 $package=Join-Path $deps 'bouncycastle.cryptography.2.7.0.nupkg'
 $expected='f091ffccab4d03993e660bace277659a79dee0972f54d7f1f4bd46d680966241'
 if(!(Test-Path -LiteralPath $package)){Invoke-WebRequest -Uri 'https://api.nuget.org/v3-flatcontainer/bouncycastle.cryptography/2.7.0/bouncycastle.cryptography.2.7.0.nupkg' -OutFile $package -UseBasicParsing}
-if((Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected){throw 'BouncyCastle package hash does not match the pinned dependency.'}
+if((Get-Sha256 $package) -ne $expected){throw 'BouncyCastle package hash does not match the pinned dependency.'}
 $dll=Join-Path $deps 'BouncyCastle.Cryptography.dll'
 $license=Join-Path $deps 'BouncyCastle-LICENSE.md'
 $archive=[IO.Compression.ZipFile]::OpenRead($package)
