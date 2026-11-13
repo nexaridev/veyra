@@ -1,4 +1,4 @@
-const {app,BrowserWindow,WebContentsView,session,ipcMain,Menu,nativeTheme,shell,safeStorage,powerMonitor,dialog,nativeImage,clipboard,net}=require('electron');
+const {app,BrowserWindow,WebContentsView,session,ipcMain,Menu,nativeTheme,shell,safeStorage,powerMonitor,dialog,nativeImage,clipboard,net,desktopCapturer}=require('electron');
 const fs=require('node:fs');
 const widgetRuntime=require('./widget-runtime.cjs');
 const path=require('node:path');
@@ -28,22 +28,24 @@ async function applyDark(wc,url){
 }
 app.setName('Veyra');const windowsNotifications=require('./windows-notifications.cjs');windowsNotifications.configure(app);
 const {configureProfile,flushSessions}=require('./profile.cjs');const sharedProfile=configureProfile(app);
-if(app.isPackaged&&!app.requestSingleInstanceLock()){app.exit(0)}
+const hasInstanceLock=!app.isPackaged||app.requestSingleInstanceLock();if(!hasInstanceLock)app.exit(0);
+const {recoverOversizedExtensionStorage}=require('./extension-storage.cjs');
+const uBlockStorageRecovery=hasInstanceLock&&app.isPackaged?recoverOversizedExtensionStorage({userData:sharedProfile,manifestPath:path.join(process.resourcesPath,'uBlock0.chromium','manifest.json')}):[];
 const localHTML=new (require('./local-html.cjs').LocalHTML)({session,net,blocked:[app.getAppPath(),path.join(__dirname,'..'),app.getPath('userData'),app.getPath('appData'),...(process.env.LOCALAPPDATA?[process.env.LOCALAPPDATA]:[])]});
 const launchURL=value=>/^https?:\/\//i.test(value)?value:localHTML.url(value);
 const pendingExternalURLs=[];
 app.on('second-instance',(_,argv)=>{const url=argv.map(launchURL).find(Boolean);if(url){if(win)newTab(url);else pendingExternalURLs.push(url);}if(win&&!win.isDestroyed()){if(win.isMinimized())win.restore();win.show();win.focus()}});
 let storageFlushRunning=false,storageFlushReady=false,exitConfirmed=false,appDialog=null;
 const UI=pathToFileURL(path.join(__dirname,'index.html')).href;
-const defaults={homeWidgets:[{id:'clock',kind:'clock',style:'plain'}],sidebarWidth:56,sidebarOrder:['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'],sidebarHidden:[],networkDownMbps:0,networkUpMbps:0,externalAppPermissions:{},popupWindows:false,discordShowDomain:false,discordShowTime:true,discordInterval:60,compatibilityDomains:['google.com','youtube.com'],hideFocus:true,fakeFullscreen:true,realFullscreen:false,autoDark:false,darkSites:{},shortcuts:[],discordEnabled:false,discordAppId:'1562807114227777606',clipboardMode:'auto',colorTheme:'violet',customAccent:'#bc9ffa',wallpaper:'aurora',wallpaperDim:45,bookmarksBar:false,restoreSession:false,externalBrowser:'auto',language:'ru',theme:'dark',search:'duckduckgo',trackers:true,dnt:true,thirdPartyCookies:true,httpsFirst:true,webrtc:true,autoUpdateFilters:true,siteExceptions:[],httpExceptions:[],permissions:{},ramTargetMB:2048,maxBackgroundTabs:6,sleepMinutes:15,eco:true,hardwareAcceleration:true};
+const defaults={homeWidgets:[{id:'clock',kind:'clock',style:'plain'}],sidebarWidth:56,sidebarOrder:['bookmarks','history','passwords','privacy','performance','keep-awake','fake-presence'],sidebarHidden:[],networkDownMbps:0,networkUpMbps:0,externalAppPermissions:{},popupWindows:false,discordShowDomain:false,discordShowTime:true,discordInterval:60,compatibilityDomains:['google.com','youtube.com'],hideFocus:true,fakeFullscreen:true,realFullscreen:false,autoDark:false,darkSites:{},shortcuts:[],discordEnabled:false,discordAppId:'1562807114227777606',clipboardMode:'auto',colorTheme:'violet',customAccent:'#bc9ffa',wallpaper:'aurora',wallpaperDim:45,bookmarksBar:false,restoreSession:false,externalBrowser:'auto',language:'en',theme:'dark',search:'duckduckgo',trackers:true,dnt:true,thirdPartyCookies:true,httpsFirst:true,webrtc:true,autoUpdateFilters:true,siteExceptions:[],httpExceptions:[],permissions:{},ramTargetMB:2048,maxBackgroundTabs:6,sleepMinutes:15,eco:true,hardwareAcceleration:true};
 let ublock;let win,profile,privacy,vault,selected,panel=null,seq=0,blocked=0,closing=false,pendingCredential=null,sitePermissions,externalApps;
 let db={schema:2,settings:{...defaults},bookmarks:[],history:[]};
 const directDownloads=new Map();const recentlyClosed=[];let wallpaperData='',wallpaperVersion=0;
 const tabs=[],downloads=[],sessions=new Map(),contexts=new Map(),popups=new Set();
-let defaultPromptVisible=true;
+let defaultPromptVisible=true,screenSharePrompt=null;
 let performanceState={memoryMB:0,privateMB:0,processCount:0,cpu:0,liveTabs:0,sleepingTabs:0},runtimeAcceleration=true;
 const earlyProfile=path.join(app.getPath('userData'),'profile.json');
-let engineLanguage='ru';try{const saved=JSON.parse(fs.readFileSync(earlyProfile,'utf8')).settings?.language;if(I18n.languages.includes(saved))engineLanguage=saved}catch{}
+let engineLanguage='en';try{const saved=JSON.parse(fs.readFileSync(earlyProfile,'utf8')).settings?.language;if(I18n.languages.includes(saved))engineLanguage=saved}catch{}
 app.commandLine.appendSwitch('lang',engineLanguage);
 try{if(JSON.parse(fs.readFileSync(earlyProfile,'utf8')).settings?.hardwareAcceleration===false){app.disableHardwareAcceleration();runtimeAcceleration=false;}}catch{}
 function web(url){try{return ['http:','https:'].includes(new URL(url).protocol)}catch{return false}}
@@ -70,7 +72,7 @@ function snapshot(){return {
  gameBest:active()?.mode==='temporary'?0:(db.gameBest||0),sync:sync.status(),discordStatus:discord?.status,closedTabs:recentlyClosed.length,wallpaperVersion,browsers:external.installedBrowsers().map(({id,name,chromium})=>({id,name,chromium})),fullscreen:!!win?.isFullScreen(),settings:db.settings,bookmarks:db.bookmarks,history:db.history.slice(0,500),recentSearches:active()?.mode==='temporary'?[]:(db.recentSearches||[]),
  downloads:downloads.map(({id,name,status,received,total,limitMbps,mode})=>({id,name,status,received,total,limitMbps,mode})),
  vault:vault?.status(),pendingCredential:pendingCredential?{origin:pendingCredential.origin,username:pendingCredential.username}:null,
- appDialog:appDialog?appDialog.public:null,clipboardPrompt:clipboardPrompt?{id:clipboardPrompt.id,origin:clipboardPrompt.origin,preview:clipboardPrompt.preview,length:clipboardPrompt.length}:null,permission:sitePermissions?.snapshot()||null,externalAppRequest:externalApps?.snapshot()||null,
+ appDialog:appDialog?appDialog.public:null,clipboardPrompt:clipboardPrompt?{id:clipboardPrompt.id,origin:clipboardPrompt.origin,preview:clipboardPrompt.preview,length:clipboardPrompt.length}:null,clipboardReadPrompt:clipboardReadPrompt?{id:clipboardReadPrompt.id,origin:clipboardReadPrompt.origin}:null,permission:sitePermissions?.snapshot()||null,screenSharePrompt:screenSharePrompt?{id:screenSharePrompt.id,origin:screenSharePrompt.origin,audioAvailable:screenSharePrompt.audioAvailable,sources:screenSharePrompt.sources}:null,externalAppRequest:externalApps?.snapshot()||null,
  filters:privacy?.status(),performance:performanceState,runtimeAcceleration,version:require('../package.json').displayVersion||app.getVersion()
 }}
 function emit(){discord?.protectContext();if(win&&!win.isDestroyed()&&!closing)win.webContents.send('veyra:state',snapshot())}
@@ -79,15 +81,15 @@ function layout(){
  if(!win||win.isDestroyed())return;const [w,h]=win.getContentSize(),top=win.isFullScreen()?0:94+(db.settings.bookmarksBar?32:0)+(defaultPromptVisible?44:0),left=win.isFullScreen()?0:db.settings.sidebarWidth;
  const side=panel?Math.min(380,Math.floor(w*.47)):0;
  for(const t of tabs)if(t.view&&!t.view.webContents.isDestroyed()){
-  t.view.setVisible(t.id===selected&&(web(t.url)||t.url.startsWith('file:')||t.url==='about:blank')&&!t.error&&!t.googleBlocked&&!t.reader&&!clipboardPrompt&&!appDialog&&!sitePermissions?.pending&&!externalApps?.pending);
+  t.view.setVisible(t.id===selected&&(web(t.url)||t.url.startsWith('file:')||t.url==='about:blank')&&!t.error&&!t.googleBlocked&&!t.reader&&!clipboardPrompt&&!clipboardReadPrompt&&!screenSharePrompt&&!appDialog&&!sitePermissions?.pending&&!externalApps?.pending);
   t.view.setBounds({x:left,y:top,width:Math.max(100,w-left-side),height:Math.max(100,h-top)});
  }
 }
 function setPanel(value){panel=panel===value?null:value;layout();emit();win?.webContents.focus()}
-function permitted(wc,url,p,details){if(p==='clipboard-sanitized-write')return secure(url)&&db.settings.clipboardMode==='auto';if(p==='fullscreen')return !!contexts.get(wc?.id)&&(db.settings.fakeFullscreen||db.settings.realFullscreen);return sitePermissions.check(wc,p,url,details)}
+function permitted(wc,url,p,details){if(p==='clipboard-read')return false;if(p==='clipboard-sanitized-write')return secure(url)&&db.settings.clipboardMode==='auto';if(p==='fullscreen')return !!contexts.get(wc?.id)&&(db.settings.fakeFullscreen||db.settings.realFullscreen);return sitePermissions.check(wc,p,url,details)}
 function askPermission(wc,p,callback,details){
  if(externalApps?.pending)return callback(false);
- if(p==='clipboard-sanitized-write')return callback(!!wc&&secure(wc.getURL())&&db.settings.clipboardMode==='auto');
+ if(p==='clipboard-read')return callback(false);if(p==='clipboard-sanitized-write')return callback(!!wc&&secure(wc.getURL())&&db.settings.clipboardMode==='auto');
  if(p==='fullscreen'){
   const url=details?.requestingUrl||wc?.getURL()||'',page=contexts.get(wc?.id),requestOrigin=origin(url);
   if(!page||!requestOrigin||!web(url))return callback(false);
@@ -98,12 +100,24 @@ function askPermission(wc,p,callback,details){
  }
  return sitePermissions.request(wc,p,callback,details);
 }
+async function requestDisplaySource(wc,request){
+ const context=contexts.get(wc?.id),frame=request?.frame,url=frame?.url||'';
+ if(!context||context.tab?.id!==selected||!web(url)||!secure(url)||origin(url)!==origin(wc.getURL())||frame!==wc.mainFrame||!request.userGesture||screenSharePrompt)return null;
+ let sources;try{sources=await desktopCapturer.getSources({types:['screen','window'],thumbnailSize:{width:160,height:90},fetchWindowIcons:false})}catch{return null}
+ if(wc.isDestroyed()||context.tab?.id!==selected||origin(wc.getURL())!==origin(url))return null;
+ sources=sources.slice(0,16);if(!sources.length)return null;
+ return new Promise(resolve=>{
+  const id=crypto.randomUUID();let timer;const cancel=()=>finish(null);const finish=value=>{if(screenSharePrompt?.id!==id)return;clearTimeout(timer);wc.removeListener('did-start-navigation',cancel);wc.removeListener('destroyed',cancel);const selectedSource=sources.find(s=>s.id===value?.id)||null;screenSharePrompt=null;layout();emit();resolve(selectedSource?{source:selectedSource,audio:process.platform==='win32'&&request.audioRequested&&value.audio===true}:null);if(!wc.isDestroyed())wc.focus()};
+  screenSharePrompt={id,origin:origin(url),audioAvailable:process.platform==='win32'&&request.audioRequested===true,sources:sources.map(s=>({id:s.id,name:s.name.slice(0,180),thumbnail:s.thumbnail.toDataURL()})),finish};wc.once('did-start-navigation',cancel);wc.once('destroyed',cancel);timer=setTimeout(cancel,60000);layout();emit();win?.webContents.focus();
+ });
+}
 function sessionFor(mode){
  if(sessions.has(mode))return sessions.get(mode);
  const ses=session.fromPartition(mode==='temporary'?'veyra-temporary':mode==='google'?'persist:veyra-google-native':'persist:veyra');
  if(mode!=='google')ses.setUserAgent(ses.getUserAgent().replace(/\sElectron\/[^\s]+/g,'').replace(/\sveyra\/[^\s]+/gi,''));
  ses.setPermissionCheckHandler((wc,p,requestingOrigin,details)=>permitted(wc,requestingOrigin||wc?.getURL(),p,details));
  ses.setPermissionRequestHandler(askPermission);
+ ses.setDisplayMediaRequestHandler(async(request,callback)=>{const wc=request.frame?.hostWebContents;if(!wc||request.audioRequested&&!request.videoRequested){callback(null);return}const choice=await requestDisplaySource(wc,request);if(!choice||wc.isDestroyed()||contexts.get(wc.id)?.tab?.id!==selected){callback(null);return}callback({video:choice.source,...(choice.audio?{audio:'loopback'}:{})});});
  ses.setDevicePermissionHandler(()=>false);
  const topURL=d=>{const context=contexts.get(d.webContentsId);return context?.wc&&!context.wc.isDestroyed()?context.wc.getURL():d.referrer||''};
  const filterPage=d=>contexts.has(d.webContentsId);
@@ -220,12 +234,12 @@ async function navigate(t,input,historyMode='push'){
  catch(error){if(tabs.includes(t)&&t.generation===generation){t.loading=false;t.error=error.message;layout();emit()}}
 }
 function newTab(url='veyra://newtab',mode='private'){
- externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);
+ externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);clipboardReadPrompt?.finish(null);
  if(!['private','google','temporary','local'].includes(mode))mode='private';
  const t={id:++seq,mode,url:'veyra://newtab',title:tr('Новая вкладка'),loading:false,error:null,generation:0,lastActive:Date.now(),sleeping:false,dirty:false,pinned:false,keepAwake:false,fakePresence:true,blocked:0,googleBlocked:false,reader:null,zoomLevel:0,muted:false,audible:false,navEntries:[],navIndex:-1,pendingNavigation:false,traversing:false};
  if(active())active().lastActive=Date.now();tabs.push(t);selected=t.id;void navigate(t,url);layout();emit();return t;
 }
-function choose(id){externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);const t=tabs.find(t=>t.id===id);if(!t)return;if(active())active().lastActive=Date.now();selected=id;t.lastActive=Date.now();if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents)}
+function choose(id){externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);screenSharePrompt?.finish(null);const t=tabs.find(t=>t.id===id);if(!t)return;if(active())active().lastActive=Date.now();selected=id;t.lastActive=Date.now();if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents)}
 async function closeTab(id){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs.find(x=>x.id===t.openerTabId)?.id||tabs[Math.min(i,tabs.length-1)].id);layout();save();emit()}
 function sleepTab(t,manual=false){
  if(!t||t.openerTabId||t.keepAwake||t.id===selected||!t.view||!web(t.url)||t.pinned||t.dirty||t.loading||t.view.webContents.isCurrentlyAudible()||downloads.some(d=>d.status==='progress'&&d.mode===t.mode))return false;
@@ -288,7 +302,7 @@ ipcMain.on('veyra:password-candidate',(e,payload)=>{
  pendingCredential={origin:origin(e.senderFrame.url),username:payload.username,password:payload.password,created:Date.now()};panel='passwords';layout();emit();
 });
 function requestAppDialog(value,wc=null){return new Promise(resolve=>{
- if(appDialog||clipboardPrompt||externalApps?.pending)return resolve(null);const id=crypto.randomUUID();let timer;
+ if(appDialog||clipboardPrompt||clipboardReadPrompt||externalApps?.pending)return resolve(null);const id=crypto.randomUUID();let timer;
  const cancel=()=>finish(null);const finish=result=>{if(appDialog?.public.id!==id)return;clearTimeout(timer);if(wc){wc.removeListener('did-start-navigation',cancel);wc.removeListener('destroyed',cancel)}appDialog=null;layout();emit();resolve(result)};
  appDialog={public:{id,...value},finish};if(wc){wc.once('did-start-navigation',cancel);wc.once('destroyed',cancel)}timer=setTimeout(cancel,60000);layout();emit();win?.webContents.focus();
 })}
@@ -303,10 +317,12 @@ ipcMain.on('veyra:native-compat',e=>{const ctx=contexts.get(e.sender.id),url=e.s
 ipcMain.on('veyra:compatibility-config',e=>{e.returnValue={hideFocus:db.settings.hideFocus===true,fakeFullscreen:db.settings.fakeFullscreen===true,realFullscreen:db.settings.realFullscreen===true}});
 ipcMain.on('veyra:real-fullscreen-request',e=>{const context=contexts.get(e.sender.id),wc=e.sender;if(!context||!db.settings.realFullscreen||!db.settings.fakeFullscreen||!web(wc.getURL()))return;requestAppDialog({type:'confirm',title:'Разрешить полноэкранный режим?',origin:origin(wc.getURL()),message:'Сайт запрашивает настоящий полноэкранный режим окна.'},wc).then(allow=>{if(allow&&win&&!win.isDestroyed()&&context.tab?.id===selected)win.setFullScreen(true)})});
 ipcMain.on('veyra:dark-config',e=>{e.returnValue={...(contexts.has(e.sender.id)?darkConfig(contexts.get(e.sender.id)?.policyURL||e.senderFrame?.url||e.sender.getURL()):{enabled:false}),clipboardMode:db.settings.clipboardMode}});
-let clipboardBusy=false,clipboardPrompt=null;
+let clipboardBusy=false,clipboardPrompt=null,clipboardReadPrompt=null;
 function requestClipboard(wc,text,url){if(externalApps?.pending)return Promise.resolve(false);return new Promise(resolve=>{const id=crypto.randomUUID();const cancel=()=>finish(false);let timer;const finish=allow=>{if(clipboardPrompt?.id!==id)return;clearTimeout(timer);wc.removeListener('did-start-navigation',cancel);wc.removeListener('destroyed',cancel);clipboardPrompt=null;layout();emit();resolve(!!allow);if(!wc.isDestroyed())wc.focus()};clipboardPrompt={id,origin:origin(url),preview:text.slice(0,12000),length:text.length,finish};wc.once('did-start-navigation',cancel);wc.once('destroyed',cancel);timer=setTimeout(cancel,45000);layout();emit();win.webContents.focus()})}
 
 ipcMain.handle('veyra:clipboard-write',async(e,text)=>{const wc=e.sender,frame=e.senderFrame,url=frame?.url;if(!contexts.has(wc.id)||(contexts.get(wc.id).tab&&contexts.get(wc.id).tab.id!==selected)||frame!==wc.mainFrame||!secure(url)||origin(url)!==origin(wc.getURL())||typeof text!=='string'||text.length>1000000||clipboardBusy)throw Error('Clipboard write unavailable');const initial=url;clipboardBusy=true;try{if(db.settings.clipboardMode==='ask'){if(!await requestClipboard(wc,text,url))throw Error('Clipboard write declined')}if(wc.isDestroyed()||frame.url!==initial)throw Error('Page changed');clipboard.writeText(text);return true}finally{clipboardBusy=false}});
+function requestClipboardRead(wc,url){if(appDialog||clipboardPrompt||clipboardReadPrompt||externalApps?.pending)return Promise.resolve(null);return new Promise(resolve=>{const id=crypto.randomUUID();let timer;const cancel=()=>finish(null);const finish=text=>{if(clipboardReadPrompt?.id!==id)return;clearTimeout(timer);wc.removeListener('did-start-navigation',cancel);wc.removeListener('destroyed',cancel);clipboardReadPrompt=null;layout();emit();resolve(typeof text==='string'?text:null);if(!wc.isDestroyed())wc.focus()};clipboardReadPrompt={id,origin:origin(url),finish};wc.once('did-start-navigation',cancel);wc.once('destroyed',cancel);timer=setTimeout(cancel,60000);layout();emit();win?.webContents.focus()})}
+ipcMain.handle('veyra:clipboard-read',async e=>{const wc=e.sender,frame=e.senderFrame,url=frame?.url,ctx=contexts.get(wc.id);if(!ctx||frame!==wc.mainFrame||(ctx.tab&&ctx.tab.id!==selected)||!secure(url)||origin(url)!==origin(wc.getURL()))throw Error('Clipboard read unavailable');const text=await requestClipboardRead(wc,url);if(typeof text!=='string')throw Error('Clipboard read declined');return text});
 ipcMain.handle('veyra:command',async(e,action,payload)=>{
  try{
  assertTrusted(e);candidateExpired();
@@ -364,6 +380,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  }
 
  case 'clipboard-response':if(clipboardPrompt?.id===payload?.id)clipboardPrompt.finish(payload.allow===true);break;
+  case 'clipboard-read-response':if(clipboardReadPrompt?.id===payload?.id)clipboardReadPrompt.finish(payload.allow===true&&typeof payload.text==='string'&&payload.text.length<=100000?payload.text:null);break;
  case 'open-profile':await shell.openPath(sharedProfile);break;
  case 'compatibility-save':{if(!Array.isArray(payload)||payload.length>100)throw Error('Некорректный список доменов.');const values=payload.map(x=>String(x).trim().toLowerCase()).filter(Boolean);if(values.some(x=>!/^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(x)))throw Error('Укажи домены без https:// и пути.');db.settings.compatibilityDomains=[...new Set(values)];save();emit();toast('Настройки сохранены.');break}
  case 'compatibility-settings':{const rows=payload?.domains;if(!Array.isArray(rows)||rows.length>100)throw Error('Некорректный список доменов.');const values=rows.map(x=>String(x).trim().toLowerCase()).filter(Boolean);if(values.some(x=>!/^([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(x)))throw Error('Укажи домены без https:// и пути.');db.settings.compatibilityDomains=[...new Set(values)];for(const key of ['hideFocus','fakeFullscreen','realFullscreen'])if(typeof payload[key]==='boolean')db.settings[key]=payload[key];save();broadcastCompatibility();emit();toast('Настройки сохранены.');break}
@@ -440,6 +457,7 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'clear-data':for(const ses of sessions.values()){await ses.clearStorageData();await ses.clearCache();await ses.closeAllConnections()}pendingCredential=null;toast('Cookie, хранилища и кэш профилей очищены.');emit();break;
  case 'clear-site':{const o=origin(active()?.url);if(!o||o==='null')throw Error('Сначала открой сайт.');await sessionFor(active().mode).clearStorageData({origin:o});toast('Хранилища сайта очищены. Обнови страницу.');break}
  case 'permission-response':return sitePermissions.respond(payload);
+ case 'screen-share-response':if(screenSharePrompt?.id===payload?.id)screenSharePrompt.finish({id:typeof payload.source==='string'?payload.source:null,audio:payload.audio===true});return true;
  case 'permissions-reset':sitePermissions.reset();db.settings.permissions={};save();emit();toast('Разрешения сайтов сброшены.');break;
  case 'ublock-settings':{const ses=sessionFor(active()?.mode==='google'?'google':'private');await ublock.install(ses);const child=ublock.open(ses);popups.add(child);child.on('closed',()=>popups.delete(child));break}
  case 'update-filters':await privacy.update();return privacy.status();
@@ -450,6 +468,9 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
  case 'vault-unlock':return await vault.unlock(payload,false);
  case 'vault-lock':vault.lock();break;
  case 'vault-list':return vault.list();
+ case 'vault-cards-list':return vault.listCards();
+ case 'vault-card-save':vault.saveCard(payload);return vault.listCards();
+ case 'vault-card-delete':vault.remove(payload);return vault.listCards();
  case 'vault-save':vault.save(payload);return vault.list();
  case 'vault-delete':vault.remove(payload);return vault.list();
  case 'vault-generate':return vault.generate(payload);
@@ -462,6 +483,14 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
   const script=`(()=>{if(location.origin!==${JSON.stringify(entry.origin)})return false;const p=[...document.querySelectorAll('input[type=password]')].find(x=>!x.disabled&&!x.readOnly&&x.autocomplete!=='new-password'&&x.getClientRects().length);if(!p)return false;const f=p.form; if(f){const a=new URL(f.action||location.href,location.href);if(a.origin!==location.origin||a.protocol!=='https:')return false;}const scope=f||document;const u=[...scope.querySelectorAll('input')].find(x=>!x.disabled&&x.getClientRects().length&&(x.autocomplete==='username'||x.type==='email'))||[...scope.querySelectorAll('input[type=text]')].find(x=>!x.disabled&&x.getClientRects().length);const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;const set=(x,v)=>{setter.call(x,v);x.dispatchEvent(new Event('input',{bubbles:true}));x.dispatchEvent(new Event('change',{bubbles:true}));};if(u)set(u,${JSON.stringify(entry.username)});set(p,${JSON.stringify(entry.password)});return true;})()`;
   const frame=wc.mainFrame;
   const ok=await frame.executeJavaScript(script,true);if(!ok)throw Error('Подходящая форма входа не найдена. Заполнение не выполнено.');toast('Поля заполнены. Проверь страницу и войди самостоятельно.');break;
+ }
+ case 'vault-fill-card':{
+  const card=vault.getCard(payload),t=active(),wc=t?.view?.webContents;
+  if(!wc||!secure(wc.getURL()))throw Error('Открой защищённую HTTPS-страницу и нажми заполнить ещё раз.');
+  if(t.mode==='temporary')throw Error('Заполнение отключено во временном профиле.');
+  const values={holder:card.holder,number:card.number,month:String(card.month).padStart(2,'0'),year:String(card.year)};
+  const script=`(()=>{if(location.protocol!=='https:')return false;const visible=e=>!e.disabled&&!e.readOnly&&e.getClientRects().length>0;const find=(selector)=>[...document.querySelectorAll(selector)].find(visible);const set=(e,v)=>{if(!e)return false;const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;setter.call(e,v);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}));return true};let n=find('input[autocomplete="cc-number"]')||find('input[name*="cardnumber" i],input[id*="cardnumber" i],input[name*="card_number" i]');if(!n)return false;set(n,${JSON.stringify(values.number)});const h=find('input[autocomplete="cc-name"]')||find('input[name*="cardholder" i],input[id*="cardholder" i]');if(h)set(h,${JSON.stringify(values.holder)});const m=find('input[autocomplete="cc-exp-month"]')||find('select[autocomplete="cc-exp-month"]');if(m){m.value=${JSON.stringify(values.month)};m.dispatchEvent(new Event('input',{bubbles:true}));m.dispatchEvent(new Event('change',{bubbles:true}))}const y=find('input[autocomplete="cc-exp-year"]')||find('select[autocomplete="cc-exp-year"]');if(y){const v=String(y.value||'').length===2?${JSON.stringify(values.year.slice(-2))}:${JSON.stringify(values.year)};y.value=v;y.dispatchEvent(new Event('input',{bubbles:true}));y.dispatchEvent(new Event('change',{bubbles:true}))}const ex=find('input[autocomplete="cc-exp"]');if(ex)set(ex,${JSON.stringify(values.month+'/'+values.year.slice(-2))});return true})()`;
+  const ok=await wc.mainFrame.executeJavaScript(script,true);if(!ok)throw Error('Не нашёл видимое поле номера карты. Данные карты не переданы.');toast('Данные карты заполнены. Проверь их перед оплатой.');break;
  }
  case 'minimize':win.minimize();break;case 'maximize':win.isMaximized()?win.unmaximize():win.maximize();break;case 'close':win.close();break;
  default:throw Error('Unknown action');
@@ -536,7 +565,7 @@ app.whenReady().then(async()=>{
  sync.configureStore(path.join(sharedProfile,'account.session'),safeStorage);
  sitePermissions=new(require('./site-permissions.cjs').SitePermissions)({settings:()=>db.settings,save,changed:()=>{layout();emit()},show:()=>{layout();emit();win?.webContents.focus()},notifications:()=>{try{return windowsNotifications.register(app,shell)}catch{return false}}});
  if(Object.values(db.settings.permissions).some(value=>value?.notifications===true)){try{windowsNotifications.register(app,shell)}catch{}}
- externalApps=new ExternalApplications({settings:()=>db.settings,save,changed:()=>{layout();emit()},available:()=>!appDialog&&!clipboardPrompt&&!sitePermissions?.pending,
+ externalApps=new ExternalApplications({settings:()=>db.settings,save,changed:()=>{layout();emit()},available:()=>!appDialog&&!clipboardPrompt&&!clipboardReadPrompt&&!sitePermissions?.pending,
  active:wc=>{const c=contexts.get(wc.id);return !!c&&(c.tab?c.tab.id===selected:[...popups].some(child=>!child.isDestroyed()&&child.webContents===wc&&(child.isFocused()||externalApps?.pending?.wc===wc)));},
  temporary:wc=>contexts.get(wc.id)?.mode==='temporary',application:scheme=>app.getApplicationNameForProtocol(scheme),launch:url=>shell.openExternal(url,{activate:true}),failed:()=>toast('Не удалось открыть приложение.'),
  show:()=>{const hidden=[...popups].filter(child=>!child.isDestroyed()&&child.isVisible());hidden.forEach(child=>child.hide());win?.show();win?.webContents.focus();return ()=>{hidden.forEach(child=>{if(!child.isDestroyed())child.show()});};}
@@ -550,7 +579,6 @@ app.whenReady().then(async()=>{
  for(const event of ['resize','maximize','unmaximize','enter-full-screen','leave-full-screen'])win.on(event,()=>{layout();emit()});
  win.on('close',event=>{externalApps?.cancel();clipboardPrompt?.finish(false);if(!closing&&!exitConfirmed&&!storageFlushRunning&&!storageFlushReady&&tabs.some(t=>t.dirty)){event.preventDefault();if(!appDialog)requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть браузер с введёнными данными?'}).then(yes=>{if(yes){exitConfirmed=true;win.close()}});return}if(!storageFlushReady){event.preventDefault();if(!storageFlushRunning){storageFlushRunning=true;save();Promise.race([flushSessions(new Map([...sessions,...localHTML.sessions])),new Promise((_,reject)=>setTimeout(()=>reject(Error('Сохранение сессий заняло слишком много времени.')),5000))]).then(()=>{storageFlushReady=true;win.close()}).catch(error=>{storageFlushRunning=false;toast(error.message)})}return}save();closing=true;discord.stop();vault.lock();pendingCredential=null;externalApps?.cancel();sitePermissions?.reset();for(const child of popups)child.close();for(const t of tabs)removeView(t)});
  powerMonitor.on('lock-screen',()=>vault.lock());powerMonitor.on('suspend',()=>vault.lock());
- win.loadFile(path.join(__dirname,'index.html'));const restored=db.settings.restoreSession&&Array.isArray(db.lastSession?.tabs)?db.lastSession.tabs.filter(t=>web(t.url)&&t.mode!=='temporary').slice(0,30):[];const selectedURL=db.lastSession?.selectedURL;if(restored.length){for(const row of restored){const t=newTab(row.url,row.mode);t.pinned=!!row.pinned;t.zoomLevel=Math.max(-3,Math.min(3,Number(row.zoomLevel)||0));t.muted=!!row.muted;t.view?.webContents.setZoomLevel(t.zoomLevel);t.view?.webContents.setAudioMuted(t.muted)}sortPinned();const selectedTab=tabs.find(t=>t.url===selectedURL);if(selectedTab)choose(selectedTab.id);}else newTab();const startupURL=process.argv.map(launchURL).find(Boolean);if(startupURL)newTab(startupURL);for(const url of pendingExternalURLs.splice(0))newTab(url);save();performanceTick();setInterval(performanceTick,5000).unref();setInterval(()=>{void flushSessions(new Map([...sessions,...localHTML.sessions])).catch(()=>toast('Не удалось сохранить сессии на диск.'))},30000).unref();
- if(db.settings.autoUpdateFilters&&(!privacy.updated||Date.now()-new Date(privacy.updated).getTime()>86400000))setTimeout(()=>privacy.update(),1500).unref();
+  win.loadFile(path.join(__dirname,'index.html'));if(uBlockStorageRecovery.length)win.webContents.once('did-finish-load',()=>toast('Oversized uBlock data was backed up and reset. Your site cookies and sessions were kept.'));const restored=db.settings.restoreSession&&Array.isArray(db.lastSession?.tabs)?db.lastSession.tabs.filter(t=>web(t.url)&&t.mode!=='temporary').slice(0,30):[];const selectedURL=db.lastSession?.selectedURL;if(restored.length){for(const row of restored){const t=newTab(row.url,row.mode);t.pinned=!!row.pinned;t.zoomLevel=Math.max(-3,Math.min(3,Number(row.zoomLevel)||0));t.muted=!!row.muted;t.view?.webContents.setZoomLevel(t.zoomLevel);t.view?.webContents.setAudioMuted(t.muted)}sortPinned();const selectedTab=tabs.find(t=>t.url===selectedURL);if(selectedTab)choose(selectedTab.id);}else newTab();const startupURL=process.argv.map(launchURL).find(Boolean);if(startupURL)newTab(startupURL);for(const url of pendingExternalURLs.splice(0))newTab(url);save();performanceTick();setInterval(performanceTick,5000).unref();setInterval(()=>{void flushSessions(new Map([...sessions,...localHTML.sessions])).catch(()=>toast('Не удалось сохранить сессии на диск.'))},30000).unref();
 });
 app.on('window-all-closed',()=>app.quit());

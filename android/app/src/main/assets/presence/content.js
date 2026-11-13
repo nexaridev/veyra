@@ -20,12 +20,12 @@ function apply(next) {
     for (const key of ['fullscreenElement', 'webkitFullscreenElement', 'webkitCurrentFullScreenElement']) define(d, key, { configurable: true, get: fn(() => fakeFsEl) });
     const change = target => { dispatch(d, 'fullscreenchange'); dispatch(d, 'webkitfullscreenchange'); dispatch(target || d, 'fullscreenchange'); };
     const requestReal = () => { if (options.realFullscreen) browser.runtime.sendNativeMessage('veyra_presence', 'real-fullscreen-request').catch(() => {}); };
-    const enter = function () { fakeFsEl = this; queueMicrotask(() => setTimeout(() => change(this), 0)); requestReal(); return Promise.resolve(); };
+    const enter = function () { fakeFsEl = this; queueMicrotask(() => setTimeout(() => change(this), 0)); requestReal(); return w.Promise.resolve(); };
     const legacy = function () { fakeFsEl = this; queueMicrotask(() => setTimeout(() => change(this), 0)); requestReal(); };
     for (const name of ['requestFullscreen']) define(w.Element.prototype, name, { configurable: true, writable: true, value: fn(enter) });
     for (const name of ['webkitRequestFullscreen', 'mozRequestFullScreen', 'msRequestFullscreen']) define(w.Element.prototype, name, { configurable: true, writable: true, value: fn(legacy) });
     if (w.HTMLVideoElement) define(w.HTMLVideoElement.prototype, 'webkitEnterFullscreen', { configurable: true, writable: true, value: fn(function () { fakeFsEl = this; queueMicrotask(() => setTimeout(() => { change(this); dispatch(this, 'webkitbeginfullscreen'); }, 0)); requestReal(); }) });
-    const exit = fn(() => { const old = fakeFsEl; fakeFsEl = null; queueMicrotask(() => setTimeout(() => change(old), 0)); return Promise.resolve(); });
+    const exit = fn(() => { const old = fakeFsEl; fakeFsEl = null; queueMicrotask(() => setTimeout(() => change(old), 0)); return w.Promise.resolve(); });
     define(d, 'exitFullscreen', { configurable: true, writable: true, value: exit });
     define(d, 'webkitExitFullscreen', { configurable: true, writable: true, value: exit });
   } else {
@@ -50,3 +50,19 @@ window.addEventListener('blur', event => {
 }, true);
 apply(options); // Install defaults synchronously at document_start, before the page runs.
 browser.runtime.sendNativeMessage('veyra_presence', {}).then(apply).catch(() => {});
+
+let lastClipboardGesture=0;
+for(const name of ['pointerdown','keydown','click'])document.addEventListener(name,event=>{if(event.isTrusted)lastClipboardGesture=Date.now()},true);
+if(w.navigator.clipboard){
+  const denied=()=>new w.DOMException('Clipboard text was not approved','NotAllowedError');
+  const readText=fn(()=>{
+    if(Date.now()-lastClipboardGesture>5000)return w.Promise.reject(denied());
+    return new w.Promise((resolve,reject)=>{
+      browser.runtime.sendNativeMessage('veyra_presence','clipboard-read-request').then(text=>{if(typeof text==='string')resolve(text);else reject(denied())},()=>reject(denied()));
+    });
+  });
+  define(w.navigator.clipboard,'readText',{configurable:true,writable:true,value:readText});
+  define(w.navigator.clipboard,'read',{configurable:true,writable:true,value:fn(()=>new w.Promise((resolve,reject)=>{
+    readText().then(text=>{try{resolve([new w.ClipboardItem({'text/plain':new w.Blob([text],{type:'text/plain'})})])}catch(_){reject(denied())}},reject);
+  }))});
+}

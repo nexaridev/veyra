@@ -70,10 +70,11 @@ try{installDarkMode(ipcRenderer.sendSync('veyra:dark-config'),require('electron'
 if(process.isMainFrame&&location.protocol==='https:'){
  const {contextBridge}=require('electron');let lastGesture=0;
  for(const name of ['pointerdown','keydown','click'])document.addEventListener(name,event=>{if(event.isTrusted)lastGesture=Date.now()},true);
- const write=async text=>{if(Date.now()-lastGesture>5000)throw new Error('Clipboard requires a user gesture');return ipcRenderer.invoke('veyra:clipboard-write',String(text))};
+  const write=async text=>{if(Date.now()-lastGesture>5000)throw new Error('Clipboard requires a user gesture');return ipcRenderer.invoke('veyra:clipboard-write',String(text))};
+  const read=async()=>{if(Date.now()-lastGesture>5000)throw new Error('Clipboard requires a user gesture');return ipcRenderer.invoke('veyra:clipboard-read')};
  const config=ipcRenderer.sendSync('veyra:dark-config');
- contextBridge.exposeInMainWorld('__veyraTextClipboard',Object.freeze({write}));
- contextBridge.executeInMainWorld({func:()=>{if(navigator.clipboard){navigator.clipboard.writeText=async text=>{await window.__veyraTextClipboard.write(String(text))};const original=navigator.clipboard.write.bind(navigator.clipboard);navigator.clipboard.write=async items=>{if(items.length===1&&items[0].types.length===1&&items[0].types.includes('text/plain')){const blob=await items[0].getType('text/plain');await navigator.clipboard.writeText(await blob.text());return}return original(items)}}}});
+  contextBridge.exposeInMainWorld('__veyraTextClipboard',Object.freeze({write,read}));
+  contextBridge.executeInMainWorld({func:()=>{if(navigator.clipboard){navigator.clipboard.writeText=async text=>{await window.__veyraTextClipboard.write(String(text))};navigator.clipboard.readText=async()=>{try{return await window.__veyraTextClipboard.read()}catch{throw new DOMException('Clipboard text was not approved','NotAllowedError')}};navigator.clipboard.read=async()=>{const text=await navigator.clipboard.readText();return [new ClipboardItem({'text/plain':new Blob([text],{type:'text/plain'})})]};const original=navigator.clipboard.write.bind(navigator.clipboard);navigator.clipboard.write=async items=>{if(items.length===1&&items[0].types.length===1&&items[0].types.includes('text/plain')){const blob=await items[0].getType('text/plain');await navigator.clipboard.writeText(await blob.text());return}return original(items)}}}});
  if(config.clipboardMode==='ask')document.addEventListener('copy',event=>{if(!event.isTrusted)return;event.preventDefault();queueMicrotask(()=>{const text=event.clipboardData?.getData('text/plain')||String(getSelection()||'');if(text)void write(text).catch(()=>{})})},true);
 }
 

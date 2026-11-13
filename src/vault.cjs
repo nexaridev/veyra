@@ -99,7 +99,11 @@ class PasswordVault {
   }
   list() {
     this.assertOpen();
-    return this.entries.map(({id,origin,username,updated}) => ({id,origin,username,updated}));
+    return this.entries.filter(e=>e.type!=='card').map(({id,origin,username,updated}) => ({id,origin,username,updated}));
+  }
+  listCards() {
+    this.assertOpen();
+    return this.entries.filter(e=>e.type==='card').map(({id,holder,number,month,year,updated})=>({id,holder,last4:number.slice(-4),month,year,updated}));
   }
   save({id,origin,username,password}) {
     this.assertOpen();
@@ -108,7 +112,7 @@ class PasswordVault {
     if (url.protocol !== 'https:' || url.username || url.password) throw Error('Пароли сохраняются только для HTTPS-сайтов.');
     if (typeof username !== 'string' || username.length > 512 || typeof password !== 'string' || !password || password.length > 4096)
       throw Error('Проверь логин и пароль.');
-    const prior = this.entries.find(e => e.id === id) || this.entries.find(e => e.origin === url.origin && e.username === username);
+    const prior = this.entries.find(e => e.type!=='card'&&e.id === id) || this.entries.find(e => e.type!=='card'&&e.origin === url.origin && e.username === username);
     const entry = {id:prior?.id || crypto.randomUUID(), origin:url.origin, username, password, updated:Date.now()};
     const next = this.entries.filter(e => e.id !== entry.id);
     next.unshift(entry);
@@ -117,9 +121,28 @@ class PasswordVault {
     try {this.persist();} catch(error) {this.entries=previous;throw error;}
     this.changed(); return entry.id;
   }
+  saveCard({id,holder,number,month,year}) {
+    this.assertOpen();
+    const pan=String(number||'').replace(/[\s-]/g,'');
+    if(!/^\d{12,19}$/.test(pan))throw Error('Проверь номер карты.');
+    let sum=0,double=false;for(let i=pan.length-1;i>=0;i--){let n=Number(pan[i]);if(double){n*=2;if(n>9)n-=9}sum+=n;double=!double}
+    if(sum%10!==0)throw Error('Номер карты не прошёл проверку.');
+    const m=Number(month),y=Number(year),now=new Date();
+    if(!Number.isInteger(m)||m<1||m>12||!Number.isInteger(y)||y<now.getFullYear()||y>now.getFullYear()+30||(y===now.getFullYear()&&m<now.getMonth()+1))throw Error('Проверь срок действия карты.');
+    if(typeof holder!=='string'||holder.length>100)throw Error('Проверь имя держателя карты.');
+    const prior=this.entries.find(e=>e.id===id&&e.type==='card')||this.entries.find(e=>e.type==='card'&&e.number===pan);
+    const entry={type:'card',id:prior?.id||crypto.randomUUID(),holder:holder.trim(),number:pan,month:m,year:y,updated:Date.now()};
+    const next=this.entries.filter(e=>e.id!==entry.id),previous=this.entries;next.unshift(entry);this.entries=next;
+    try{this.persist()}catch(error){this.entries=previous;throw error}
+    this.changed();return entry.id;
+  }
+  getCard(id) {
+    this.assertOpen();const entry=this.entries.find(e=>e.id===id&&e.type==='card');
+    if(!entry)throw Error('Карта не найдена.');return entry;
+  }
   get(id) {
     this.assertOpen();
-    const entry = this.entries.find(e => e.id === id);
+    const entry = this.entries.find(e => e.type!=='card'&&e.id === id);
     if (!entry) throw Error('Запись не найдена.');
     return entry;
   }

@@ -1,6 +1,29 @@
 (function(root){
 'use strict';
 const catalog={
+  "Платёжные карты":{"en":"Payment cards","uk":"Платіжні картки"},
+  "Карты защищены тем же мастер-паролем. Код безопасности карты не сохраняется.":{"en":"Cards are protected by the same master password. Card security codes are never stored.","uk":"Картки захищені тим самим майстер-паролем. Коди безпеки карток не зберігаються."},
+  "Код безопасности карты не сохраняется.":{"en":"Card security codes are never stored.","uk":"Коди безпеки карток не зберігаються."},
+  "Банковская карта":{"en":"Payment card","uk":"Платіжна картка"},
+  "Заполнить поля карты на защищённой странице":{"en":"Fill card fields on the secure page","uk":"Заповнити дані картки на захищеній сторінці"},
+  "Заполнить карту":{"en":"Fill card","uk":"Заповнити картку"},
+  "Удалить карту":{"en":"Delete card","uk":"Видалити картку"},
+  "Сохранённых карт нет.":{"en":"No saved cards.","uk":"Збережених карток немає."},
+  "Добавить карту":{"en":"Add a card","uk":"Додати картку"},
+  "Имя держателя":{"en":"Cardholder name","uk":"Ім’я власника картки"},
+  "Номер карты":{"en":"Card number","uk":"Номер картки"},
+  "Месяц":{"en":"Month","uk":"Місяць"},
+  "Год":{"en":"Year","uk":"Рік"},
+  "Сохранить карту":{"en":"Save card","uk":"Зберегти картку"},
+  "Карта сохранена в зашифрованном хранилище.":{"en":"Card saved in the encrypted vault.","uk":"Картку збережено в зашифрованому сховищі."},
+  "Проверь номер карты.":{"en":"Check the card number.","uk":"Перевір номер картки."},
+  "Номер карты не прошёл проверку.":{"en":"The card number failed validation.","uk":"Номер картки не пройшов перевірку."},
+  "Проверь срок действия карты.":{"en":"Check the card expiry date.","uk":"Перевір термін дії картки."},
+  "Проверь имя держателя карты.":{"en":"Check the cardholder name.","uk":"Перевір ім’я власника картки."},
+  "Открой защищённую HTTPS-страницу и нажми заполнить ещё раз.":{"en":"Open a secure HTTPS page and select Fill again.","uk":"Відкрий захищену сторінку HTTPS і знову вибери «Заповнити»."},
+  "Не нашёл видимое поле номера карты. Данные карты не переданы.":{"en":"No visible card-number field was found. Card details were not sent.","uk":"Не знайдено видимого поля номера картки. Дані картки не передано."},
+  "Данные карты заполнены. Проверь их перед оплатой.":{"en":"Card details filled. Review them before paying.","uk":"Дані картки заповнено. Перевір їх перед оплатою."},
+  "Новая установка по умолчанию использует английский интерфейс.":{"en":"New installations use English by default.","uk":"У нових встановленнях типово використовується англійська мова."},
   "Запомнить для этого сайта":{"en":"Remember for this site","uk":"Запам'ятати для цього сайту"},
   "Микрофон":{"en":"Microphone","uk":"Мікрофон"},
   "Камера":{"en":"Camera","uk":"Камера"},
@@ -18,6 +41,22 @@ const catalog={
     "es": "Configuración",
     "pl": "Ustawienia"
   },
+  "Oversized uBlock data was backed up and reset. Your site cookies and sessions were kept.": {
+    "ru": "Разросшееся хранилище uBlock сохранено в резервную копию и сброшено. Cookies и сессии сайтов сохранены.",
+    "uk": "Збільшене сховище uBlock збережено в резервну копію та скинуто. Cookies і сеанси сайтів збережено."
+  },
+  "Appearance & search": {"ru":"Оформление и поиск","uk":"Оформлення і пошук"},
+  "Tabs": {"ru":"Вкладки","uk":"Вкладки"},
+  "Privacy": {"ru":"Приватность","uk":"Приватність"},
+  "Profiles": {"ru":"Профили","uk":"Профілі"},
+  "Performance": {"ru":"Производительность","uk":"Продуктивність"},
+  "Data & permissions": {"ru":"Данные и разрешения","uk":"Дані й дозволи"},
+  "Share text with this site?": {"ru":"Передать текст этому сайту?","uk":"Передати текст цьому сайту?"},
+  "The site is asking to read your clipboard. Nothing is shared until you type or paste it here and choose Share.": {"ru":"Сайт просит прочитать буфер обмена. Текст не будет передан, пока ты не введёшь или не вставишь его сюда и не нажмёшь «Передать».","uk":"Сайт просить прочитати буфер обміну. Текст не буде передано, доки ти не введеш або не вставиш його сюди та не натиснеш «Передати»."},
+  "Text to share": {"ru":"Текст для передачи","uk":"Текст для передавання"},
+  "Type or paste only the text you want to share": {"ru":"Введи или вставь только тот текст, которым хочешь поделиться","uk":"Введи або встав лише той текст, яким хочеш поділитися"},
+  "If you select part of the text, only that selection will be shared. The rest of your clipboard stays private.": {"ru":"Если выделить часть текста, сайту будет передано только выделенное. Остальная часть буфера останется приватной.","uk":"Якщо виділити частину тексту, сайту буде передано лише виділене. Решта буфера залишиться приватною."},
+  "Share text": {"ru":"Передать текст","uk":"Передати текст"},
   "Язык интерфейса": {
     "uk": "Мова інтерфейсу",
     "en": "Interface language",
@@ -1764,6 +1803,7 @@ Object.assign(catalog,{'Разрешить полноэкранный режим
 Object.assign(catalog,{'Локальный файл':{en:'Local file'},'Открыть HTML-файл':{en:'Open HTML file'},'Не удалось открыть HTML-файл.':{en:'Could not open the HTML file.'}});
 Object.assign(catalog,{'Приватность и совместимость':{en:'Privacy and compatibility',uk:'Приватність і сумісність'},'Скрывать от сайтов, что окно не в фокусе':{en:'Hide from sites when the window is unfocused',uk:'Приховувати від сайтів, що вікно не у фокусі'},'Страница получает состояние «в фокусе» и «видима», даже когда окно браузера не активно.':{en:'Pages see the browser as focused and visible even while its window is inactive.',uk:'Сторінки бачать браузер активним і видимим, навіть коли його вікно неактивне.'},'Всегда сообщать сайтам fullscreen':{en:'Always report fullscreen to sites',uk:'Завжди повідомляти сайтам про fullscreen'},'Веб API fullscreen имитируется внутри страницы. Размер окна браузера не меняется.':{en:'Fullscreen APIs are simulated inside the page. The browser window does not resize.',uk:'Fullscreen API імітується на сторінці. Розмір вікна браузера не змінюється.'},'Разрешать настоящий fullscreen окна':{en:'Allow real window fullscreen',uk:'Дозволити справжній fullscreen вікна'},'При запросе страницы Veyra спросит подтверждение перед переходом окна в fullscreen.':{en:'Veyra asks before the window enters fullscreen at a page’s request.',uk:'Veyra запитає підтвердження перед переходом вікна у fullscreen на запит сторінки.'},'Ложный fullscreen не меняет размер окна. Если включён настоящий fullscreen, браузер отдельно покажет запрос подтверждения.':{en:'Simulated fullscreen does not resize the window. If real fullscreen is enabled, Veyra asks separately for confirmation.',uk:'Імітація fullscreen не змінює розмір вікна. Якщо справжній fullscreen дозволено, Veyra окремо запитає підтвердження.'},'Домены профиля совместимости':{en:'Compatibility profile domains',uk:'Домени профілю сумісності'}});
 Object.assign(catalog,{'Сайт запрашивает настоящий полноэкранный режим окна.':{en:'The site requests actual fullscreen for the browser window.',uk:'Сайт запитує справжній повноекранний режим вікна.'}});
+Object.assign(catalog,{'Choose what to share':{ru:'Выберите, чем поделиться',uk:'Виберіть, чим поділитися'},'The selected screen or window is shared with this site until you stop sharing.':{ru:'Выбранный экран или окно будет доступно сайту, пока вы не остановите трансляцию.',uk:'Вибраний екран або вікно буде доступне сайту, доки ви не зупините трансляцію.'},'The site is asking to read your clipboard. Nothing is shared until you type or paste it here and choose Share.':{ru:'Сайт запрашивает буфер обмена. Ничего не отправится, пока вы не введёте или не вставите текст сюда и не нажмёте «Поделиться».',uk:'Сайт запитує буфер обміну. Нічого не буде надіслано, доки ви не введете або не вставите текст сюди й не натиснете «Поділитися».'},'Share screen':{ru:'Поделиться экраном',uk:'Поділитися екраном'},'Share system audio':{ru:'Передавать системный звук',uk:'Передавати системний звук'},'Camera':{ru:'Камера',uk:'Камера'},'Microphone':{ru:'Микрофон',uk:'Мікрофон'},'Site permissions':{ru:'Разрешения сайта',uk:'Дозволи сайту'},'Choose which camera, microphone, or screen this site may use.':{ru:'Выберите, какие камеру, микрофон или экран разрешить этому сайту.',uk:'Виберіть, які камеру, мікрофон або екран дозволити цьому сайту.'},'Allow selected':{ru:'Разрешить выбранное',uk:'Дозволити вибране'}});
 const api={translate,errorMessage,languages,catalog};
 if(typeof module==='object'&&module.exports)module.exports=api;
 else root.VeyraI18n=Object.freeze(api);
