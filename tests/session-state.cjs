@@ -10,6 +10,8 @@ assert.equal(serialized.tabs[0].sleeping,true);
 assert.equal(serialized.tabs[1].sleeping,false);
 assert.equal(serialized.tabs[0].pinned,true);
 assert.equal(serialized.tabs[0].zoomLevel,1.5);
+const deferred=session.serialize([{...first,sleeping:true,restoreQueuedActive:true}],1);
+assert.equal(deferred.tabs[0].sleeping,false,'deferred active tabs retain their pre-restart state');
 const temporary={id:3,sessionId:'33333333-3333-4333-8333-333333333333',url:'https://private.example',mode:'temporary'};
 const privateOnly=session.serialize([first,temporary],3);
 assert.equal(privateOnly.selectedSessionId,null,'temporary tabs never become the selected persistent tab');

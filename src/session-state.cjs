@@ -3,7 +3,7 @@
 const MAX_TABS=30,MAX_FIELDS=128,MAX_FORM_BYTES=24*1024;
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 function serialize(tabs,selectedId){
- const rows=tabs.filter(t=>t&&t.mode!=='temporary'&&typeof t.url==='string').slice(0,MAX_TABS).map(t=>({sessionId:t.sessionId,url:t.url,mode:t.mode,pinned:!!t.pinned,sleeping:!!t.sleeping,zoomLevel:Number.isFinite(t.zoomLevel)?Math.max(-3,Math.min(3,t.zoomLevel)):0,muted:!!t.muted}));
+ const rows=tabs.filter(t=>t&&t.mode!=='temporary'&&typeof t.url==='string').slice(0,MAX_TABS).map(t=>({sessionId:t.sessionId,url:t.url,mode:t.mode,pinned:!!t.pinned,sleeping:t.restoreQueuedActive?false:!!t.sleeping,zoomLevel:Number.isFinite(t.zoomLevel)?Math.max(-3,Math.min(3,t.zoomLevel)):0,muted:!!t.muted}));
  const selected=tabs.find(t=>t?.id===selectedId),selectedRow=rows.find(row=>row.sessionId&&row.sessionId===selected?.sessionId);
  return {tabs:rows,selectedSessionId:selectedRow?.sessionId||null,selectedURL:selectedRow?.url||null};
 }

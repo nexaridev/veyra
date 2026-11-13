@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-Windows 1.0.9 and Android 0.7.2 are the current release builds. The Android APK is signed with the existing release key and was installed and launched from the phone home screen. Google sign-in compatibility remains dependent on Google and the embedded browser engine. Windows 0.7.0 through 0.8.3 carry a memory warning; use Windows 0.9.0 or newer. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+Windows 1.0.10 and Android 0.7.2 are the current release builds. The Android APK is signed with the existing release key and was installed and launched from the phone home screen. Google sign-in compatibility remains dependent on Google and the embedded browser engine. Windows 0.7.0 through 0.8.3 carry a memory warning; use Windows 0.9.0 or newer. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 
