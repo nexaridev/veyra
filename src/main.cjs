@@ -42,7 +42,7 @@ const defaults={homeWidgets:[{id:'clock',kind:'clock',style:'plain'}],sidebarWid
 let ublock;let win,profile,privacy,vault,selected,panel=null,seq=0,blocked=0,closing=false,pendingCredential=null,sitePermissions,externalApps,keybindingCapture=false;
 let db={schema:2,settings:{...defaults},bookmarks:[],history:[]};
 const directDownloads=new Map();const recentlyClosed=[];let wallpaperData='',wallpaperVersion=0;
-const tabs=[],downloads=[],sessions=new Map(),contexts=new Map(),popups=new Set();let recentTabIds=[],restoreQueue=[],restoreQueueTimer=null;
+const tabs=[],downloads=[],sessions=new Map(),contexts=new Map(),popups=new Set(),intentionalTabCloses=new WeakSet();let recentTabIds=[],restoreQueue=[],restoreQueueTimer=null;
 const savedFormState=new Map();
 let defaultPromptVisible=true,screenSharePrompt=null;
 let performanceState={memoryMB:0,privateMB:0,processCount:0,cpu:0,liveTabs:0,sleepingTabs:0},runtimeAcceleration=true,highMemorySamples=0,memoryRestarting=false;
@@ -175,7 +175,7 @@ function attachPage(wc,mode,tab=null,initialURL=''){
  const attachedView=tab?.view;sitePermissions.bind(wc);externalApps.bind(wc);
  wc.on('before-input-event',(event,input)=>shortcuts(event,input,wc));
  contexts.set(wc.id,{wc,mode,tab});applySitePolicy(wc,initialURL||tab?.url||wc.getURL());applyWebRTC(wc);tab?.view?.setBackgroundColor('#121418');wc.on('did-start-navigation',(_,url,inPlace,main)=>{if(main&&!inPlace&&web(url)){applySitePolicy(wc,url);void applyDark(wc,url)}});
- wc.on('destroyed',()=>{contexts.delete(wc.id);if(tab&&tabs.includes(tab)&&tab.view===attachedView){if(win&&!win.isDestroyed())win.contentView.removeChildView(attachedView);tab.view=null;tab.dirty=false;if(!closing)void closeTab(tab.id)}});
+  wc.on('destroyed',()=>{contexts.delete(wc.id);if(tab&&tabs.includes(tab)&&tab.view===attachedView){if(win&&!win.isDestroyed())win.contentView.removeChildView(attachedView);tab.view=null;tab.dirty=false;if(!closing){if(tab.openerTabId){tab.openerTabId=null;void closeTab(tab.id,{skipDirty:true});return}tab.sleeping=true;tab.loading=false;tab.error='Вкладка аварийно остановилась. Нажми, чтобы восстановить её.';layout();emit();save()}}});
  const guard=(e,url)=>{if(url.startsWith('file:')){if(mode==='local'&&localHTML.url(url)&&localHTML.allowed(wc.session,url))return;e.preventDefault();return;}if(externalURL(url)){e.preventDefault();void externalApps.request(wc,url,wc.getURL());return;}if(web(url))applySitePolicy(wc,url);if(!web(url)){e.preventDefault();toast('Поддерживаются HTTP и HTTPS ссылки.');return}if(tab&&!tab.openerTabId&&tab.mode!=='temporary'&&googleHost(url)!==(tab.mode==='google')){e.preventDefault();void navigate(tab,url,tab.pendingNavigation?'replace':'push')}};
  wc.on('will-frame-navigate',event=>{
   if(event.url.startsWith('file:')&&mode==='local'&&localHTML.allowed(wc.session,event.url))return;
@@ -203,7 +203,7 @@ function attachPage(wc,mode,tab=null,initialURL=''){
   child.on('closed',()=>popups.delete(child));
  });
  if(tab){
-  wc.on('close',()=>{if(!closing&&tab.openerTabId&&tabs.includes(tab)){tab.dirty=false;void closeTab(tab.id)}});
+  wc.on('close',event=>{if(closing||intentionalTabCloses.has(wc)||!tabs.includes(tab))return;event.preventDefault();if(tab.openerTabId){tab.openerTabId=null;void closeTab(tab.id,{skipDirty:true});return}toast('Сайт попытался закрыть вкладку. Закрой её кнопкой Veyra, если это нужно.')});
   wc.on('did-start-loading',()=>{tab.loading=true;tab.error=null;emit()});
   wc.on('did-stop-loading',()=>{tab.loading=false;emit()});
   wc.on('did-navigate',(_,url)=>{if(url==='about:blank')return;applySitePolicy(wc,url);if(web(tab.url)&&new URL(tab.url).hostname!=='accounts.google.com')tab.serviceURL=tab.url;commitNavigation(tab,url,wc);tab.url=url;tab.error=null;tab.dirty=false;tab.reader=null;tab.googleBlocked=isGoogleRejected(url);layout();emit()});
@@ -242,7 +242,7 @@ function makeView(t,options={}){
  t.view=new WebContentsView({...(options.webContents?{webContents:options.webContents}:{}),webPreferences:{...options.webPreferences,disableDialogs:true,session:t.mode==='local'?localHTML.sessionFor(t.url):sessionFor(t.mode),preload:path.join(__dirname,'page-preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,allowRunningInsecureContent:false,spellcheck:true,backgroundThrottling:true}});
  win.contentView.addChildView(t.view);attachPage(t.view.webContents,t.mode,t);ublock?.addTab(t.view.webContents,win);t.view.webContents.setZoomLevel(t.zoomLevel||0);t.view.webContents.setAudioMuted(!!t.muted);t.sleeping=false;layout();
 }
-function removeView(t){const v=t.view;t.view=null;if(!v)return;if(win&&!win.isDestroyed())win.contentView.removeChildView(v);const wc=v.webContents;if(wc&&!wc.isDestroyed())wc.close()}
+function removeView(t){const v=t.view;t.view=null;if(!v)return;if(win&&!win.isDestroyed())win.contentView.removeChildView(v);const wc=v.webContents;if(wc&&!wc.isDestroyed()){intentionalTabCloses.add(wc);wc.close()}}
 async function navigate(t,input,historyMode='push'){
  if(!t)return;const url=address(input);if(!url){toast('Этот адрес не поддерживается.');return}
  if(t.sessionId&&t.url!==url)savedFormState.delete(t.sessionId);
@@ -267,8 +267,8 @@ function newTab(url='veyra://newtab',mode='private',restoreOptions={}){
 let tabUseCounter=Date.now();
 function markRecentTab(id,previousId=selected){recentTabIds=[id,previousId,...recentTabIds].filter((value,index,list)=>value!=null&&list.indexOf(value)===index&&tabs.some(t=>t.id===value)).slice(0,50)}
 function switchRecentTab(){const t=recentTabIds.map(id=>tabs.find(x=>x.id===id)).find(x=>x&&x.id!==selected)||tabs.filter(x=>x.id!==selected).sort((a,b)=>b.lastActive-a.lastActive)[0];if(t)choose(t.id)}
-function choose(id){externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);screenSharePrompt?.finish(null);const t=tabs.find(t=>t.id===id);if(!t)return;const previousSelected=selected;if(active())active().lastActive=++tabUseCounter;selected=id;t.lastActive=++tabUseCounter;markRecentTab(id,previousSelected);if(t.restoreQueuedActive){t.restoreQueuedActive=false;restoreQueue=restoreQueue.filter(value=>value!==id)}if(t.sleeping)void navigate(t,t.url);layout();save();emit();t.view?.webContents.focus();if(t.view)ublock?.selectTab(t.view.webContents);scheduleRestoredTabs()}
-async function closeTab(id){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);restoreQueue=restoreQueue.filter(value=>value!==id);recentTabIds=recentTabIds.filter(value=>value!==id);savedFormState.delete(t.sessionId);clearTimeout(t.formSaveTimer);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs.find(x=>x.id===t.openerTabId)?.id||tabs[Math.min(i,tabs.length-1)].id);layout();save();emit();scheduleRestoredTabs()}
+function choose(id){externalApps?.cancel();appDialog?.finish(null);clipboardPrompt?.finish(false);screenSharePrompt?.finish(null);const t=tabs.find(t=>t.id===id);if(!t)return;const previousSelected=selected;if(active())active().lastActive=++tabUseCounter;selected=id;t.lastActive=++tabUseCounter;markRecentTab(id,previousSelected);if(t.restoreQueuedActive){t.restoreQueuedActive=false;restoreQueue=restoreQueue.filter(value=>value!==id)}if(t.sleeping)void navigate(t,t.url);layout();save();emit();if(t.view){setImmediate(()=>{if(tabs.includes(t)&&t.view&&!t.view.webContents.isDestroyed())t.view.webContents.focus()});ublock?.selectTab(t.view.webContents)}scheduleRestoredTabs()}
+async function closeTab(id,options={}){const candidate=tabs.find(t=>t.id===id);if(candidate?.dirty&&!options.skipDirty&&!await requestAppDialog({type:'confirm',title:'Несохранённые данные',message:'Закрыть вкладку с введёнными данными?'}))return;const i=tabs.findIndex(t=>t.id===id);if(i<0)return;const [t]=tabs.splice(i,1);restoreQueue=restoreQueue.filter(value=>value!==id);recentTabIds=recentTabIds.filter(value=>value!==id);savedFormState.delete(t.sessionId);clearTimeout(t.formSaveTimer);if(t.mode!=='temporary'){recentlyClosed.unshift({url:t.url,mode:t.mode,pinned:t.pinned,zoomLevel:t.zoomLevel||0,muted:!!t.muted});recentlyClosed.splice(20)}t.generation++;removeView(t);if(!tabs.length)newTab();else if(selected===id)choose(tabs.find(x=>x.id===t.openerTabId)?.id||tabs[Math.min(i,tabs.length-1)].id);layout();save();emit();scheduleRestoredTabs()}
 function sleepTab(t,manual=false){
  const protectedRecents=tabs.slice().sort((a,b)=>b.lastActive-a.lastActive).slice(0,2);
  if(!t||t.openerTabId||t.keepAwake||protectedRecents.includes(t)||t.id===selected||!t.view||!web(t.url)||t.pinned||t.dirty||t.loading||t.view.webContents.isCurrentlyAudible()||downloads.some(d=>d.status==='progress'&&d.mode===t.mode))return false;
@@ -301,7 +301,7 @@ async function openHTML(){const result=await dialog.showOpenDialog(win,{title:tr
 function shortcuts(e,input,target=active()?.view?.webContents){
  if(input.type!=='keyDown'||input.isAutoRepeat||keybindingCapture)return;const raw=String(input.key||'').toLowerCase(),code=String(input.code||'');const k=/^Key[A-Z]$/.test(code)?code.slice(3).toLowerCase():/^Digit[0-9]$/.test(code)?code.slice(5):({left:'arrowleft',right:'arrowright'}[raw]||raw),ctrl=(input.control||input.meta)&&!input.alt;let handled=true;
  const custom=Object.entries(db.settings.keybindings||defaults.keybindings).find(([_,combo])=>keybindingMatches(input,combo))?.[0];
- const rawBackquote=input.alt&&!input.control&&!input.meta&&!input.shift&&(['Backquote'].includes(code)||['`','~'].includes(raw));
+  const rawBackquote=input.alt&&!input.control&&!input.meta&&(code==='Backquote'||raw==='`'||raw==='~'||input.keyCode===192);
  if(db.settings.clipboardMode==='sandbox'&&ctrl&&!input.shift&&['c','x','v'].includes(k)&&target&&contexts.has(target.id)){e.preventDefault();void sandboxClipboardShortcut(target,k)}
  else if(custom==='switchRecent'||(rawBackquote&&(db.settings.keybindings?.switchRecent||defaults.keybindings.switchRecent)==='Alt+Backquote'))switchRecentTab();
  else if(custom==='newTab'){newTab();win.webContents.focus()}

@@ -1,6 +1,11 @@
 const fs=require('fs'),assert=require('node:assert/strict');
 const pkg=require('../package.json'),main=fs.readFileSync('src/main.cjs','utf8'),renderer=fs.readFileSync('src/renderer.js','utf8'),preload=fs.readFileSync('src/page-preload.cjs','utf8'),css=fs.readFileSync('src/style.css','utf8'),sync=fs.readFileSync('src/sync.cjs','utf8'),updates=fs.readFileSync('src/updates.cjs','utf8'),local=fs.readFileSync('src/local-html.cjs','utf8'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
-assert.equal(pkg.version,'1.1.4');assert.equal(pkg.displayVersion,'1.1.3a');assert.match(gradle,/versionName\s+'0\.7\.5'/);
+assert.equal(pkg.version,'1.1.5');assert.equal(pkg.displayVersion,'1.1.5');assert.match(gradle,/versionName\s+'0\.7\.6'/);
+const androidMain=fs.readFileSync('android/app/src/main/java/dev/veyra/browser/MainActivity.java','utf8'),androidUpdater=fs.readFileSync('android/app/src/main/java/dev/veyra/browser/AppUpdater.java','utf8');
+assert.match(main,/intentionalTabCloses=new WeakSet/);assert.match(main,/Сайт попытался закрыть вкладку/);assert.match(main,/function removeView\(t\).*intentionalTabCloses\.add\(wc\)/);
+assert.match(main,/rawBackquote=input\.alt&&!input\.control&&!input\.meta&&\(code==='Backquote'/);assert.match(main,/input\.isAutoRepeat\|\|keybindingCapture/);
+assert.match(css,/:has\(#home-engine-menu:not\(\[hidden\]\)\)\{z-index:40\}/);assert.match(css,/:has\(#home-engine-menu:not\(\[hidden\]\)\) \.search-form\{position:relative;z-index:2\}/);
+assert.match(androidMain,/setSelectionActionDelegate\(new BasicSelectionActionDelegate\(this\)\)/);assert.match(androidMain,/onContextMenu\(GeckoSession session,int x,int y,ContextElement element\)\{if\(tab==selected\)showContext\(tab,element\);\}/);assert.match(androidMain,/Copy link text/);assert.doesNotMatch(androidMain,/Copy selected text/);assert.match(androidUpdater,/verifyPackageSigner\(file\)/);assert.match(androidUpdater,/signing certificate does not match installed Veyra/);assert.match(androidMain,/Check for updates/);assert.match(androidUpdater,/releases\?per_page=30/);assert.match(androidUpdater,/APK checksum mismatch/);assert.match(androidUpdater,/ACTION_VIEW/);
 assert.match(main,/clipboardMode:'sandbox'/);assert.match(main,/clipboardMode='sandbox'/);
 const privacy=renderer.slice(renderer.indexOf('id="settings-privacy"'),renderer.indexOf('</form>',renderer.indexOf('id="settings-privacy"')));
 for(const key of ['clipboardMode','trackers','thirdPartyCookies','httpsFirst','webrtc','dnt','autoUpdateFilters','hideFocus','fakeFullscreen','realFullscreen'])assert.ok(privacy.includes(key),`Privacy settings missing ${key}`);
@@ -9,4 +14,4 @@ for(const type of ['mousedown','mouseup','contextmenu'])assert.ok(preload.includ
 assert.match(sync,/electron'\)\.net\.fetch/);assert.match(updates,/electron'\)\.net\.fetch/);assert.doesNotMatch(sync,/(?<!net\.)\bfetch\s*\(/);assert.doesNotMatch(updates,/(?<!net\.)\bfetch\s*\(/);
 assert.match(local,/sessionForFactory\?this\.sessionForFactory\(key\)/);assert.match(main,/sessionFor:mode=>sessionFor\(mode\)/);
 assert.match(css,/\.toolbar\{position:relative;z-index:12/);assert.match(css,/#address-suggestions\{position:absolute;z-index:31/);assert.match(main,/function setPanel\(value\)\{panel=panel===value\?null:value/);
-console.log('PASS 1.1.3a release metadata, privacy placement/default, live stealth config, Shift+RMB capture, internal network stack, local session factory and popup/sidebar layering');
+console.log('PASS 1.1.5 release metadata, privacy placement/default, live stealth config, Shift+RMB capture, internal network stack, local session factory and popup/sidebar layering');

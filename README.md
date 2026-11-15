@@ -11,7 +11,7 @@ A browser for Windows and Android by Nexaridev.
 
 ## Current versions
 
-This source tree targets Windows 1.1.3a and Android 0.7.5. Local testing artifacts are built under `outputs/`; the public release is available from the [website](https://veyra.veyra-nexaridev.workers.dev) and [GitHub releases](https://github.com/nexaridev/veyra/releases). Google sign-in compatibility remains dependent on Google and the embedded browser engine. Windows 0.7.0 through 0.8.3 carry a memory warning; use Windows 0.9.0 or newer. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
+This source tree targets Windows 1.1.5 and Android 0.7.6. The latest Android APK currently available for in-place updates remains 0.7.5 until the matching release signing key is available. Local testing artifacts are built under `outputs/`; the public release is available from the [website](https://veyra.veyra-nexaridev.workers.dev) and [GitHub releases](https://github.com/nexaridev/veyra/releases). Google sign-in compatibility remains dependent on Google and the embedded browser engine. Windows 0.7.0 through 0.8.3 carry a memory warning; use Windows 0.9.0 or newer. Windows uses Electron 45. Android uses GeckoView and supports Android 8 or newer on ARM64 devices.
 
 ## Installation
 

@@ -13,8 +13,8 @@ for(const [path,method,status] of [['/','GET',200],['/privacy?lang=ru','GET',200
  if(path==='/assets/site.css'){assert.match(response.headers.get('Content-Type'),/^text\/css/);assert.ok(text.includes('.language-switch{margin-left:auto}'));}
  if(path==='/health'){assert.equal(response.headers.get('Cache-Control'),'no-store');assert.equal(JSON.parse(text).status,'ok');}
  if(path==='/'&&status===200){
-  assert.match(text,/<a class="primary" href="\/download\/windows"[^>]*><span class="download-icon">↓<\/span>Download installer for Windows 1\.1\.3a<\/a>/);
-  assert.match(text,/href="https:\/\/github\.com\/nexaridev\/veyra\/releases\/download\/v1\.1\.3a\/Veyra-1\.1\.3a-Windows\.zip"/);
+  assert.match(text,/<a class="primary" href="\/download\/windows"[^>]*><span class="download-icon">↓<\/span>Download installer for Windows 1\.1\.5<\/a>/);
+  assert.match(text,/href="https:\/\/github\.com\/nexaridev\/veyra\/releases\/download\/v1\.1\.5\/Veyra-1\.1\.5-Windows\.zip"/);
  }
  if(path.startsWith('/api/'))assert.equal(response.headers.get('Cache-Control'),'no-store');
 }
@@ -27,7 +27,7 @@ assert.ok(accountScript.includes('X-Veyra-Web-Session'));
 const siteCss=await worker.fetch(new Request(origin+'/assets/site.css'),{},{}).then(r=>r.text());
 assert.ok(siteCss.includes('.account-page'));
 const win=await worker.fetch(new Request(origin+'/download/windows'),{},{});
-assert.equal(win.headers.get('Location'),'https://github.com/nexaridev/veyra/releases/download/v1.1.3a/VeyraSetup.exe');
+assert.equal(win.headers.get('Location'),'https://github.com/nexaridev/veyra/releases/download/v1.1.5/VeyraSetup.exe');
 const android=await worker.fetch(new Request(origin+'/download/android'),{},{});
 assert.equal(android.headers.get('Location'),'https://github.com/nexaridev/veyra/releases/download/v1.1.3/Veyra-Android-0.7.5.apk');
 for(const path of ['/','/privacy','/assets/site.css','/health','/downloads/windows.json','/missing']){
