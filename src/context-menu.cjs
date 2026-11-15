@@ -1,4 +1,4 @@
-function buildPageMenu(wc, p, {open, back, forward, copyText, openExternal, download = url => wc.downloadURL(url), translate = x => x}) {
+function buildPageMenu(wc, p, {open, back, forward, copyText, openExternal, download = url => wc.downloadURL(url), clipboardMode = 'auto', sandboxClipboard = () => {}, translate = x => x}) {
  const items=[];const add=(label,click,enabled=true)=>items.push({label:translate(label),click,enabled});
  const web=u=>{try{return ['http:','https:'].includes(new URL(u).protocol)}catch{return false}};
  if(web(p.linkURL)){
@@ -18,8 +18,8 @@ function buildPageMenu(wc, p, {open, back, forward, copyText, openExternal, down
  items.push({type:'separator'});
  if(p.isEditable){
   add('Отменить',()=>wc.undo(),!!p.editFlags?.canUndo);add('Повторить',()=>wc.redo(),!!p.editFlags?.canRedo);
-  add('Вырезать',()=>wc.cut(),!!p.editFlags?.canCut);add('Копировать',()=>wc.copy(),!!p.editFlags?.canCopy);add('Вставить',()=>wc.paste(),!!p.editFlags?.canPaste);add('Выделить всё',()=>wc.selectAll());
- }else if(p.selectionText)add('Копировать',()=>wc.copy());
+  add('Вырезать',()=>clipboardMode==='sandbox'?sandboxClipboard('x'):wc.cut(),!!p.editFlags?.canCut);add('Копировать',()=>clipboardMode==='sandbox'?sandboxClipboard('c'):wc.copy(),!!p.editFlags?.canCopy);add('Вставить',()=>clipboardMode==='sandbox'?sandboxClipboard('v'):wc.paste(),!!p.editFlags?.canPaste);add('Выделить всё',()=>wc.selectAll());
+ }else if(p.selectionText)add('Копировать',()=>clipboardMode==='sandbox'?sandboxClipboard('c'):wc.copy());
  else{add('Назад',back);add('Вперёд',forward);add('Обновить',()=>wc.reload());}
  return items;
 }

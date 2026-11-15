@@ -15,6 +15,11 @@ browser.runtime.sendNativeMessage('veyra_presence', {}).then(config => {
   window.postMessage({ __veyraPresence: true, type: 'config', config }, '*');
 }).catch(() => {});
 
+const presencePort = browser.runtime.connectNative('veyra_presence');
+presencePort.onMessage.addListener(config => {
+  window.postMessage({ __veyraPresence: true, type: 'config', config }, '*');
+});
+
 let lastClipboardGesture = 0;
 for (const name of ['pointerdown', 'keydown', 'click']) document.addEventListener(name, event => {
   if (event.isTrusted) lastClipboardGesture = Date.now();

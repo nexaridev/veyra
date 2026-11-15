@@ -1,7 +1,7 @@
 {
   "name": "veyra",
   "productName": "Veyra",
-  "version": "1.1.0",
+  "version": "1.1.3",
   "private": true,
   "description": "Private desktop browser with encrypted vault and resource controls",
   "main": "src/main.cjs",
@@ -11,7 +11,8 @@
     "build:mac": "node scripts/package-mac.cjs",
     "build:mac:dmg": "bash scripts/make-dmg.sh",
     "build:installer": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/BUILD-INSTALLER.ps1",
-    "test": "node tests/widget-package.cjs && node tests/vault-cards.cjs && node tests/extension-storage.cjs && node tests/account-gateway-v4.mjs && node tests/site-headers.mjs && node tests/site-permissions.cjs && node tests/popup-policy.cjs && node tests/external-apps.cjs && node tests/clean-link.cjs && node tests/session-state.cjs"
+    "test": "node tests/release-1.1.3.cjs && node tests/widget-package.cjs && node tests/vault-cards.cjs && node tests/extension-storage.cjs && node tests/account-gateway-v4.mjs && node tests/site-headers.mjs && node tests/site-permissions.cjs && node tests/popup-policy.cjs && node tests/external-apps.cjs && node tests/clean-link.cjs && node tests/session-state.cjs && electron tests/presence-ui.cjs && electron tests/network-stack.cjs",
+    "lint": "node scripts/lint.cjs"
   },
   "devDependencies": {
     "@electron/packager": "20.3.0",
@@ -25,6 +26,6 @@
   "engines": {
     "node": ">=24"
   },
-  "displayVersion": "1.1.0",
+  "displayVersion": "1.1.3",
   "license": "MIT"
 }

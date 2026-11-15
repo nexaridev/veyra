@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const defaults = { hideFocus: true, fakeFullscreen: true, realFullscreen: false };
-  let options = { ...defaults }, activated = false, fakeFsEl = null, focusListeners = false, suppressedFocusReturn = false, suppressedVisibilityReturn = false;
+  let options = { ...defaults }, activated = false, fakeFsEl = null, focusTrap = null, suppressedFocusReturn = false, suppressedVisibilityReturn = false;
   const d = document, elementProto = Element.prototype;
   const inherited = (obj, key) => { for (let p = obj; p; p = Object.getPrototypeOf(p)) { const desc = Object.getOwnPropertyDescriptor(p, key); if (desc) return desc; } return null; };
   const descriptors = {
@@ -21,8 +21,7 @@
       for (const key of ['hidden','webkitHidden','mozHidden']) { try { Object.defineProperty(d, key, { configurable: true, get: () => false }); } catch (_) {} }
       for (const key of ['visibilityState','webkitVisibilityState','mozVisibilityState']) { try { Object.defineProperty(d, key, { configurable: true, get: () => 'visible' }); } catch (_) {} }
       try { Object.defineProperty(d, 'hasFocus', { configurable: true, writable: true, value: () => true }); } catch (_) {}
-      if (!focusListeners) {
-        focusListeners = true;
+      if (!focusTrap) {
         const nativeHidden = () => { try { if (descriptors.nativeVisibility?.get) return descriptors.nativeVisibility.get.call(d) === 'hidden'; return descriptors.nativeHidden?.get ? descriptors.nativeHidden.get.call(d) === true : false; } catch (_) { return false; } };
         const nativeFocus = () => { try { return !!descriptors.nativeHasFocus?.call(d); } catch (_) { return true; } };
         const trap = event => {
@@ -43,10 +42,12 @@
           if (windowFocus) suppressedFocusReturn = false;
           event.stopImmediatePropagation();
         };
+        focusTrap = trap;
         for (const type of ['visibilitychange','webkitvisibilitychange','mozvisibilitychange','blur','focus','focusout','pagehide','freeze','mouseenter','mouseleave']) window.addEventListener(type, trap, true);
       }
     } else {
       suppressedFocusReturn = false; suppressedVisibilityReturn = false;
+      if (focusTrap) { for (const type of ['visibilitychange','webkitvisibilitychange','mozvisibilitychange','blur','focus','focusout','pagehide','freeze','mouseenter','mouseleave']) window.removeEventListener(type, focusTrap, true); focusTrap = null; }
       for (const key of ['hidden','webkitHidden','mozHidden','visibilityState','webkitVisibilityState','mozVisibilityState','hasFocus']) restore(d, key, descriptors.doc[key]);
     }
     if (!activated) return;

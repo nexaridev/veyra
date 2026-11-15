@@ -1,4 +1,4 @@
-# Veyra Android 0.7.3
+# Veyra Android 0.7.5
 
 The Android application uses GeckoView 158 with a native interface. It requires Android 8 or newer and an ARM64 device.
 
@@ -12,4 +12,4 @@ Use JDK 17, Gradle 9.3.1, Android platform 37 and build tools 36.0.0. Run `gradl
 
 ## Verification
 
-Android 0.7.3 is available in the [Veyra 1.1.0 release](https://github.com/nexaridev/veyra/releases/tag/v1.1.0). Release builds require the original application signing key, which must remain outside the repository. Website-specific fullscreen and Google sign-in acceptance tests are not claimed by this release. This application does not provide a VPN or hide your IP address.
+Android 0.7.5 is the current release target. Release APKs must be signed with the project’s existing Android release key so installed builds can be upgraded in place. Website-specific fullscreen and Google sign-in acceptance tests are not claimed by this release. This application does not provide a VPN or hide your IP address.

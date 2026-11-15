@@ -1,4 +1,18 @@
 const {ipcRenderer} = require('electron');
+let forcedRightClick=null,forcedRightClickTimer=0;
+function forceVeyraContextMenu(event){
+ const target=event.target instanceof Element?event.target:null,editable=target?.closest('input,textarea,[contenteditable="true"]'),active=editable||document.activeElement;
+ const media=target?.closest('img,video,audio'),tag=media?.tagName?.toLowerCase();
+ const selection=(()=>{try{return String(window.getSelection()||'')}catch{return ''}})();
+ const editFlags={canUndo:false,canRedo:false,canCut:false,canCopy:!!selection,canPaste:false};
+ if(active instanceof HTMLInputElement||active instanceof HTMLTextAreaElement){const hasSelection=active.selectionStart!==active.selectionEnd;editFlags.canCopy=hasSelection;editFlags.canCut=hasSelection&&!active.readOnly;editFlags.canPaste=!active.readOnly;editFlags.canUndo=true;editFlags.canRedo=true}
+ else if(active?.isContentEditable){editFlags.canCut=true;editFlags.canPaste=true;editFlags.canUndo=true;editFlags.canRedo=true}
+ ipcRenderer.send('veyra:force-context-menu',{trusted:true,x:event.clientX,y:event.clientY,linkURL:target?.closest('a[href]')?.href||'',srcURL:media?.currentSrc||media?.src||'',mediaType:tag==='img'?'image':tag==='video'?'video':tag==='audio'?'audio':'none',selectionText:selection,isEditable:!!editable,editFlags});
+ forcedRightClick.sent=true;clearTimeout(forcedRightClickTimer);forcedRightClickTimer=setTimeout(()=>{forcedRightClick=null},1200);
+}
+window.addEventListener('mousedown',event=>{if(!event.isTrusted||event.button!==2||!event.shiftKey)return;forcedRightClick={sent:false};event.preventDefault();event.stopImmediatePropagation()},true);
+window.addEventListener('mouseup',event=>{if(!event.isTrusted||event.button!==2||!(event.shiftKey||forcedRightClick))return;event.preventDefault();event.stopImmediatePropagation();if(!forcedRightClick?.sent)forceVeyraContextMenu(event)},true);
+window.addEventListener('contextmenu',event=>{if(!event.isTrusted||event.button!==2||!(event.shiftKey||forcedRightClick))return;event.preventDefault();event.stopImmediatePropagation();if(!forcedRightClick?.sent)forceVeyraContextMenu(event)},true);
 const nativeCompatibility=ipcRenderer.sendSync('veyra:native-compat');
 // A site gets device labels only after the user grants native media access.
 // The initial stream stays private to this wrapper until device selection ends.
@@ -103,10 +117,9 @@ if(process.isMainFrame&&location.protocol==='https:'){
  for(const name of ['pointerdown','keydown','click'])document.addEventListener(name,event=>{if(event.isTrusted)lastGesture=Date.now()},true);
   const write=async text=>{if(Date.now()-lastGesture>5000)throw new Error('Clipboard requires a user gesture');return ipcRenderer.invoke('veyra:clipboard-write',String(text))};
   const read=async()=>{if(Date.now()-lastGesture>5000)throw new Error('Clipboard requires a user gesture');return ipcRenderer.invoke('veyra:clipboard-read')};
- const config=ipcRenderer.sendSync('veyra:dark-config');
   contextBridge.exposeInMainWorld('__veyraTextClipboard',Object.freeze({write,read}));
   contextBridge.executeInMainWorld({func:()=>{if(navigator.clipboard){navigator.clipboard.writeText=async text=>{await window.__veyraTextClipboard.write(String(text))};navigator.clipboard.readText=async()=>{try{return await window.__veyraTextClipboard.read()}catch{throw new DOMException('Clipboard text was not approved','NotAllowedError')}};navigator.clipboard.read=async()=>{const text=await navigator.clipboard.readText();return [new ClipboardItem({'text/plain':new Blob([text],{type:'text/plain'})})]};const original=navigator.clipboard.write.bind(navigator.clipboard);navigator.clipboard.write=async items=>{if(items.length===1&&items[0].types.length===1&&items[0].types.includes('text/plain')){const blob=await items[0].getType('text/plain');await navigator.clipboard.writeText(await blob.text());return}return original(items)}}}});
- if(config.clipboardMode==='ask')document.addEventListener('copy',event=>{if(!event.isTrusted)return;event.preventDefault();queueMicrotask(()=>{const text=event.clipboardData?.getData('text/plain')||String(getSelection()||'');if(text)void write(text).catch(()=>{})})},true);
+ for(const type of ['copy','cut','paste'])window.addEventListener(type,event=>{const mode=ipcRenderer.sendSync('veyra:clipboard-mode');if(mode==='sandbox'){event.preventDefault();event.stopImmediatePropagation();return}if(type!=='copy'||!event.isTrusted||mode!=='ask')return;event.preventDefault();queueMicrotask(()=>{const text=event.clipboardData?.getData('text/plain')||String(getSelection()||'');if(text)void write(text).catch(()=>{})})},true);
 }
 
 // Suppress unsolicited WebAuthn prompts; deliberate passkey actions keep native WebAuthn.
@@ -132,7 +145,7 @@ if(/^https?:$/.test(location.protocol)){
   if(!w.__veyraCompat){
    const names=['requestFullscreen','webkitRequestFullscreen','mozRequestFullScreen','msRequestFullscreen'];
    const inherited=(obj,key)=>{for(let p=obj;p;p=Object.getPrototypeOf(p)){const desc=Object.getOwnPropertyDescriptor(p,key);if(desc)return desc}return null};
-  w.__veyraCompat={fakeFsEl:null,suppressedFocusReturn:false,suppressedVisibilityReturn:false,base:{fullscreenEnabled:Object.getOwnPropertyDescriptor(d,'fullscreenEnabled'),webkitFullscreenEnabled:Object.getOwnPropertyDescriptor(d,'webkitFullscreenEnabled'),fullscreenElement:Object.getOwnPropertyDescriptor(d,'fullscreenElement'),webkitFullscreenElement:Object.getOwnPropertyDescriptor(d,'webkitFullscreenElement'),webkitCurrentFullScreenElement:Object.getOwnPropertyDescriptor(d,'webkitCurrentFullScreenElement'),hidden:Object.getOwnPropertyDescriptor(d,'hidden'),webkitHidden:Object.getOwnPropertyDescriptor(d,'webkitHidden'),mozHidden:Object.getOwnPropertyDescriptor(d,'mozHidden'),visibilityState:Object.getOwnPropertyDescriptor(d,'visibilityState'),webkitVisibilityState:Object.getOwnPropertyDescriptor(d,'webkitVisibilityState'),mozVisibilityState:Object.getOwnPropertyDescriptor(d,'mozVisibilityState'),nativeHidden:inherited(d,'hidden'),nativeVisibilityState:inherited(d,'visibilityState'),hasFocus:d.hasFocus,requests:names.map(n=>Object.getOwnPropertyDescriptor(ElementCtor.prototype,n)),webkitVideo:Object.getOwnPropertyDescriptor(VideoCtor?.prototype||{},'webkitEnterFullscreen'),exit:Object.getOwnPropertyDescriptor(d,'exitFullscreen')},listeners:false};
+   w.__veyraCompat={fakeFsEl:null,suppressedFocusReturn:false,suppressedVisibilityReturn:false,focusHandler:null,base:{fullscreenEnabled:Object.getOwnPropertyDescriptor(d,'fullscreenEnabled'),webkitFullscreenEnabled:Object.getOwnPropertyDescriptor(d,'webkitFullscreenEnabled'),fullscreenElement:Object.getOwnPropertyDescriptor(d,'fullscreenElement'),webkitFullscreenElement:Object.getOwnPropertyDescriptor(d,'webkitFullscreenElement'),webkitCurrentFullScreenElement:Object.getOwnPropertyDescriptor(d,'webkitCurrentFullScreenElement'),hidden:Object.getOwnPropertyDescriptor(d,'hidden'),webkitHidden:Object.getOwnPropertyDescriptor(d,'webkitHidden'),mozHidden:Object.getOwnPropertyDescriptor(d,'mozHidden'),visibilityState:Object.getOwnPropertyDescriptor(d,'visibilityState'),webkitVisibilityState:Object.getOwnPropertyDescriptor(d,'webkitVisibilityState'),mozVisibilityState:Object.getOwnPropertyDescriptor(d,'mozVisibilityState'),nativeHidden:inherited(d,'hidden'),nativeVisibilityState:inherited(d,'visibilityState'),hasFocus:Object.getOwnPropertyDescriptor(d,'hasFocus'),nativeHasFocus:d.hasFocus,requests:names.map(n=>Object.getOwnPropertyDescriptor(ElementCtor.prototype,n)),webkitVideo:Object.getOwnPropertyDescriptor(VideoCtor?.prototype||{},'webkitEnterFullscreen'),exit:Object.getOwnPropertyDescriptor(d,'exitFullscreen')}};
   }
   const state=w.__veyraCompat,define=(obj,key,descriptor)=>{try{Object.defineProperty(obj,key,descriptor)}catch{}};
   const dispatch=(target,type)=>{try{target?.dispatchEvent(new w.Event(type,{bubbles:true}))}catch{}};
@@ -158,10 +171,9 @@ if(/^https?:$/.test(location.protocol)){
    for(const key of ['hidden','webkitHidden','mozHidden'])define(d,key,{configurable:true,get:()=>false});
    for(const key of ['visibilityState','webkitVisibilityState','mozVisibilityState'])define(d,key,{configurable:true,get:()=> 'visible'});
    define(d,'hasFocus',{configurable:true,writable:true,value:()=>true});
-   if(!state.listeners){
-    state.listeners=true;
+    if(!state.focusHandler){
     const nativeHidden=()=>{try{const visibility=state.base.nativeVisibilityState,hidden=state.base.nativeHidden;if(visibility?.get)return visibility.get.call(d)==='hidden';return hidden?.get?hidden.get.call(d)===true:false}catch{return false}};
-    const nativeFocus=()=>{try{return !!state.base.hasFocus?.call(d)}catch{return true}};
+    const nativeFocus=()=>{try{return !!state.base.nativeHasFocus?.call(d)}catch{return true}};
     const hideEvent=event=>{
      const compat=w.__veyraCompat;if(!compat?.settings?.hideFocus)return;
      const background=nativeHidden()||!nativeFocus();
@@ -180,13 +192,15 @@ if(/^https?:$/.test(location.protocol)){
      if(windowFocus)compat.suppressedFocusReturn=false;
      event.stopImmediatePropagation();
     };
-    for(const type of ['visibilitychange','webkitvisibilitychange','mozvisibilitychange','blur','focus','focusout','pagehide','freeze','mouseenter','mouseleave'])w.addEventListener(type,hideEvent,true);
+     state.focusHandler=hideEvent;
+     for(const type of ['visibilitychange','webkitvisibilitychange','mozvisibilitychange','blur','focus','focusout','pagehide','freeze','mouseenter','mouseleave'])w.addEventListener(type,hideEvent,true);
    }
   }else{
    state.suppressedFocusReturn=false;state.suppressedVisibilityReturn=false;
+    if(state.focusHandler){for(const type of ['visibilitychange','webkitvisibilitychange','mozvisibilitychange','blur','focus','focusout','pagehide','freeze','mouseenter','mouseleave'])w.removeEventListener(type,state.focusHandler,true);state.focusHandler=null;}
    for(const key of ['hidden','webkitHidden','mozHidden'])restore(d,key,state.base[key]);
    for(const key of ['visibilityState','webkitVisibilityState','mozVisibilityState'])restore(d,key,state.base[key]);
-   restore(d,'hasFocus',state.base.hasFocus?{configurable:true,writable:true,value:state.base.hasFocus}:null)
+   restore(d,'hasFocus',state.base.hasFocus)
   }
   state.settings={...settings};
  },args:[next]});

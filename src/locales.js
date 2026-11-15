@@ -1694,6 +1694,40 @@ const catalog={
     "es": "Preguntar con vista previa",
     "pl": "Pytaj z podglądem"
   },
+  "Блокировать Clipboard API для сайтов": {
+    "uk": "Блокувати Clipboard API для сайтів",
+    "en": "Block Clipboard API for sites",
+    "de": "Clipboard-API für Websites blockieren",
+    "fr": "Bloquer l’API Clipboard pour les sites",
+    "es": "Bloquear la API Clipboard para sitios",
+    "pl": "Blokuj Clipboard API dla witryn"
+  },
+  "Sandbox Clipboard Mode": {
+    "ru": "Изолировать Ctrl+C/X/V (только текст)",
+    "uk": "Ізолювати Ctrl+C/X/V (лише текст)",
+    "en": "Sandbox Ctrl+C/X/V (plain text only)",
+    "de": "Strg+C/X/V isolieren (nur Text)",
+    "fr": "Isoler Ctrl+C/X/V (texte brut uniquement)",
+    "es": "Aislar Ctrl+C/X/V (solo texto sin formato)",
+    "pl": "Izoluj Ctrl+C/X/V (tylko zwykły tekst)"
+  },
+  "Sandbox mode keeps system clipboard access in Veyra. Sites do not receive copy, cut, or paste events from Veyra shortcuts or context-menu actions. Rich formatting may be lost.": {
+    "ru": "В изолированном режиме системным буфером управляет Veyra. Сайты не получают события copy/cut/paste от сочетаний и меню Veyra. Форматирование может потеряться.",
+    "uk": "В ізольованому режимі системним буфером керує Veyra. Сайти не отримують події copy/cut/paste від комбінацій і меню Veyra. Форматування може втратитися.",
+    "en": "Sandbox mode keeps system clipboard access in Veyra. Sites do not receive copy, cut, or paste events from Veyra shortcuts or context-menu actions. Rich formatting may be lost.",
+    "de": "Im Sandbox-Modus verwaltet Veyra den System-Clipboard. Websites erhalten von Veyra-Tastenkürzeln oder Kontextmenüaktionen keine Copy/Cut/Paste-Ereignisse. Formatierungen können verloren gehen.",
+    "fr": "En mode isolé, Veyra gère le presse-papiers système. Les sites ne reçoivent pas les événements copier/couper/coller des raccourcis ou du menu Veyra. Le formatage peut être perdu.",
+    "es": "En modo aislado, Veyra controla el portapapeles del sistema. Los sitios no reciben eventos de copiar, cortar o pegar de los atajos o el menú de Veyra. Se puede perder el formato.",
+    "pl": "W trybie izolowanym systemowym schowkiem zarządza Veyra. Witryny nie otrzymują zdarzeń kopiowania, wycinania ani wklejania ze skrótów i menu Veyra. Formatowanie może zostać utracone."
+  },
+  "Clipboard API access is controlled here. Keyboard copy and paste keep their normal behavior.": {
+    "uk": "Тут налаштовується navigator.clipboard. Сайти й далі отримують стандартні події копіювання та вставлення.",
+    "en": "This controls navigator.clipboard. Sites may still receive standard copy and paste events.",
+    "de": "Hier wird navigator.clipboard gesteuert. Websites erhalten weiterhin normale Kopier- und Einfügeereignisse.",
+    "fr": "Ce réglage contrôle navigator.clipboard. Les sites peuvent toujours recevoir les événements de copie et de collage.",
+    "es": "Esto controla navigator.clipboard. Los sitios pueden seguir recibiendo los eventos normales de copiar y pegar.",
+    "pl": "To ustawienie kontroluje navigator.clipboard. Witryny nadal mogą otrzymywać standardowe zdarzenia kopiowania i wklejania."
+  },
   "Сайт хочет скопировать текст": {
     "uk": "Сайт хоче скопіювати текст",
     "en": "Website wants to copy text"
@@ -1878,6 +1912,21 @@ Object.assign(catalog,{
  'Перезапускать при высоком расходе памяти':{en:'Restart when memory use is high',uk:'Перезапускати за високого використання пам’яті'},
  'Срабатывает после 15 секунд выше порога; сначала открытые сайты сохраняются как спящие вкладки. Не срабатывает при загрузках, звуке или несохранённых полях.':{en:'Triggers after 15 seconds above the limit. Open sites are saved as sleeping tabs first. Paused during downloads, audio playback or unsaved form entries.',uk:'Спрацьовує після 15 секунд вище порога. Спочатку відкриті сайти зберігаються як приспані вкладки. Не спрацьовує під час завантажень, відтворення звуку або незбережених полів.'},
  'Порог перезапуска, МБ':{en:'Restart threshold, MB',uk:'Поріг перезапуску, МБ'}
+});
+Object.assign(catalog,{
+ 'Clipboard isolation':{en:'Clipboard isolation',uk:'Ізоляція буфера обміну'},
+ 'Копирование с сайтов':{en:'Website clipboard access',uk:'Доступ сайтів до буфера обміну'},
+ 'Копировать сразу':{en:'Allow website clipboard access',uk:'Дозволити сайтам буфер обміну'},
+ 'Спрашивать с предпросмотром':{en:'Ask before sharing clipboard text',uk:'Запитувати перед передаванням тексту'},
+ 'Блокировать Clipboard API для сайтов':{en:'Block website Clipboard API',uk:'Блокувати Clipboard API для сайтів'},
+ 'Sandbox Clipboard Mode':{en:'Sandbox Clipboard Mode',uk:'Ізольований буфер обміну'},
+ 'Скрывать от сайтов, что окно не в фокусе':{en:'Hide when the browser window is unfocused',uk:'Приховувати втрату фокуса вікна від сайтів'},
+ 'Страница получает состояние «в фокусе» и «видима», даже когда окно браузера не активно.':{en:'Pages receive focused and visible states while the browser window is inactive.',uk:'Сторінки отримують стан фокуса та видимості, навіть коли вікно браузера неактивне.'},
+ 'Всегда сообщать сайтам fullscreen':{en:'Report fullscreen to sites',uk:'Повідомляти сайтам про fullscreen'},
+ 'Веб API fullscreen имитируется внутри страницы. Размер окна браузера не меняется.':{en:'Fullscreen APIs are simulated inside the page. The browser window does not resize.',uk:'Fullscreen API імітується на сторінці. Розмір вікна браузера не змінюється.'},
+ 'Разрешать настоящий fullscreen окна':{en:'Allow real window fullscreen',uk:'Дозволити справжній fullscreen вікна'},
+ 'При запросе страницы Veyra спросит подтверждение перед переходом окна в fullscreen.':{en:'Veyra asks before the window enters fullscreen at a page’s request.',uk:'Veyra запитає підтвердження перед переходом вікна у fullscreen на запит сторінки.'},
+ 'Simulated fullscreen does not resize the window. If real fullscreen is enabled, Veyra asks separately for confirmation.':{en:'Simulated fullscreen does not resize the window. If real fullscreen is enabled, Veyra asks separately for confirmation.',uk:'Імітація fullscreen не змінює розмір вікна. Якщо справжній fullscreen дозволено, Veyra окремо запитає підтвердження.'}
 });
 const api={translate,errorMessage,languages,catalog};
 if(typeof module==='object'&&module.exports)module.exports=api;

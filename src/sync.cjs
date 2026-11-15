@@ -24,7 +24,7 @@ class SyncClient{
  status(){return {signedIn:!!this.auth,email:this.auth?.user?.email||'',busy:this.busy}}
  async request(route,body={},authenticated=false){
   if(authenticated&&!this.auth?.access_token)throw Error('Сначала войди в аккаунт.');
-  const response=await fetch(config.apiURL+'/api/v1/'+route,{method:'POST',headers:{'Content-Type':'application/json',...(authenticated?{Authorization:'Bearer '+this.auth.access_token}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(40000),redirect:'error'});
+  const response=await require('electron').net.fetch(config.apiURL+'/api/v1/'+route,{method:'POST',headers:{'Content-Type':'application/json',...(authenticated?{Authorization:'Bearer '+this.auth.access_token}:{})},body:JSON.stringify(body),signal:AbortSignal.timeout(40000),redirect:'error'});
   if(!response.ok){if(authenticated&&response.status===401){this.auth=null;this.persist()}const error=await response.json().catch(()=>({}));throw Error(String(error.error||'Запрос не выполнен: '+response.status).slice(0,300))}
   return response.status===204?null:response.json().catch(()=>null);
  }
