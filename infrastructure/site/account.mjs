@@ -2,7 +2,7 @@ import './widget-package.mjs';
 const ORIGIN='https://veyra.veyra-nexaridev.workers.dev';
 const operations=new Set(['signup','verify','login','reset-request','reset','logout','logout-all','me','delete','password','sync-list','sync-put','sync-delete','profile','profile-save','session-revoke','widget-list','widget-get','widget-publish','widget-delete','mfa-status','mfa-begin','mfa-confirm','mfa-disable','mfa-recovery']);
 const headers={'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
-const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers});
+const reply=(body,status=200,extraHeaders={})=>new Response(JSON.stringify(body),{status,headers:{...headers,...extraHeaders}});
 async function readBody(request){
  if(!request.body)return {};let size=0;const chunks=[],reader=request.body.getReader();try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>2200000)throw Error('Too large');chunks.push(value)}}finally{await reader.cancel()}
  const buffer=new Uint8Array(size);let offset=0;for(const chunk of chunks){buffer.set(chunk,offset);offset+=chunk.length}const data=JSON.parse(new TextDecoder().decode(buffer));if(!data||Array.isArray(data)||typeof data!=='object')throw Error('Invalid body');return data;
@@ -16,7 +16,10 @@ export async function accountAPI(request,env,ctx){
  if(['signup','reset-request'].includes(operation)&&!env.BREVO_API_KEY)return reply({error:'Отправка писем ещё не настроена.'},503);
  let body;try{body=await readBody(request)}catch{return reply({error:'Некорректный или слишком большой запрос.'},400)}
  if(operation==='widget-publish'&&body.template?.kind==='custom')try{body.template={kind:'custom',style:'plain',package:globalThis.VeyraWidgetPackage.normalize(body.template.package)}}catch{return reply({error:'Invalid widget package'},400)}
- const authorization=request.headers.get('Authorization')||'';const token=/^Bearer ([a-f0-9]{64})$/.exec(authorization)?.[1]||'';
+  const webSession=request.headers.get('X-Veyra-Web-Session')==='1';
+  const authorization=request.headers.get('Authorization')||'';
+  const cookieToken=webSession?(/(?:^|;\s*)__Host-veyra_session=([a-f0-9]{64})(?:;|$)/.exec(request.headers.get('Cookie')||'')?.[1]||''):'';
+  const token=/^Bearer ([a-f0-9]{64})$/.exec(authorization)?.[1]||cookieToken;
  const data={...body,token};
  const ip=request.headers.get('CF-Connecting-IP')||'unknown';
  const ipHash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(env.ACCOUNT_GATEWAY_SECRET+':'+ip)))].map(x=>x.toString(16).padStart(2,'0')).join('');
@@ -24,12 +27,17 @@ export async function accountAPI(request,env,ctx){
   const response=await fetch('https://ekqwcwedmdpiogxskrac.supabase.co/rest/v1/rpc/veyra_account_api',{method:'POST',headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({gateway_key:env.ACCOUNT_GATEWAY_SECRET,operation,data,client_ip:ipHash}),signal:AbortSignal.timeout(20000),redirect:'manual'});
   if(!response.ok)return reply({error:'Сервис временно недоступен.'},503);
   const result=await response.json();const status=Number(result.status)||500;
-  if(status>=400){delete result.status;delete result.mail;return reply(result,status)}
+  if(status>=400){delete result.status;delete result.mail;return reply(result,status,webSession&&status===401?{'Set-Cookie':'__Host-veyra_session=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict'}:{})}
   delete result.mail;
   if(['signup','reset-request'].includes(operation))ctx.waitUntil(drainMail(env).catch(()=>console.error('mail_outbox_delivery_failed')));
   delete result.status;
+  let cookieHeader='';
+  if(webSession&&typeof result.access_token==='string'&&/^[a-f0-9]{64}$/.test(result.access_token)){
+   cookieHeader=`__Host-veyra_session=${result.access_token}; Max-Age=2592000; Path=/; Secure; HttpOnly; SameSite=Strict`;
+   delete result.access_token;
+  }else if(webSession&&result.mfa_required!==true&&['logout','logout-all','delete','password'].includes(operation))cookieHeader='__Host-veyra_session=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Strict';
   if(['signup','reset-request'].includes(operation))return reply({confirmation:true,message:'Если действие доступно для этого адреса, код отправлен. Проверь почту и папку «Спам».'},status);
-  return reply(result,status);
+  return reply(result,status,cookieHeader?{'Set-Cookie':cookieHeader}:{});
  }catch{return reply({error:'Сервис временно недоступен. Попробуй ещё раз.'},503)}
 }
 

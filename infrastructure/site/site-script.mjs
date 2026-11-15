@@ -1,4 +1,5 @@
-export const siteScript = String.raw`
+import {accountClientScript} from './account-client.mjs';
+const baseScript = String.raw`
 (()=>{
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  if(!reduced&&'IntersectionObserver'in window){document.documentElement.classList.add('reveal-ready');const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){entry.target.classList.add('is-visible');observer.unobserve(entry.target)}},{threshold:.14});document.querySelectorAll('[data-reveal]').forEach(node=>observer.observe(node))}
@@ -6,3 +7,4 @@ export const siteScript = String.raw`
  const language=document.querySelector('#site-language');if(language)language.addEventListener('change',()=>{const url=new URL(location.href);url.searchParams.set('lang',language.value);location.assign(url.href)});
 })();
 `;
+export const siteScript=baseScript+accountClientScript;

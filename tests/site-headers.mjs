@@ -1,14 +1,15 @@
 import assert from 'node:assert/strict';
 import worker from '../infrastructure/site/worker.mjs';
 const origin='https://veyra.veyra-nexaridev.workers.dev';
-for(const [path,method,status] of [['/','GET',200],['/privacy?lang=ru','GET',200],['/assets/site.css','GET',200],['/health','GET',200],['/downloads/windows.json','GET',200],['/download/windows','GET',302],['/missing','GET',404],['/','POST',405],['/api/v1/profile','GET',404],['/api/v1/profile','POST',403]]){
+for(const [path,method,status] of [['/','GET',200],['/privacy?lang=ru','GET',200],['/account?lang=en','GET',200],['/assets/site.css','GET',200],['/health','GET',200],['/downloads/windows.json','GET',200],['/download/windows','GET',302],['/missing','GET',404],['/','POST',405],['/api/v1/profile','GET',404],['/api/v1/profile','POST',403]]){
  const response=await worker.fetch(new Request(origin+path,{method,headers:{Origin:'https://other.invalid'}}),{},{});
  assert.equal(response.status,status,path);
  assert.equal(response.headers.get('X-Content-Type-Options'),'nosniff',path);
  assert.equal(response.headers.get('Strict-Transport-Security'),'max-age=31536000',path);
  assert.ok(!response.headers.get('Content-Security-Policy').includes('unsafe-inline'),path);
+ assert.ok(response.headers.get('Content-Security-Policy').includes("connect-src 'self'"),path);
  const text=await response.text();
- if(status===200&&(path==='/'||path.startsWith('/privacy'))){assert.ok(text.includes('href="/assets/site.css"'));assert.ok(!/<style|\sstyle=/i.test(text));}
+ if(status===200&&(path==='/'||path.startsWith('/privacy')||path.startsWith('/account'))){assert.ok(text.includes('href="/assets/site.css"'));assert.ok(!/<style|\sstyle=/i.test(text));}
  if(path==='/assets/site.css'){assert.match(response.headers.get('Content-Type'),/^text\/css/);assert.ok(text.includes('.language-switch{margin-left:auto}'));}
  if(path==='/health'){assert.equal(response.headers.get('Cache-Control'),'no-store');assert.equal(JSON.parse(text).status,'ok');}
  if(path==='/'&&status===200){
@@ -17,6 +18,14 @@ for(const [path,method,status] of [['/','GET',200],['/privacy?lang=ru','GET',200
  }
  if(path.startsWith('/api/'))assert.equal(response.headers.get('Cache-Control'),'no-store');
 }
+const account=await worker.fetch(new Request(origin+'/account?lang=en'),{},{}),accountHtml=await account.text();
+assert.match(accountHtml,/<title>Veyra for Windows and Android · Account<\/title>/);
+assert.match(accountHtml,/id="account-root"[^>]+data-labels=/);
+assert.equal(account.headers.get('Cache-Control'),'no-store');
+const accountScript=await worker.fetch(new Request(origin+'/assets/site.js'),{},{}).then(r=>r.text());
+assert.ok(accountScript.includes('X-Veyra-Web-Session'));
+const siteCss=await worker.fetch(new Request(origin+'/assets/site.css'),{},{}).then(r=>r.text());
+assert.ok(siteCss.includes('.account-page'));
 const win=await worker.fetch(new Request(origin+'/download/windows'),{},{});
 assert.equal(win.headers.get('Location'),'https://github.com/nexaridev/veyra/releases/download/installer-v1.3.7/VeyraSetup.exe');
 const android=await worker.fetch(new Request(origin+'/download/android'),{},{});

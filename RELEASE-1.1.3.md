@@ -10,6 +10,7 @@ Windows browser release with Android 0.7.5.
 - Raised the address suggestion layer so the dropdown stays above neighboring toolbar controls.
 - Kept internal sync and update requests on Electron's Chromium network stack; local HTML sessions use the shared filtered session factory.
 - Updated the website release metadata and installer fallback for the new browser build.
+- Added a Veyra website account center for email sign-in and verification, profile pictures, device sessions, password and authenticator management, and encrypted bookmark backup import/export. Web sessions use an HttpOnly, Secure, SameSite cookie.
 
 ## Notes
 
