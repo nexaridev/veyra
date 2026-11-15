@@ -1,6 +1,6 @@
 const fs=require('fs'),assert=require('node:assert/strict');
 const pkg=require('../package.json'),main=fs.readFileSync('src/main.cjs','utf8'),renderer=fs.readFileSync('src/renderer.js','utf8'),preload=fs.readFileSync('src/page-preload.cjs','utf8'),css=fs.readFileSync('src/style.css','utf8'),sync=fs.readFileSync('src/sync.cjs','utf8'),updates=fs.readFileSync('src/updates.cjs','utf8'),local=fs.readFileSync('src/local-html.cjs','utf8'),gradle=fs.readFileSync('android/app/build.gradle','utf8');
-assert.equal(pkg.version,'1.1.3');assert.equal(pkg.displayVersion,'1.1.3');assert.match(gradle,/versionName\s+'0\.7\.5'/);
+assert.equal(pkg.version,'1.1.4');assert.equal(pkg.displayVersion,'1.1.3a');assert.match(gradle,/versionName\s+'0\.7\.5'/);
 assert.match(main,/clipboardMode:'sandbox'/);assert.match(main,/clipboardMode='sandbox'/);
 const privacy=renderer.slice(renderer.indexOf('id="settings-privacy"'),renderer.indexOf('</form>',renderer.indexOf('id="settings-privacy"')));
 for(const key of ['clipboardMode','trackers','thirdPartyCookies','httpsFirst','webrtc','dnt','autoUpdateFilters','hideFocus','fakeFullscreen','realFullscreen'])assert.ok(privacy.includes(key),`Privacy settings missing ${key}`);
@@ -9,4 +9,4 @@ for(const type of ['mousedown','mouseup','contextmenu'])assert.ok(preload.includ
 assert.match(sync,/electron'\)\.net\.fetch/);assert.match(updates,/electron'\)\.net\.fetch/);assert.doesNotMatch(sync,/(?<!net\.)\bfetch\s*\(/);assert.doesNotMatch(updates,/(?<!net\.)\bfetch\s*\(/);
 assert.match(local,/sessionForFactory\?this\.sessionForFactory\(key\)/);assert.match(main,/sessionFor:mode=>sessionFor\(mode\)/);
 assert.match(css,/\.toolbar\{position:relative;z-index:12/);assert.match(css,/#address-suggestions\{position:absolute;z-index:31/);assert.match(main,/function setPanel\(value\)\{panel=panel===value\?null:value/);
-console.log('PASS 1.1.3 release metadata, privacy placement/default, live stealth config, Shift+RMB capture, internal network stack, local session factory and popup/sidebar layering');
+console.log('PASS 1.1.3a release metadata, privacy placement/default, live stealth config, Shift+RMB capture, internal network stack, local session factory and popup/sidebar layering');

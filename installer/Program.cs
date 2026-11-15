@@ -18,8 +18,8 @@ using Microsoft.Win32;
 [assembly:AssemblyTitle("Veyra Installer")]
 [assembly:AssemblyProduct("Veyra Installer")]
 [assembly:AssemblyCompany("Nexaridev")]
-[assembly:AssemblyVersion("1.3.7.0")]
-[assembly:AssemblyFileVersion("1.3.7.0")]
+[assembly:AssemblyVersion("1.3.8.0")]
+[assembly:AssemblyFileVersion("1.3.8.0")]
 
 namespace Veyra.Setup {
  internal static class Program {
@@ -120,7 +120,7 @@ namespace Veyra.Setup {
     else{
      var progress=new Progress<ProgressInfo>(value=>{status.Text=value.Text;bar.Value=value.Percent;bar.Invalidate();percent.Text=value.Percent<0?"":value.Percent+"%";if(value.Percent>=95)cancel.Enabled=false;});
      using(var network=new Network()){
-      var release=await network.Latest(cancellation.Token);var options=new Options{Desktop=desktop.Checked,StartMenu=startMenu.Checked};
+      var release=await network.Latest(cancellation.Token);var pinned=Manifest.Preview();if(new Version(pinned.Version)>new Version(release.Version))release=pinned;var options=new Options{Desktop=desktop.Checked,StartMenu=startMenu.Checked};
       var next=await ManagerUpdates.Download(network,release,progress,cancellation.Token);
       if(next!=null){cancellation.Token.ThrowIfCancellationRequested();Process.Start(ManagerUpdates.StartInfo(next,Process.GetCurrentProcess().Id,options));closeRequested=true;return;}
       await installer.Install(network,options,progress,cancellation.Token,release,incremental);

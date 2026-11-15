@@ -2,12 +2,13 @@
 const assert=require('node:assert/strict');
 const session=require('../src/session-state.cjs');
 
-const first={id:1,sessionId:'11111111-1111-4111-8111-111111111111',url:'https://example.com/page',mode:'private',sleeping:true,pinned:true,zoomLevel:1.5,muted:true};
-const second={id:2,sessionId:'22222222-2222-4222-8222-222222222222',url:first.url,mode:'google',sleeping:false};
+const first={id:1,sessionId:'11111111-1111-4111-8111-111111111111',url:'https://example.com/page',title:'Example article title',mode:'private',sleeping:true,pinned:true,zoomLevel:1.5,muted:true};
+const second={id:2,sessionId:'22222222-2222-4222-8222-222222222222',url:first.url,title:'Another tab title',mode:'google',sleeping:false};
 const serialized=session.serialize([first,second],2);
 assert.equal(serialized.selectedSessionId,second.sessionId,'selected duplicate URL is identified by tab ID');
 assert.equal(serialized.tabs[0].sleeping,true);
 assert.equal(serialized.tabs[1].sleeping,false);
+assert.equal(serialized.tabs[0].title,'Example article title');
 assert.equal(serialized.tabs[0].pinned,true);
 assert.equal(serialized.tabs[0].zoomLevel,1.5);
 const deferred=session.serialize([{...first,sleeping:true,restoreQueuedActive:true}],1);
@@ -20,11 +21,13 @@ const restored=session.restore(serialized,url=>/^https:\/\//.test(url));
 assert.equal(restored.selectedSessionId,second.sessionId);
 assert.equal(restored.rows[0].sleeping,true);
 assert.equal(restored.rows[1].sleeping,false);
+assert.equal(restored.rows[0].title,'Example article title');
 assert.equal(restored.rows[0].muted,true);
 assert.equal(restored.rows[0].pinned,true);
 const legacy=session.restore({tabs:[{url:first.url,mode:'private'}],selectedURL:first.url},()=>true);
 assert.equal(legacy.rows.length,1);
 assert.equal(legacy.selectedSessionId,null);
+assert.equal(legacy.rows[0].title,'example.com','old snapshots use a readable hostname fallback');
 assert.equal(session.normalizePageURL('http://example.com'),null);
 assert.equal(session.normalizePageURL('https://user:pass@example.com'),null);
 

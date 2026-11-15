@@ -24,6 +24,6 @@ When the recorded signed browser artifact and installed browser version match th
 
 Versions 1.1 and 1.2 require one manual run of setup 1.3.0 to enable this behavior. Those older executables cannot acquire a self update feature remotely. No browser or Android version change is required.
 
-## Installer 1.3.7
+## Installer 1.3.8
 
-Installer 1.3.7 ships with Windows browser 1.1.3 under the GitHub release tag `installer-v1.3.7`. The setup build registers Veyra as a selectable handler for supported web documents and cleans up only its own associations on uninstall. Windows still asks the user to choose file defaults. A pinned Windows 1.1.3 archive fallback supports fresh installs and repairs from the browser release. The signed feed remains the source of future releases and points to the published installer for its maintenance updater. Existing hash, size, downgrade and rollback checks remain enabled.
+Installer 1.3.8 ships with Windows browser 1.1.3a under the GitHub release tag `v1.1.3a`. Run it over an existing Veyra installation to update the browser in place; the profile, shortcuts, and user data are preserved. A pinned Windows archive fallback ensures the installer can use the bundled release even if the signed update feed is behind. Windows still asks the user to choose file defaults. Existing hash, size, downgrade, staging, and rollback checks remain enabled.

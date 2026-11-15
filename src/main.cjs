@@ -261,7 +261,7 @@ function newTab(url='veyra://newtab',mode='private',restoreOptions={}){
  if(!['private','google','temporary','local'].includes(mode))mode='private';
   const t={id:++seq,sessionId:typeof restoreOptions.sessionId==='string'?restoreOptions.sessionId:crypto.randomUUID(),mode,url:'veyra://newtab',title:tr('Новая вкладка'),loading:false,error:null,generation:0,lastActive:Date.now(),sleeping:false,restoreQueuedActive:restoreOptions.restoreQueuedActive===true,dirty:false,pinned:restoreOptions.pinned===true,keepAwake:false,fakePresence:true,blocked:0,googleBlocked:false,reader:null,zoomLevel:Math.max(-3,Math.min(3,Number(restoreOptions.zoomLevel)||0)),muted:restoreOptions.muted===true,audible:false,navEntries:[],navIndex:-1,pendingNavigation:false,traversing:false};
  const previousSelected=selected;if(active())active().lastActive=++tabUseCounter;t.lastActive=++tabUseCounter;tabs.push(t);selected=t.id;markRecentTab(t.id,previousSelected);
- if(restoreOptions.sleeping===true&&web(url)){t.url=url;t.title=new URL(url).hostname;t.sleeping=true;t.pinned=restoreOptions.pinned===true;t.zoomLevel=Math.max(-3,Math.min(3,Number(restoreOptions.zoomLevel)||0));t.muted=restoreOptions.muted===true;t.navEntries=[{url}];t.navIndex=0;layout();emit();return t;}
+ if(restoreOptions.sleeping===true&&web(url)){t.url=url;t.title=typeof restoreOptions.title==='string'&&restoreOptions.title.trim()?restoreOptions.title.slice(0,512):new URL(url).hostname;t.sleeping=true;t.pinned=restoreOptions.pinned===true;t.zoomLevel=Math.max(-3,Math.min(3,Number(restoreOptions.zoomLevel)||0));t.muted=restoreOptions.muted===true;t.navEntries=[{url}];t.navIndex=0;layout();emit();return t;}
  void navigate(t,url);layout();emit();return t;
 }
 let tabUseCounter=Date.now();
@@ -566,7 +566,8 @@ ipcMain.handle('veyra:command',async(e,action,payload)=>{
 });
 function performanceTick(){
  if(closing)return;
- const metrics=app.getAppMetrics();performanceState={privateMB:Math.round(metrics.reduce((n,m)=>n+(m.memory?.privateBytes||0),0)/1024),processCount:metrics.length,memoryMB:Math.round(metrics.reduce((n,m)=>n+(m.memory?.workingSetSize||0),0)/1024),cpu:Math.round(metrics.reduce((n,m)=>n+(m.cpu?.percentCPUUsage||0),0)*10)/10,liveTabs:tabs.filter(t=>t.view).length,sleepingTabs:tabs.filter(t=>t.sleeping).length};
+ const metrics=app.getAppMetrics(),workingSetMB=Math.round(metrics.reduce((n,m)=>n+(m.memory?.workingSetSize||0),0)/1024),hasPrivateBytes=process.platform==='win32'&&metrics.some(m=>Number.isFinite(m.memory?.privateBytes));
+ performanceState={privateMB:hasPrivateBytes?Math.round(metrics.reduce((n,m)=>n+(m.memory?.privateBytes||0),0)/1024):workingSetMB,workingSetMB,processCount:metrics.length,memoryMB:hasPrivateBytes?Math.round(metrics.reduce((n,m)=>n+(m.memory?.privateBytes||0),0)/1024):workingSetMB,cpu:Math.round(metrics.reduce((n,m)=>n+(m.cpu?.percentCPUUsage||0),0)*10)/10,liveTabs:tabs.filter(t=>t.view).length,sleepingTabs:tabs.filter(t=>t.sleeping).length};
  if(db.settings.eco){
   const candidates=tabs.filter(t=>t.id!==selected&&t.view).sort((a,b)=>a.lastActive-b.lastActive);
   for(const t of candidates)if(Date.now()-t.lastActive>db.settings.sleepMinutes*60000)sleepTab(t);
@@ -586,7 +587,9 @@ function scheduleRestoredTabs(delay=1800){
   while(restoreQueue.length){const queued=tabs.find(t=>t.id===restoreQueue[0]);if(queued?.restoreQueuedActive&&queued.sleeping)break;restoreQueue.shift()}
   if(!restoreQueue.length)return;
   if(active()?.loading){scheduleRestoredTabs(1200);return}
-  const memoryMB=Math.round(app.getAppMetrics().reduce((sum,item)=>sum+(item.memory?.workingSetSize||0),0)/1024);
+  // Reuse the five-second sampler; calling getAppMetrics() here resets CPU deltas and
+  // used a different RAM metric than the one shown in Performance.
+  const memoryMB=performanceState.memoryMB;
   const target=Math.max(512,Number(db.settings.ramTargetMB)||2048),ceiling=Math.min(Number(db.settings.highMemoryLimitMB)||6144,target+768);
   if(memoryMB>=ceiling){scheduleRestoredTabs(5000);return}
   const id=restoreQueue.shift(),tab=tabs.find(t=>t.id===id);if(!tab||!tab.sleeping)return;
@@ -684,7 +687,7 @@ app.whenReady().then(async()=>{
    if(restoredSession.rows.length){
     for(const row of restoredSession.rows){
      const deferActive=!emergencyRestart&&!row.sleeping&&row!==selectedRestoreRow;
-     const tab=newTab(row.url,row.mode,{sessionId:row.sessionId,sleeping:!!emergencyRestart||row.sleeping||deferActive,restoreQueuedActive:deferActive,pinned:row.pinned,zoomLevel:row.zoomLevel,muted:row.muted});
+     const tab=newTab(row.url,row.mode,{sessionId:row.sessionId,title:row.title,sleeping:!!emergencyRestart||row.sleeping||deferActive,restoreQueuedActive:deferActive,pinned:row.pinned,zoomLevel:row.zoomLevel,muted:row.muted});
      if(deferActive)restoreQueue.push(tab.id);
     }
     sortPinned();

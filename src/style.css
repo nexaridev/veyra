@@ -192,8 +192,8 @@ select,textarea{font:inherit;color:var(--text);background:var(--surface2);border
 .tab-favicon{width:16px;height:16px;object-fit:contain;display:block}
 .titlebar>button{flex-shrink:0}
 .tab.pinned{flex:0 0 48px}
-@container (max-width:90px){.tab-close{display:none}.tab-audio{display:none}}
-@container (max-width:35px){.tab-title{display:none}}
+@container (max-width:90px){.tab-title,.tab-audio{display:none}.tab{gap:4px;padding:0 5px;justify-content:space-between}}
+@container (max-width:50px){.tab-mark{display:none}.tab{justify-content:center;padding:0 2px;min-width:28px}.tab-close{width:22px;height:24px}}
 
 .sync-page .card{padding:20px}.sync-page .card>p:first-child{margin-top:0}.sync-page .field{margin-top:0}
 

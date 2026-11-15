@@ -2,14 +2,19 @@
 
 const MAX_TABS=30,MAX_FIELDS=128,MAX_FORM_BYTES=24*1024;
 const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+function safeTitle(value,url){
+ const title=typeof value==='string'?value.replace(/[\u0000-\u001f\u007f]/g,' ').trim().slice(0,512):'';
+ if(title)return title;
+ try{return new URL(url).hostname.slice(0,253)}catch{return url.slice(0,512)}
+}
 function serialize(tabs,selectedId){
- const rows=tabs.filter(t=>t&&t.mode!=='temporary'&&typeof t.url==='string').slice(0,MAX_TABS).map(t=>({sessionId:t.sessionId,url:t.url,mode:t.mode,pinned:!!t.pinned,sleeping:t.restoreQueuedActive?false:!!t.sleeping,zoomLevel:Number.isFinite(t.zoomLevel)?Math.max(-3,Math.min(3,t.zoomLevel)):0,muted:!!t.muted}));
+ const rows=tabs.filter(t=>t&&t.mode!=='temporary'&&typeof t.url==='string').slice(0,MAX_TABS).map(t=>({sessionId:t.sessionId,url:t.url,title:safeTitle(t.title,t.url),mode:t.mode,pinned:!!t.pinned,sleeping:t.restoreQueuedActive?false:!!t.sleeping,zoomLevel:Number.isFinite(t.zoomLevel)?Math.max(-3,Math.min(3,t.zoomLevel)):0,muted:!!t.muted}));
  const selected=tabs.find(t=>t?.id===selectedId),selectedRow=rows.find(row=>row.sessionId&&row.sessionId===selected?.sessionId);
  return {tabs:rows,selectedSessionId:selectedRow?.sessionId||null,selectedURL:selectedRow?.url||null};
 }
 function restore(snapshot,isWeb){
  const input=Array.isArray(snapshot?.tabs)?snapshot.tabs:[];
- const usedIds=new Set(),rows=input.filter(row=>row&&typeof row.url==='string'&&typeof isWeb==='function'&&isWeb(row.url)&&['private','google'].includes(row.mode)).slice(0,MAX_TABS).map(row=>{let sessionId=uuid(row.sessionId)&&!usedIds.has(row.sessionId)?row.sessionId:null;if(sessionId)usedIds.add(sessionId);return {sessionId,url:row.url,mode:row.mode,pinned:!!row.pinned,sleeping:row.sleeping===true,zoomLevel:Number.isFinite(row.zoomLevel)?Math.max(-3,Math.min(3,row.zoomLevel)):0,muted:!!row.muted}});
+ const usedIds=new Set(),rows=input.filter(row=>row&&typeof row.url==='string'&&typeof isWeb==='function'&&isWeb(row.url)&&['private','google'].includes(row.mode)).slice(0,MAX_TABS).map(row=>{let sessionId=uuid(row.sessionId)&&!usedIds.has(row.sessionId)?row.sessionId:null;if(sessionId)usedIds.add(sessionId);return {sessionId,url:row.url,title:safeTitle(row.title,row.url),mode:row.mode,pinned:!!row.pinned,sleeping:row.sleeping===true,zoomLevel:Number.isFinite(row.zoomLevel)?Math.max(-3,Math.min(3,row.zoomLevel)):0,muted:!!row.muted}});
  let selectedSessionId=uuid(snapshot?.selectedSessionId)?snapshot.selectedSessionId:null;
  if(!rows.some(row=>row.sessionId===selectedSessionId))selectedSessionId=null;
  return {rows,selectedSessionId,selectedURL:typeof snapshot?.selectedURL==='string'?snapshot.selectedURL:null};
